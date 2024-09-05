@@ -11,7 +11,7 @@ pub struct FeedGeneratorFeed {
   pub accepts_interactions: Option<bool>,
   pub labels: Option<AppBskyFeedGeneratorLabelsUnion>,
   pub created_at: chrono::DateTime<chrono::Utc>,
-  pub cache: Vec<String>,
+  pub cache: std::sync::Arc<tokio::sync::RwLock<Vec<String>>>,
 }
 
 impl FeedGeneratorFeed {
@@ -26,7 +26,7 @@ impl FeedGeneratorFeed {
       accepts_interactions: None,
       labels: None,
       created_at: chrono::Utc::now(),
-      cache: Vec::new(),
+      cache: std::sync::Arc::new(tokio::sync::RwLock::new(Vec::new())),
     }
   }
 
@@ -80,7 +80,7 @@ impl FeedGeneratorFeed {
   }
 
   pub async fn push_post(&mut self, aturi: &str) {
-    self.cache.push(aturi.to_string());
+    self.cache.write().await.push(aturi.to_string());
   }
 }
 
@@ -284,9 +284,9 @@ async fn xrpc_server(
         .and_then(|l| l.parse::<usize>().ok())
         .unwrap_or(30);
       tracing::debug!("LIMIT : {limit}");
+      let cache = { feed.cache.read().await.clone() };
       let feeds = match query.get("cursor") {
-        Some(cursor) => feed
-          .cache
+        Some(cursor) => cache
           .iter()
           .skip_while(|c| cursor != *c)
           .skip(1)
@@ -297,8 +297,7 @@ async fn xrpc_server(
             feed_context: None,
           })
           .collect::<Vec<_>>(),
-        None => feed
-          .cache
+        None => cache
           .iter()
           .take(limit)
           .map(|f| AppBskyFeedDefsSkeletonFeedPost {
@@ -312,7 +311,7 @@ async fn xrpc_server(
       let cursor = feeds
         .last()
         .map(|f| &f.post)
-        .and_then(|p| feed.cache.last().and_then(|l| (p != l).then(|| p.clone())));
+        .and_then(|p| cache.last().and_then(|l| (p != l).then(|| p.clone())));
       tracing::debug!("CURSOR : {cursor:?}");
       Ok(axum::response::IntoResponse::into_response(axum::Json(
         AppBskyFeedGetFeedSkeletonOutput {
