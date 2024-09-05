@@ -122,12 +122,65 @@ pub async fn japanese_thread(
   }
 }
 
+pub async fn token_thread(
+  mut receiver: tokio::sync::mpsc::Receiver<(ComAtprotoSyncSubscribeReposCommit, AppBskyFeedPost)>,
+  ja_receivers: std::sync::Arc<
+    tokio::sync::RwLock<
+      Vec<
+        tokio::sync::mpsc::Sender<(
+          ComAtprotoSyncSubscribeReposCommit,
+          AppBskyFeedPost,
+          Vec<Vec<String>>,
+        )>,
+      >,
+    >,
+  >,
+) {
+  let dictionary = lindera::DictionaryConfig {
+    kind: Some(lindera::DictionaryKind::IPADIC),
+    path: None,
+  };
+  let config = lindera::TokenizerConfig {
+    dictionary,
+    user_dictionary: None,
+    mode: lindera::Mode::Normal,
+  };
+  let tokenizer = lindera::Tokenizer::from_config(config).unwrap();
+  loop {
+    let (commit, post) = match receiver.recv().await {
+      Some(p) => p,
+      None => continue,
+    };
+    if let Ok(tokens) = tokenizer
+      .tokenize(&post.text)
+      .map(|mut tokens| {
+        tokens
+          .iter_mut()
+          .filter_map(|t| t.get_details())
+          .map(|t| t.iter().map(|t| t.to_string()).collect::<Vec<_>>())
+          .collect::<Vec<_>>()
+      })
+      .as_ref()
+    {
+      for tx in ja_receivers.read().await.iter() {
+        if let Err(e) = tx
+          .send((commit.clone(), post.clone(), tokens.to_vec()))
+          .await
+        {
+          tracing::warn!("JA_RECEIVER : send record error {e}");
+        }
+      }
+    }
+  }
+}
+
 pub struct Firehose {
   pub handles: indexmap::IndexMap<String, tokio::task::JoinHandle<()>>,
   pub tx: tokio::sync::mpsc::Sender<(ComAtprotoSyncSubscribeReposCommit, Record)>,
   pub rx_hd: tokio::task::JoinHandle<()>,
   pub post_rx_hd: tokio::task::JoinHandle<()>,
   pub ja_rx_hd: tokio::task::JoinHandle<()>,
+  pub token_rx_hd: tokio::task::JoinHandle<()>,
   pub receivers: std::sync::Arc<
     tokio::sync::RwLock<
       Vec<tokio::sync::mpsc::Sender<(ComAtprotoSyncSubscribeReposCommit, Record)>>,
@@ -143,11 +196,26 @@ pub struct Firehose {
       Vec<tokio::sync::mpsc::Sender<(ComAtprotoSyncSubscribeReposCommit, AppBskyFeedPost)>>,
     >,
   >,
+  pub token_receivers: std::sync::Arc<
+    tokio::sync::RwLock<
+      Vec<
+        tokio::sync::mpsc::Sender<(
+          ComAtprotoSyncSubscribeReposCommit,
+          AppBskyFeedPost,
+          Vec<Vec<String>>,
+        )>,
+      >,
+    >,
+  >,
 }
 
 impl Firehose {
   pub fn new(size: usize) -> Self {
-    let ja_receivers = std::sync::Arc::new(tokio::sync::RwLock::new(Vec::new()));
+    let token_receivers = std::sync::Arc::new(tokio::sync::RwLock::new(Vec::new()));
+    let (token_tx, token_rx) = tokio::sync::mpsc::channel(size);
+    let token_rx_hd = tokio::spawn(token_thread(token_rx, token_receivers.clone()));
+
+    let ja_receivers = std::sync::Arc::new(tokio::sync::RwLock::new(vec![token_tx]));
     let (ja_tx, ja_rx) = tokio::sync::mpsc::channel(size);
     let ja_rx_hd = tokio::spawn(japanese_thread(ja_rx, ja_receivers.clone()));
 
@@ -165,9 +233,11 @@ impl Firehose {
       rx_hd,
       post_rx_hd,
       ja_rx_hd,
+      token_rx_hd,
       receivers,
       post_receivers,
       ja_receivers,
+      token_receivers,
     }
   }
 
@@ -202,6 +272,19 @@ impl Firehose {
   ) -> tokio::sync::mpsc::Receiver<(ComAtprotoSyncSubscribeReposCommit, AppBskyFeedPost)> {
     let (sender, receiver) = tokio::sync::mpsc::channel(size);
     self.ja_receivers.write().await.push(sender);
+    receiver
+  }
+
+  pub async fn add_token_receiver(
+    &mut self,
+    size: usize,
+  ) -> tokio::sync::mpsc::Receiver<(
+    ComAtprotoSyncSubscribeReposCommit,
+    AppBskyFeedPost,
+    Vec<Vec<String>>,
+  )> {
+    let (sender, receiver) = tokio::sync::mpsc::channel(size);
+    self.token_receivers.write().await.push(sender);
     receiver
   }
 }
