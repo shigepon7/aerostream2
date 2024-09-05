@@ -459,6 +459,6 @@ impl ComAtprotoSyncSubscribeReposCommit {
     self
       .ops
       .first()
-      .map(|op| format!("at://{}{}", self.repo, op.path))
+      .map(|op| format!("at://{}/{}", self.repo, op.path))
   }
 }
