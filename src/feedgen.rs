@@ -225,7 +225,7 @@ impl FeedGeneratorServer {
 
 async fn xrpc_server(
   axum::extract::Path(nsid): axum::extract::Path<String>,
-  axum::extract::State(server): axum::extract::State<FeedGeneratorServer>,  
+  axum::extract::State(server): axum::extract::State<FeedGeneratorServer>,
 ) -> Result<axum::response::Response, axum::http::StatusCode> {
   match nsid.as_str() {
     "app.bsky.feed.describeFeedGenerator" => {
