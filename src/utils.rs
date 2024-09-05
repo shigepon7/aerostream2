@@ -453,3 +453,12 @@ impl TextDecoration {
     ret
   }
 }
+
+impl ComAtprotoSyncSubscribeReposCommit {
+  pub fn to_aturi(&self) -> Option<String> {
+    self
+      .ops
+      .first()
+      .map(|op| format!("at://{}{}", self.repo, op.path))
+  }
+}
