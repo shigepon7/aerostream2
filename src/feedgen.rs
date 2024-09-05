@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use crate::*;
 
 #[derive(Clone)]
@@ -11,7 +13,7 @@ pub struct FeedGeneratorFeed {
   pub accepts_interactions: Option<bool>,
   pub labels: Option<AppBskyFeedGeneratorLabelsUnion>,
   pub created_at: chrono::DateTime<chrono::Utc>,
-  pub cache: std::sync::Arc<tokio::sync::RwLock<Vec<String>>>,
+  pub cache: std::sync::Arc<tokio::sync::RwLock<VecDeque<String>>>,
 }
 
 impl FeedGeneratorFeed {
@@ -26,7 +28,7 @@ impl FeedGeneratorFeed {
       accepts_interactions: None,
       labels: None,
       created_at: chrono::Utc::now(),
-      cache: std::sync::Arc::new(tokio::sync::RwLock::new(Vec::new())),
+      cache: std::sync::Arc::new(tokio::sync::RwLock::new(VecDeque::new())),
     }
   }
 
@@ -80,7 +82,7 @@ impl FeedGeneratorFeed {
   }
 
   pub async fn push_post(&mut self, aturi: &str) {
-    self.cache.write().await.push(aturi.to_string());
+    self.cache.write().await.push_front(aturi.to_string());
   }
 }
 
@@ -324,10 +326,12 @@ async fn xrpc_server(
           .collect::<Vec<_>>(),
       };
       tracing::debug!("FEEDS : {feeds:?}");
-      let cursor = feeds
-        .last()
-        .map(|f| &f.post)
-        .and_then(|p| cache.last().and_then(|l| (p != l).then(|| p.clone())));
+      let cursor = feeds.last().map(|f| &f.post).and_then(|p| {
+        cache
+          .iter()
+          .last()
+          .and_then(|l| (p != l).then(|| p.clone()))
+      });
       tracing::debug!("CURSOR : {cursor:?}");
       Ok(axum::response::IntoResponse::into_response(axum::Json(
         AppBskyFeedGetFeedSkeletonOutput {
