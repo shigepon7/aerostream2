@@ -208,11 +208,27 @@ impl FeedGeneratorServer {
   pub async fn start(&self) -> anyhow::Result<()> {
     let app = axum::Router::new()
       .route("/xrpc/:nsid", axum::routing::get(xrpc_server))
+      .route("/.well-known/did.json", axum::routing::get(did_document))
       .with_state(self.clone());
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     axum::serve(listener, app).await?;
     Ok(())
   }
+}
+
+#[axum::debug_handler]
+async fn did_document(
+  axum::extract::State(server): axum::extract::State<FeedGeneratorServer>,
+) -> axum::response::Response {
+  let document = serde_json::json!({
+  "@context":["https://www.w3.org/ns/did/v1"],
+  "id":format!("did:web:{}", &server.hostname),
+  "service":[{
+    "id":"#bsky_fg",
+    "type":"BskyFeedGenerator",
+    "serviceEndpoint":format!("https://{}", &server.hostname)}]
+  });
+  axum::response::IntoResponse::into_response(axum::Json(document))
 }
 
 async fn xrpc_server(
