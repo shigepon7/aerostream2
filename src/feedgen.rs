@@ -247,39 +247,48 @@ async fn xrpc_server(
         Some(f) => f,
         None => return Err(axum::http::StatusCode::BAD_REQUEST),
       };
+      tracing::debug!("FEED : {feed}");
       let url = match reqwest::Url::parse(feed) {
         Ok(u) => u,
         Err(_) => return Err(axum::http::StatusCode::BAD_REQUEST),
       };
+      tracing::debug!("URL : {url}");
       let did = match url.host() {
         Some(d) => d.to_string(),
         None => return Err(axum::http::StatusCode::BAD_REQUEST),
       };
+      tracing::debug!("DID : {did}");
       let generators = { server.generators.read().await.clone() };
       let feedgen = match generators.iter().find(|g| g.did == did) {
         Some(g) => g,
         None => return Err(axum::http::StatusCode::NOT_FOUND),
       };
+      tracing::debug!("FEEDGEN : {}", feedgen.did);
       let mut path = url.path().split("/");
       let nsid = match path.next() {
         Some(p) => p,
         None => return Err(axum::http::StatusCode::BAD_REQUEST),
       };
+      tracing::debug!("NSID : {nsid}");
       if nsid != "app.bsky.feed.generator" {
         return Err(axum::http::StatusCode::BAD_REQUEST);
       }
+      tracing::debug!("NSID : OK");
       let rkey = match path.next() {
         Some(p) => p,
         None => return Err(axum::http::StatusCode::BAD_REQUEST),
       };
+      tracing::debug!("RKEY : {rkey}");
       let feed = match feedgen.feeds.iter().find(|f| f.rkey == rkey) {
         Some(f) => f,
         None => return Err(axum::http::StatusCode::NOT_FOUND),
       };
+      tracing::debug!("FEED : {}", feed.rkey);
       let limit = query
         .get("limit")
         .and_then(|l| l.parse::<usize>().ok())
         .unwrap_or(30);
+      tracing::debug!("LIMIT : {limit}");
       let feeds = match query.get("cursor") {
         Some(cursor) => feed
           .cache
@@ -304,10 +313,12 @@ async fn xrpc_server(
           })
           .collect::<Vec<_>>(),
       };
+      tracing::debug!("FEEDS : {feeds:?}");
       let cursor = feeds
         .last()
         .map(|f| &f.post)
         .and_then(|p| feed.cache.last().and_then(|l| (p != l).then(|| p.clone())));
+      tracing::debug!("CURSOR : {cursor:?}");
       Ok(axum::response::IntoResponse::into_response(axum::Json(
         AppBskyFeedGetFeedSkeletonOutput {
           cursor,
