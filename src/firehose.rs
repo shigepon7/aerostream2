@@ -6,6 +6,7 @@ pub async fn firehose_thread(
 ) {
   let atproto = Atproto::new(None, Some(&hostname));
   let mut cursor = None;
+  let mut counter: u64 = 0;
   loop {
     tracing::warn!(
       "FIREHOSE : {hostname} : try connect websocket from {}",
@@ -29,6 +30,10 @@ pub async fn firehose_thread(
         }
         None => continue,
       };
+      counter += 1;
+      if counter % 1000 == 0 {
+        tracing::info!("FIREHOSE : {hostname} : received {counter}");
+      }
       let object = match Object::try_from(&message) {
         Ok(o) => o,
         Err(_) => continue,
@@ -56,11 +61,16 @@ pub async fn receiver_thread(
     >,
   >,
 ) {
+  let mut counter: u64 = 0;
   loop {
     let payload = match servers.recv().await {
       Some(p) => p,
       None => continue,
     };
+    counter += 1;
+    if counter % 10000 == 0 {
+      tracing::info!("RECEIVER : received {counter}");
+    }
     for tx in receivers.read().await.iter() {
       if let Err(e) = tx.send(payload.clone()).await {
         tracing::warn!("RECEIVER : send record error {e}");
@@ -77,6 +87,7 @@ pub async fn post_thread(
     >,
   >,
 ) {
+  let mut counter: u64 = 0;
   loop {
     let (commit, record) = match receiver.recv().await {
       Some(p) => p,
@@ -86,6 +97,10 @@ pub async fn post_thread(
       Some(p) => p,
       None => continue,
     };
+    counter += 1;
+    if counter % 10000 == 0 {
+      tracing::info!("POST_RECEIVER : received {counter}");
+    }
     for tx in post_receivers.read().await.iter() {
       if let Err(e) = tx.send((commit.clone(), post.clone())).await {
         tracing::warn!("POST_RECEIVER : send record error {e}");
@@ -102,6 +117,7 @@ pub async fn japanese_thread(
     >,
   >,
 ) {
+  let mut counter: u64 = 0;
   loop {
     let (commit, post) = match receiver.recv().await {
       Some(p) => p,
@@ -113,6 +129,10 @@ pub async fn japanese_thread(
       .map(|l| l.contains(&String::from("ja")))
       .unwrap_or(false)
     {
+      counter += 1;
+      if counter % 1000 == 0 {
+        tracing::info!("JA_RECEIVER : received {counter}");
+      }
       for tx in ja_receivers.read().await.iter() {
         if let Err(e) = tx.send((commit.clone(), post.clone())).await {
           tracing::warn!("JA_RECEIVER : send record error {e}");
@@ -136,6 +156,7 @@ pub async fn token_thread(
     >,
   >,
 ) {
+  let mut counter: u64 = 0;
   let dictionary = lindera::DictionaryConfig {
     kind: Some(lindera::DictionaryKind::IPADIC),
     path: None,
@@ -162,12 +183,16 @@ pub async fn token_thread(
       })
       .as_ref()
     {
+      counter += 1;
+      if counter % 1000 == 0 {
+        tracing::info!("TOKEN_RECEIVER : received {counter}");
+      }
       for tx in ja_receivers.read().await.iter() {
         if let Err(e) = tx
           .send((commit.clone(), post.clone(), tokens.to_vec()))
           .await
         {
-          tracing::warn!("JA_RECEIVER : send record error {e}");
+          tracing::warn!("TOKEN_RECEIVER : send record error {e}");
         }
       }
     }
