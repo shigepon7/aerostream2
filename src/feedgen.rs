@@ -248,12 +248,8 @@ async fn xrpc_server(
         None => return Err(axum::http::StatusCode::BAD_REQUEST),
       };
       tracing::debug!("FEED : {feed}");
-      let url = match reqwest::Url::parse(feed) {
-        Ok(u) => u,
-        Err(_) => return Err(axum::http::StatusCode::BAD_REQUEST),
-      };
-      tracing::debug!("URL : {url}");
-      let did = match url.host() {
+      let mut splitted = feed.split("/").skip(2);
+      let did = match splitted.next() {
         Some(d) => d.to_string(),
         None => return Err(axum::http::StatusCode::BAD_REQUEST),
       };
@@ -264,8 +260,7 @@ async fn xrpc_server(
         None => return Err(axum::http::StatusCode::NOT_FOUND),
       };
       tracing::debug!("FEEDGEN : {}", feedgen.did);
-      let mut path = url.path().split("/");
-      let nsid = match path.next() {
+      let nsid = match splitted.next() {
         Some(p) => p,
         None => return Err(axum::http::StatusCode::BAD_REQUEST),
       };
@@ -274,7 +269,7 @@ async fn xrpc_server(
         return Err(axum::http::StatusCode::BAD_REQUEST);
       }
       tracing::debug!("NSID : OK");
-      let rkey = match path.next() {
+      let rkey = match splitted.next() {
         Some(p) => p,
         None => return Err(axum::http::StatusCode::BAD_REQUEST),
       };

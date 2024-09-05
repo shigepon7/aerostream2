@@ -94,3 +94,16 @@ async fn plc() {
   let diddoc = plc.resolve_did(&did).await.unwrap();
   assert!(diddoc.also_known_as.iter().any(|a| a.contains(&id)));
 }
+
+#[test]
+fn aturi() {
+  let aturi = "at://did:plc:pwlfo4w6auzwihryxik32t6d/app.bsky.feed.generator/nara2";
+  assert_eq!(
+    aturi.split("/").skip(2).take(3).collect::<Vec<_>>(),
+    vec![
+      "did:plc:pwlfo4w6auzwihryxik32t6d",
+      "app.bsky.feed.generator",
+      "nara2"
+    ]
+  );
+}
