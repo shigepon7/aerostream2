@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use crate::*;
 
 #[derive(Clone)]
@@ -13,7 +11,7 @@ pub struct FeedGeneratorFeed {
   pub accepts_interactions: Option<bool>,
   pub labels: Option<AppBskyFeedGeneratorLabelsUnion>,
   pub created_at: chrono::DateTime<chrono::Utc>,
-  pub cache: std::sync::Arc<tokio::sync::RwLock<VecDeque<String>>>,
+  pub cache: std::sync::Arc<tokio::sync::RwLock<std::collections::VecDeque<String>>>,
 }
 
 impl FeedGeneratorFeed {
@@ -28,7 +26,7 @@ impl FeedGeneratorFeed {
       accepts_interactions: None,
       labels: None,
       created_at: chrono::Utc::now(),
-      cache: std::sync::Arc::new(tokio::sync::RwLock::new(VecDeque::new())),
+      cache: std::sync::Arc::new(tokio::sync::RwLock::new(std::collections::VecDeque::new())),
     }
   }
 
@@ -81,6 +79,10 @@ impl FeedGeneratorFeed {
     }
   }
 
+  pub fn to_aturi(&self) -> String {
+    format!("at://{}/app.bsky.feed.generator/{}", self.owner, self.rkey)
+  }
+
   pub async fn push_post(&mut self, aturi: &str) {
     self.cache.write().await.push_front(aturi.to_string());
   }
@@ -88,104 +90,51 @@ impl FeedGeneratorFeed {
 
 #[derive(Clone)]
 pub struct FeedGenerator {
-  pub atproto: Atproto,
-  pub did: String,
-  pub feeds: Vec<FeedGeneratorFeed>,
-}
-
-impl FeedGenerator {
-  pub async fn new(id: &str, pw: &str) -> anyhow::Result<Self> {
-    let mut atproto = Atproto::default();
-    atproto.login(id, pw).await?;
-    let repo = atproto.com_atproto_repo_describe_repo(id).await?;
-    Ok(Self {
-      atproto,
-      did: repo.did,
-      feeds: Vec::new(),
-    })
-  }
-
-  pub fn add_feed(&mut self, feed: FeedGeneratorFeed) {
-    self.feeds.push(feed);
-  }
-
-  pub async fn insert_records(&self, server: &str) -> anyhow::Result<()> {
-    let mut input = ComAtprotoRepoPutRecordInput {
-      repo: self.did.clone(),
-      collection: String::from("app.bsky.feed.generator"),
-      rkey: String::new(),
-      validate: None,
-      record: serde_json::Value::Null,
-      swap_record: None,
-      swap_commit: None,
-    };
-    for feed in self.feeds.iter() {
-      let avatar = match &feed.avatar {
-        Some((d, m)) => self
-          .atproto
-          .com_atproto_repo_upload_blob(d.clone(), m)
-          .await
-          .ok()
-          .map(|o| o.blob),
-        None => None,
-      };
-      input.rkey = feed.rkey.clone();
-      input.record = match serde_json::to_string(&feed.to_atproto(server, avatar))
-        .and_then(|v| serde_json::from_str(&v))
-      {
-        Ok(r) => r,
-        Err(e) => {
-          tracing::warn!("FeedGenerator : {e}");
-          continue;
-        }
-      };
-      self
-        .atproto
-        .com_atproto_repo_put_record(input.clone())
-        .await?;
-    }
-    Ok(())
-  }
-
-  pub fn to_atproto(&self) -> Vec<AppBskyFeedDescribeFeedGeneratorFeed> {
-    self
-      .feeds
-      .iter()
-      .map(|f| AppBskyFeedDescribeFeedGeneratorFeed {
-        uri: format!("at://{}/app.bsky.feed.generator/{}", self.did, f.rkey),
-      })
-      .collect()
-  }
-}
-
-#[derive(Clone)]
-pub struct FeedGeneratorServer {
   pub hostname: String,
-  pub generators: std::sync::Arc<tokio::sync::RwLock<Vec<FeedGenerator>>>,
+  pub feeds: std::sync::Arc<tokio::sync::RwLock<indexmap::IndexMap<String, FeedGeneratorFeed>>>,
   pub privacy_policy: Option<String>,
   pub terms_of_service: Option<String>,
 }
 
-impl FeedGeneratorServer {
+impl FeedGenerator {
   pub fn new(hostname: &str) -> Self {
     Self {
       hostname: hostname.to_string(),
-      generators: std::sync::Arc::new(tokio::sync::RwLock::new(Vec::new())),
+      feeds: std::sync::Arc::new(tokio::sync::RwLock::new(indexmap::IndexMap::new())),
       privacy_policy: None,
       terms_of_service: None,
     }
   }
 
-  pub async fn insert_feed_generator(&mut self, gen: FeedGenerator) -> anyhow::Result<()> {
-    let did = gen.did.clone();
-    let mut generators = { self.generators.read().await.clone() }
-      .iter()
-      .filter(|g| g.did != did)
-      .cloned()
-      .collect::<Vec<_>>();
-    generators.push(gen);
-    let mut lock = self.generators.write().await;
-    *lock = generators;
+  pub async fn insert_feed(
+    &mut self,
+    feed: FeedGeneratorFeed,
+    server: &str,
+    handle: &str,
+    password: &str,
+  ) -> anyhow::Result<()> {
+    let mut atproto = Atproto::default();
+    atproto.login(handle, password).await?;
+    let avatar = match &feed.avatar {
+      Some((d, m)) => atproto
+        .com_atproto_repo_upload_blob(d.clone(), m)
+        .await
+        .ok()
+        .map(|o| o.blob),
+      None => None,
+    };
+    let input = ComAtprotoRepoPutRecordInput {
+      repo: feed.owner.clone(),
+      collection: String::from("app.bsky.feed.generator"),
+      rkey: feed.rkey.clone(),
+      validate: None,
+      record: serde_json::to_string(&feed.to_atproto(server, avatar))
+        .and_then(|v| serde_json::from_str(&v))?,
+      swap_record: None,
+      swap_commit: None,
+    };
+    atproto.com_atproto_repo_put_record(input.clone()).await?;
+    self.feeds.write().await.insert(feed.to_aturi(), feed);
     Ok(())
   }
 
@@ -195,16 +144,6 @@ impl FeedGeneratorServer {
 
   pub fn set_terms_of_service(&mut self, terms_of_service: &str) {
     self.terms_of_service = (!terms_of_service.is_empty()).then(|| terms_of_service.to_string());
-  }
-
-  pub async fn insert_records(&self) -> anyhow::Result<()> {
-    let generators = { self.generators.read().await.clone() };
-    for generator in generators.iter() {
-      if let Err(e) = generator.insert_records(&self.hostname).await {
-        tracing::warn!("cannot put feed generator record {e}");
-      }
-    }
-    Ok(())
   }
 
   pub async fn start(&self) -> anyhow::Result<()> {
@@ -220,7 +159,7 @@ impl FeedGeneratorServer {
 
 #[axum::debug_handler]
 async fn did_document(
-  axum::extract::State(server): axum::extract::State<FeedGeneratorServer>,
+  axum::extract::State(server): axum::extract::State<FeedGenerator>,
 ) -> axum::response::Response {
   let document = serde_json::json!({
   "@context":["https://www.w3.org/ns/did/v1"],
@@ -236,7 +175,7 @@ async fn did_document(
 async fn xrpc_server(
   axum::extract::Path(nsid): axum::extract::Path<String>,
   axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
-  axum::extract::State(server): axum::extract::State<FeedGeneratorServer>,
+  axum::extract::State(server): axum::extract::State<FeedGenerator>,
 ) -> Result<axum::response::Response, axum::http::StatusCode> {
   match nsid.as_str() {
     "app.bsky.feed.describeFeedGenerator" => {
@@ -249,10 +188,11 @@ async fn xrpc_server(
         });
       let output = AppBskyFeedDescribeFeedGeneratorOutput {
         did: format!("did:web:{}", server.hostname),
-        feeds: { server.generators.read().await.clone() }
-          .iter()
-          .map(|gen| gen.to_atproto())
-          .flatten()
+        feeds: { server.feeds.read().await.clone() }
+          .values()
+          .map(|feed| AppBskyFeedDescribeFeedGeneratorFeed {
+            uri: feed.to_aturi(),
+          })
           .collect(),
         links,
       };
@@ -265,38 +205,11 @@ async fn xrpc_server(
         Some(f) => f,
         None => return Err(axum::http::StatusCode::BAD_REQUEST),
       };
-      tracing::debug!("FEED : {feed}");
-      let mut splitted = feed.split("/").skip(2);
-      let did = match splitted.next() {
-        Some(d) => d.to_string(),
-        None => return Err(axum::http::StatusCode::BAD_REQUEST),
-      };
-      tracing::debug!("DID : {did}");
-      let generators = { server.generators.read().await.clone() };
-      let feedgen = match generators.iter().find(|g| g.did == did) {
-        Some(g) => g,
-        None => return Err(axum::http::StatusCode::NOT_FOUND),
-      };
-      tracing::debug!("FEEDGEN : {}", feedgen.did);
-      let nsid = match splitted.next() {
-        Some(p) => p,
-        None => return Err(axum::http::StatusCode::BAD_REQUEST),
-      };
-      tracing::debug!("NSID : {nsid}");
-      if nsid != "app.bsky.feed.generator" {
-        return Err(axum::http::StatusCode::BAD_REQUEST);
-      }
-      tracing::debug!("NSID : OK");
-      let rkey = match splitted.next() {
-        Some(p) => p,
-        None => return Err(axum::http::StatusCode::BAD_REQUEST),
-      };
-      tracing::debug!("RKEY : {rkey}");
-      let feed = match feedgen.feeds.iter().find(|f| f.rkey == rkey) {
+      let feeds = { server.feeds.read().await.clone() };
+      let feed = match feeds.get(feed).clone() {
         Some(f) => f,
         None => return Err(axum::http::StatusCode::NOT_FOUND),
       };
-      tracing::debug!("FEED : {}", feed.rkey);
       let limit = query
         .get("limit")
         .and_then(|l| l.parse::<usize>().ok())
