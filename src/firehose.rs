@@ -98,7 +98,7 @@ pub async fn post_thread(
       None => continue,
     };
     counter += 1;
-    if counter % 10000 == 0 {
+    if counter % 1000 == 0 {
       tracing::info!("POST_RECEIVER : received {counter}");
     }
     for tx in post_receivers.read().await.iter() {
@@ -130,7 +130,7 @@ pub async fn japanese_thread(
       .unwrap_or(false)
     {
       counter += 1;
-      if counter % 1000 == 0 {
+      if counter % 100 == 0 {
         tracing::info!("JA_RECEIVER : received {counter}");
       }
       for tx in ja_receivers.read().await.iter() {
@@ -184,7 +184,7 @@ pub async fn token_thread(
       .as_ref()
     {
       counter += 1;
-      if counter % 1000 == 0 {
+      if counter % 100 == 0 {
         tracing::info!("TOKEN_RECEIVER : received {counter}");
       }
       for tx in ja_receivers.read().await.iter() {
