@@ -28,3 +28,4 @@ tokio = { version = "1.40.0", features = ["full"] }
 mime_guess = "2.0.5"
 indexmap = "2.5.0"
 lindera = { version = "0.32.2", features = ["ipadic"] }
+async-std = "1.12.0"

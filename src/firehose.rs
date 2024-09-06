@@ -21,16 +21,22 @@ pub async fn firehose_thread(
       }
     };
     loop {
-      let message = match futures_util::StreamExt::next(&mut ws).await {
-        Some(Ok(o)) => o,
-        Some(Err(e)) => {
-          tracing::warn!("FIREHOSE : {hostname} : websocket receive error : {e}");
-          tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+      let message = match async_std::io::timeout(std::time::Duration::from_secs(60), async {
+        Ok(match futures_util::TryStreamExt::try_next(&mut ws).await {
+          Ok(m) => m,
+          Err(e) => return Err(std::io::Error::other(e)),
+        })
+      })
+      .await
+      {
+        Ok(Some(m)) => m,
+        Ok(None) => {
+          tracing::warn!("FIREHOSE : {hostname} : receive timeout");
           break;
         }
-        None => {
-          tracing::warn!("FIREHOSE : {hostname} : None");
-          continue;
+        Err(e) => {
+          tracing::warn!("FIREHOSE : {hostname} : receive error {e}");
+          break;
         }
       };
       counter += 1;
