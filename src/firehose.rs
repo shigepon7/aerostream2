@@ -28,7 +28,10 @@ pub async fn firehose_thread(
           tokio::time::sleep(std::time::Duration::from_secs(1)).await;
           break;
         }
-        None => continue,
+        None => {
+          tracing::warn!("FIREHOSE : {hostname} : None");
+          continue;
+        }
       };
       counter += 1;
       if counter % 1000 == 0 {
