@@ -294,15 +294,22 @@ async fn xrpc_server(
     "app.bsky.feed.getFeedSkeleton" => {
       let feed = match query.get("feed") {
         Some(f) => f,
-        None => return Err(axum::http::StatusCode::BAD_REQUEST),
+        None => {
+          tracing::warn!("no feed query");
+          return Err(axum::http::StatusCode::BAD_REQUEST);
+        }
       };
       let feeds = { server.feeds.read().await.clone() };
       let mut feed = match feeds.get(feed).clone() {
         Some(f) => f,
-        None => return Err(axum::http::StatusCode::NOT_FOUND),
+        None => {
+          tracing::warn!("no such feed {feed}");
+          return Err(axum::http::StatusCode::NOT_FOUND);
+        }
       };
       if let Some(alias) = &feed.alias {
         if let Some(destination) = feeds.get(alias) {
+          tracing::warn!("alias {} to {}", feed.to_aturi(), alias);
           feed = destination;
         }
       }
