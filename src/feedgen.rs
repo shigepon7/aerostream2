@@ -14,7 +14,52 @@ pub struct FeedGeneratorFeed {
   pub cache: std::sync::Arc<tokio::sync::RwLock<std::collections::VecDeque<String>>>,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct FeedGeneratorFeedSnapshot {
+  pub owner: String,
+  pub rkey: String,
+  pub display_name: String,
+  pub description: Option<String>,
+  pub description_facets: Option<Vec<AppBskyRichtextFacet>>,
+  pub avatar: Option<(Vec<u8>, String)>,
+  pub accepts_interactions: Option<bool>,
+  pub labels: Option<AppBskyFeedGeneratorLabelsUnion>,
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  pub cache: std::collections::VecDeque<String>,
+}
+
 impl FeedGeneratorFeed {
+  pub async fn snapshot(&self) -> FeedGeneratorFeedSnapshot {
+    let cache = { self.cache.read().await.clone() };
+    FeedGeneratorFeedSnapshot {
+      owner: self.owner.clone(),
+      rkey: self.rkey.clone(),
+      display_name: self.display_name.clone(),
+      description: self.description.clone(),
+      description_facets: self.description_facets.clone(),
+      avatar: self.avatar.clone(),
+      accepts_interactions: self.accepts_interactions,
+      labels: self.labels.clone(),
+      created_at: self.created_at,
+      cache,
+    }
+  }
+
+  pub fn from_snapshot(snapshot: &FeedGeneratorFeedSnapshot) -> Self {
+    Self {
+      owner: snapshot.owner.clone(),
+      rkey: snapshot.rkey.clone(),
+      display_name: snapshot.display_name.clone(),
+      description: snapshot.description.clone(),
+      description_facets: snapshot.description_facets.clone(),
+      avatar: snapshot.avatar.clone(),
+      accepts_interactions: snapshot.accepts_interactions,
+      labels: snapshot.labels.clone(),
+      created_at: snapshot.created_at,
+      cache: std::sync::Arc::new(tokio::sync::RwLock::new(snapshot.cache.clone())),
+    }
+  }
+
   pub fn new(owner_did: &str, rkey: &str, display_name: &str) -> Self {
     Self {
       owner: owner_did.to_string(),
