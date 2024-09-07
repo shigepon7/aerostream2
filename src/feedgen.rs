@@ -1,5 +1,3 @@
-use std::io::{Read, Write};
-
 use crate::*;
 
 #[derive(Clone)]
@@ -48,7 +46,7 @@ impl FeedGeneratorFeed {
     if let Some(avatar) = &self.avatar {
       if let Some(filename) = avatar_filename {
         match std::fs::File::create(filename) {
-          Ok(file) => match file.write_all(&avatar.0) {
+          Ok(mut file) => match std::io::Write::write_all(&mut file, &avatar.0) {
             Ok(_) => snapshot.avatar = Some((filename.to_string(), avatar.1.clone())),
             Err(e) => tracing::warn!("avatar save failed : {} : {e}", self.to_aturi()),
           },
@@ -75,13 +73,12 @@ impl FeedGeneratorFeed {
       cache: std::sync::Arc::new(tokio::sync::RwLock::new(snapshot.cache.clone())),
     };
     if let Some((filename, mimetype)) = &snapshot.avatar {
-      let mut avatar = Vec::new();
-      match std::fs::File::read_to_end(filename, &mut avatar) {
-        Ok(_) => {
+      match std::fs::read(filename) {
+        Ok(avatar) => {
           feed.avatar = Some((avatar, mimetype.clone()));
         }
         Err(e) => {
-          tracing::warn!("avatar file read failed : {} : {e}",);
+          tracing::warn!("avatar file read failed : {} : {e}", feed.to_aturi());
         }
       }
     }
