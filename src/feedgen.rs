@@ -1,3 +1,5 @@
+use std::io::{Read, Write};
+
 use crate::*;
 
 #[derive(Clone)]
@@ -21,7 +23,7 @@ pub struct FeedGeneratorFeedSnapshot {
   pub display_name: String,
   pub description: Option<String>,
   pub description_facets: Option<Vec<AppBskyRichtextFacet>>,
-  pub avatar: Option<(Vec<u8>, String)>,
+  pub avatar: Option<(String, String)>,
   pub accepts_interactions: Option<bool>,
   pub labels: Option<AppBskyFeedGeneratorLabelsUnion>,
   pub created_at: chrono::DateTime<chrono::Utc>,
@@ -29,35 +31,61 @@ pub struct FeedGeneratorFeedSnapshot {
 }
 
 impl FeedGeneratorFeed {
-  pub async fn snapshot(&self) -> FeedGeneratorFeedSnapshot {
+  pub async fn snapshot(&self, avatar_filename: Option<&str>) -> FeedGeneratorFeedSnapshot {
     let cache = { self.cache.read().await.clone() };
-    FeedGeneratorFeedSnapshot {
+    let mut snapshot = FeedGeneratorFeedSnapshot {
       owner: self.owner.clone(),
       rkey: self.rkey.clone(),
       display_name: self.display_name.clone(),
       description: self.description.clone(),
       description_facets: self.description_facets.clone(),
-      avatar: self.avatar.clone(),
+      avatar: None,
       accepts_interactions: self.accepts_interactions,
       labels: self.labels.clone(),
       created_at: self.created_at,
       cache,
+    };
+    if let Some(avatar) = &self.avatar {
+      if let Some(filename) = avatar_filename {
+        match std::fs::File::create(filename) {
+          Ok(file) => match file.write_all(&avatar.0) {
+            Ok(_) => snapshot.avatar = Some((filename.to_string(), avatar.1.clone())),
+            Err(e) => tracing::warn!("avatar save failed : {} : {e}", self.to_aturi()),
+          },
+          Err(e) => {
+            tracing::warn!("avatar file create failed : {} : {e}", self.to_aturi());
+          }
+        }
+      }
     }
+    snapshot
   }
 
   pub fn from_snapshot(snapshot: &FeedGeneratorFeedSnapshot) -> Self {
-    Self {
+    let mut feed = Self {
       owner: snapshot.owner.clone(),
       rkey: snapshot.rkey.clone(),
       display_name: snapshot.display_name.clone(),
       description: snapshot.description.clone(),
       description_facets: snapshot.description_facets.clone(),
-      avatar: snapshot.avatar.clone(),
+      avatar: None,
       accepts_interactions: snapshot.accepts_interactions,
       labels: snapshot.labels.clone(),
       created_at: snapshot.created_at,
       cache: std::sync::Arc::new(tokio::sync::RwLock::new(snapshot.cache.clone())),
+    };
+    if let Some((filename, mimetype)) = &snapshot.avatar {
+      let mut avatar = Vec::new();
+      match std::fs::File::read_to_end(filename, &mut avatar) {
+        Ok(_) => {
+          feed.avatar = Some((avatar, mimetype.clone()));
+        }
+        Err(e) => {
+          tracing::warn!("avatar file read failed : {} : {e}",);
+        }
+      }
     }
+    feed
   }
 
   pub fn new(owner_did: &str, rkey: &str, display_name: &str) -> Self {
