@@ -12,6 +12,7 @@ pub struct FeedGeneratorFeed {
   pub labels: Option<AppBskyFeedGeneratorLabelsUnion>,
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub cache: std::sync::Arc<tokio::sync::RwLock<std::collections::VecDeque<String>>>,
+  pub alias: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -26,6 +27,7 @@ pub struct FeedGeneratorFeedSnapshot {
   pub labels: Option<AppBskyFeedGeneratorLabelsUnion>,
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub cache: std::collections::VecDeque<String>,
+  pub alias: Option<String>,
 }
 
 impl FeedGeneratorFeed {
@@ -42,6 +44,7 @@ impl FeedGeneratorFeed {
       labels: self.labels.clone(),
       created_at: self.created_at,
       cache,
+      alias: self.alias.clone(),
     };
     if let Some(avatar) = &self.avatar {
       if let Some(filename) = avatar_filename {
@@ -71,6 +74,7 @@ impl FeedGeneratorFeed {
       labels: snapshot.labels.clone(),
       created_at: snapshot.created_at,
       cache: std::sync::Arc::new(tokio::sync::RwLock::new(snapshot.cache.clone())),
+      alias: snapshot.alias.clone(),
     };
     if let Some((filename, mimetype)) = &snapshot.avatar {
       match std::fs::read(filename) {
@@ -97,6 +101,23 @@ impl FeedGeneratorFeed {
       labels: None,
       created_at: chrono::Utc::now(),
       cache: std::sync::Arc::new(tokio::sync::RwLock::new(std::collections::VecDeque::new())),
+      alias: None,
+    }
+  }
+
+  pub fn alias(owner_did: &str, rkey: &str, display_name: &str, alias: &str) -> Self {
+    Self {
+      owner: owner_did.to_string(),
+      rkey: rkey.to_string(),
+      display_name: display_name.to_string(),
+      description: None,
+      description_facets: None,
+      avatar: None,
+      accepts_interactions: None,
+      labels: None,
+      created_at: chrono::Utc::now(),
+      cache: std::sync::Arc::new(tokio::sync::RwLock::new(std::collections::VecDeque::new())),
+      alias: Some(alias.to_string()),
     }
   }
 
@@ -276,10 +297,15 @@ async fn xrpc_server(
         None => return Err(axum::http::StatusCode::BAD_REQUEST),
       };
       let feeds = { server.feeds.read().await.clone() };
-      let feed = match feeds.get(feed).clone() {
+      let mut feed = match feeds.get(feed).clone() {
         Some(f) => f,
         None => return Err(axum::http::StatusCode::NOT_FOUND),
       };
+      if let Some(alias) = &feed.alias {
+        if let Some(destination) = feeds.get(alias) {
+          feed = destination;
+        }
+      }
       let limit = query
         .get("limit")
         .and_then(|l| l.parse::<usize>().ok())
