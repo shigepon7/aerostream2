@@ -309,7 +309,7 @@ async fn xrpc_server(
       };
       if let Some(alias) = &feed.alias {
         if let Some(destination) = feeds.get(alias) {
-          tracing::warn!("alias {} to {}", feed.to_aturi(), alias);
+          tracing::debug!("alias {} to {}", feed.to_aturi(), alias);
           feed = destination;
         }
       }
