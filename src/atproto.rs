@@ -1,3 +1,30 @@
+type Result<T> = std::result::Result<T, Error>;
+
+pub enum Error {
+  Reqwest(reqwest::Error),
+  WebSocket(reqwest_websocket::Error),
+  Parse((serde_json::Error, String)),
+  Rate((i64, i64, i64, String)),
+}
+
+impl From<reqwest::Error> for Error {
+  fn from(value: reqwest::Error) -> Self {
+    Self::Reqwest(value)
+  }
+}
+
+impl From<reqwest_websocket::Error> for Error {
+  fn from(value: reqwest_websocket::Error) -> Self {
+    Self::WebSocket(value)
+  }
+}
+
+impl From<(serde_json::Error, String)> for Error {
+  fn from(value: (serde_json::Error, String)) -> Self {
+    Self::Parse(value)
+  }
+}
+
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Link {
@@ -3411,6 +3438,8 @@ pub struct ToolsOzoneCommunicationCreateTemplateInput {
   pub content_markdown: String,
   /// Subject of the message, used in emails.,
   pub subject: String,
+  /// Message language.,
+  pub lang: Option<String>,
   /// DID of the user who is creating the template.,
   pub created_by: Option<String>,
 }
@@ -3427,6 +3456,8 @@ pub struct ToolsOzoneCommunicationDefsTemplateView {
   /// Subject of the message, used in emails.,
   pub content_markdown: String,
   pub disabled: bool,
+  /// Message language.,
+  pub lang: Option<String>,
   /// DID of the user who last updated the template.,
   pub last_updated_by: String,
   pub created_at: String,
@@ -3455,6 +3486,8 @@ pub struct ToolsOzoneCommunicationUpdateTemplateInput {
   pub id: String,
   /// Name of the template.,
   pub name: Option<String>,
+  /// Message language.,
+  pub lang: Option<String>,
   /// Content of the template, markdown supported, can contain variable placeholders.,
   pub content_markdown: Option<String>,
   /// Subject of the message, used in emails.,
@@ -3935,6 +3968,8 @@ pub enum ToolsOzoneModerationEmitEventInputEventUnion {
   ToolsOzoneModerationDefsModEventReverseTakedown(
     Box<ToolsOzoneModerationDefsModEventReverseTakedown>,
   ),
+  #[serde(rename = "tools.ozone.moderation.defs#modEventResolveAppeal")]
+  ToolsOzoneModerationDefsModEventResolveAppeal(Box<ToolsOzoneModerationDefsModEventResolveAppeal>),
   #[serde(rename = "tools.ozone.moderation.defs#modEventEmail")]
   ToolsOzoneModerationDefsModEventEmail(Box<ToolsOzoneModerationDefsModEventEmail>),
   #[serde(rename = "tools.ozone.moderation.defs#modEventTag")]
@@ -4084,11 +4119,7 @@ impl Atproto {
     }
   }
 
-  pub async fn login(
-    &mut self,
-    id: &str,
-    pw: &str,
-  ) -> anyhow::Result<ComAtprotoServerCreateSessionOutput> {
+  pub async fn login(&mut self, id: &str, pw: &str) -> Result<ComAtprotoServerCreateSessionOutput> {
     let output = self
       .com_atproto_server_create_session(ComAtprotoServerCreateSessionInput {
         identifier: id.to_string(),
@@ -4102,9 +4133,7 @@ impl Atproto {
   }
 
   /// Get private preferences attached to the current account. Expected use is synchronization between multiple devices, and import/export during account migration. Requires auth.
-  pub async fn app_bsky_actor_get_preferences(
-    &self,
-  ) -> anyhow::Result<AppBskyActorGetPreferencesOutput> {
+  pub async fn app_bsky_actor_get_preferences(&self) -> Result<AppBskyActorGetPreferencesOutput> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/app.bsky.actor.getPreferences",
       self.host
@@ -4113,8 +4142,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get detailed profile view of an actor. Does not require auth, but contains relevant metadata with auth.
@@ -4125,7 +4156,7 @@ impl Atproto {
   pub async fn app_bsky_actor_get_profile(
     &self,
     actor: &str,
-  ) -> anyhow::Result<AppBskyActorDefsProfileViewDetailed> {
+  ) -> Result<AppBskyActorDefsProfileViewDetailed> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
     let mut request = self
@@ -4139,8 +4170,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get detailed profile views of multiple actors.
@@ -4151,7 +4184,7 @@ impl Atproto {
   pub async fn app_bsky_actor_get_profiles(
     &self,
     actors: &[&str],
-  ) -> anyhow::Result<AppBskyActorGetProfilesOutput> {
+  ) -> Result<AppBskyActorGetProfilesOutput> {
     let mut query_ = Vec::new();
     query_.append(
       &mut actors
@@ -4170,8 +4203,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a list of suggested actors. Expected use is discovery of accounts to follow during new account onboarding.
@@ -4184,7 +4219,7 @@ impl Atproto {
     &self,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyActorGetSuggestionsOutput> {
+  ) -> Result<AppBskyActorGetSuggestionsOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
@@ -4203,8 +4238,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Set the private preferences attached to the account.
@@ -4215,7 +4252,7 @@ impl Atproto {
   pub async fn app_bsky_actor_put_preferences(
     &self,
     body: AppBskyActorPutPreferencesInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -4244,7 +4281,7 @@ impl Atproto {
     q: Option<&str>,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyActorSearchActorsOutput> {
+  ) -> Result<AppBskyActorSearchActorsOutput> {
     let mut query_ = Vec::new();
     if let Some(term) = &term {
       query_.push((String::from("term"), term.to_string()));
@@ -4269,8 +4306,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Find actor suggestions for a prefix search term. Expected use is for auto-completion during text field entry. Does not require auth.
@@ -4285,7 +4324,7 @@ impl Atproto {
     term: Option<&str>,
     q: Option<&str>,
     limit: Option<i64>,
-  ) -> anyhow::Result<AppBskyActorSearchActorsTypeaheadOutput> {
+  ) -> Result<AppBskyActorSearchActorsTypeaheadOutput> {
     let mut query_ = Vec::new();
     if let Some(term) = &term {
       query_.push((String::from("term"), term.to_string()));
@@ -4307,14 +4346,16 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get information about a feed generator, including policies and offered feed URIs. Does not require auth; implemented by Feed Generator services (not App View).
   pub async fn app_bsky_feed_describe_feed_generator(
     &self,
-  ) -> anyhow::Result<AppBskyFeedDescribeFeedGeneratorOutput> {
+  ) -> Result<AppBskyFeedDescribeFeedGeneratorOutput> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/app.bsky.feed.describeFeedGenerator",
       self.host
@@ -4323,8 +4364,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a list of feeds (feed generator records) created by the actor (in the actor's repo).
@@ -4339,7 +4382,7 @@ impl Atproto {
     actor: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyFeedGetActorFeedsOutput> {
+  ) -> Result<AppBskyFeedGetActorFeedsOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
     if let Some(limit) = &limit {
@@ -4359,8 +4402,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a list of posts liked by an actor. Requires auth, actor must be the requesting account.
@@ -4380,7 +4425,7 @@ impl Atproto {
     actor: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyFeedGetActorLikesOutput> {
+  ) -> Result<AppBskyFeedGetActorLikesOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
     if let Some(limit) = &limit {
@@ -4400,8 +4445,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a view of an actor's 'author feed' (post and reposts by the author). Does not require auth.
@@ -4423,7 +4470,7 @@ impl Atproto {
     limit: Option<i64>,
     cursor: Option<&str>,
     filter: Option<&str>,
-  ) -> anyhow::Result<AppBskyFeedGetAuthorFeedOutput> {
+  ) -> Result<AppBskyFeedGetAuthorFeedOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
     if let Some(limit) = &limit {
@@ -4446,8 +4493,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a hydrated feed from an actor's selected feed generator. Implemented by App View.
@@ -4466,7 +4515,7 @@ impl Atproto {
     feed: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyFeedGetFeedOutput> {
+  ) -> Result<AppBskyFeedGetFeedOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("feed"), feed.to_string()));
     if let Some(limit) = &limit {
@@ -4483,8 +4532,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get information about a feed generator. Implemented by AppView.
@@ -4495,7 +4546,7 @@ impl Atproto {
   pub async fn app_bsky_feed_get_feed_generator(
     &self,
     feed: &str,
-  ) -> anyhow::Result<AppBskyFeedGetFeedGeneratorOutput> {
+  ) -> Result<AppBskyFeedGetFeedGeneratorOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("feed"), feed.to_string()));
     let mut request = self
@@ -4509,8 +4560,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get information about a list of feed generators.
@@ -4521,7 +4574,7 @@ impl Atproto {
   pub async fn app_bsky_feed_get_feed_generators(
     &self,
     feeds: &[&str],
-  ) -> anyhow::Result<AppBskyFeedGetFeedGeneratorsOutput> {
+  ) -> Result<AppBskyFeedGetFeedGeneratorsOutput> {
     let mut query_ = Vec::new();
     query_.append(
       &mut feeds
@@ -4540,8 +4593,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a skeleton of a feed provided by a feed generator. Auth is optional, depending on provider requirements, and provides the DID of the requester. Implemented by Feed Generator Service.
@@ -4560,7 +4615,7 @@ impl Atproto {
     feed: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyFeedGetFeedSkeletonOutput> {
+  ) -> Result<AppBskyFeedGetFeedSkeletonOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("feed"), feed.to_string()));
     if let Some(limit) = &limit {
@@ -4580,8 +4635,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get like records which reference a subject (by AT-URI and CID).
@@ -4598,7 +4655,7 @@ impl Atproto {
     cid: Option<&str>,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyFeedGetLikesOutput> {
+  ) -> Result<AppBskyFeedGetLikesOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("uri"), uri.to_string()));
     if let Some(cid) = &cid {
@@ -4621,8 +4678,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a feed of recent posts from a list (posts and reposts from any actors on the list). Does not require auth.
@@ -4641,7 +4700,7 @@ impl Atproto {
     list: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyFeedGetListFeedOutput> {
+  ) -> Result<AppBskyFeedGetListFeedOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("list"), list.to_string()));
     if let Some(limit) = &limit {
@@ -4661,8 +4720,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get posts in a thread. Does not require auth, but additional metadata and filtering will be applied for authed requests.
@@ -4681,7 +4742,7 @@ impl Atproto {
     uri: &str,
     depth: Option<i64>,
     parent_height: Option<i64>,
-  ) -> anyhow::Result<AppBskyFeedGetPostThreadOutput> {
+  ) -> Result<AppBskyFeedGetPostThreadOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("uri"), uri.to_string()));
     if let Some(depth) = &depth {
@@ -4701,8 +4762,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Gets post views for a specified list of posts (by AT-URI). This is sometimes referred to as 'hydrating' a 'feed skeleton'.
@@ -4710,10 +4773,7 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `uris` - List of post AT-URIs to return hydrated views for.
-  pub async fn app_bsky_feed_get_posts(
-    &self,
-    uris: &[&str],
-  ) -> anyhow::Result<AppBskyFeedGetPostsOutput> {
+  pub async fn app_bsky_feed_get_posts(&self, uris: &[&str]) -> Result<AppBskyFeedGetPostsOutput> {
     let mut query_ = Vec::new();
     query_.append(
       &mut uris
@@ -4732,8 +4792,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a list of quotes for a given post.
@@ -4750,7 +4812,7 @@ impl Atproto {
     cid: Option<&str>,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyFeedGetQuotesOutput> {
+  ) -> Result<AppBskyFeedGetQuotesOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("uri"), uri.to_string()));
     if let Some(cid) = &cid {
@@ -4773,8 +4835,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a list of reposts for a given post.
@@ -4791,7 +4855,7 @@ impl Atproto {
     cid: Option<&str>,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyFeedGetRepostedByOutput> {
+  ) -> Result<AppBskyFeedGetRepostedByOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("uri"), uri.to_string()));
     if let Some(cid) = &cid {
@@ -4814,8 +4878,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a list of suggested feeds (feed generators) for the requesting account.
@@ -4828,7 +4894,7 @@ impl Atproto {
     &self,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyFeedGetSuggestedFeedsOutput> {
+  ) -> Result<AppBskyFeedGetSuggestedFeedsOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
@@ -4847,8 +4913,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a view of the requesting account's home timeline. This is expected to be some form of reverse-chronological feed.
@@ -4863,7 +4931,7 @@ impl Atproto {
     algorithm: Option<&str>,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyFeedGetTimelineOutput> {
+  ) -> Result<AppBskyFeedGetTimelineOutput> {
     let mut query_ = Vec::new();
     if let Some(algorithm) = &algorithm {
       query_.push((String::from("algorithm"), algorithm.to_string()));
@@ -4885,8 +4953,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Find posts matching search criteria, returning views of those posts.
@@ -4923,7 +4993,7 @@ impl Atproto {
     tag: Option<&[&str]>,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyFeedSearchPostsOutput> {
+  ) -> Result<AppBskyFeedSearchPostsOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("q"), q.to_string()));
     if let Some(sort) = &sort {
@@ -4975,8 +5045,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Send information about interactions with feed items back to the feed generator that served them.
@@ -4987,7 +5059,7 @@ impl Atproto {
   pub async fn app_bsky_feed_send_interactions(
     &self,
     body: AppBskyFeedSendInteractionsInput,
-  ) -> anyhow::Result<serde_json::Value> {
+  ) -> Result<serde_json::Value> {
     let mut request = self
       .client
       .post(&format!(
@@ -5000,7 +5072,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a list of starter packs created by the actor.
@@ -5015,7 +5087,7 @@ impl Atproto {
     actor: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyGraphGetActorStarterPacksOutput> {
+  ) -> Result<AppBskyGraphGetActorStarterPacksOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
     if let Some(limit) = &limit {
@@ -5035,8 +5107,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Enumerates which accounts the requesting account is currently blocking. Requires auth.
@@ -5049,7 +5123,7 @@ impl Atproto {
     &self,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyGraphGetBlocksOutput> {
+  ) -> Result<AppBskyGraphGetBlocksOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
@@ -5068,8 +5142,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Enumerates accounts which follow a specified account (actor).
@@ -5084,7 +5160,7 @@ impl Atproto {
     actor: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyGraphGetFollowersOutput> {
+  ) -> Result<AppBskyGraphGetFollowersOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
     if let Some(limit) = &limit {
@@ -5104,8 +5180,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Enumerates accounts which a specified account (actor) follows.
@@ -5120,7 +5198,7 @@ impl Atproto {
     actor: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyGraphGetFollowsOutput> {
+  ) -> Result<AppBskyGraphGetFollowsOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
     if let Some(limit) = &limit {
@@ -5140,8 +5218,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Enumerates accounts which follow a specified account (actor) and are followed by the viewer.
@@ -5156,7 +5236,7 @@ impl Atproto {
     actor: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyGraphGetKnownFollowersOutput> {
+  ) -> Result<AppBskyGraphGetKnownFollowersOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
     if let Some(limit) = &limit {
@@ -5176,8 +5256,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Gets a 'view' (with additional context) of a specified list.
@@ -5192,7 +5274,7 @@ impl Atproto {
     list: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyGraphGetListOutput> {
+  ) -> Result<AppBskyGraphGetListOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("list"), list.to_string()));
     if let Some(limit) = &limit {
@@ -5212,8 +5294,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get mod lists that the requesting account (actor) is blocking. Requires auth.
@@ -5226,7 +5310,7 @@ impl Atproto {
     &self,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyGraphGetListBlocksOutput> {
+  ) -> Result<AppBskyGraphGetListBlocksOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
@@ -5245,8 +5329,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Enumerates mod lists that the requesting account (actor) currently has muted. Requires auth.
@@ -5259,7 +5345,7 @@ impl Atproto {
     &self,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyGraphGetListMutesOutput> {
+  ) -> Result<AppBskyGraphGetListMutesOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
@@ -5278,8 +5364,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Enumerates the lists created by a specified account (actor).
@@ -5294,7 +5382,7 @@ impl Atproto {
     actor: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyGraphGetListsOutput> {
+  ) -> Result<AppBskyGraphGetListsOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
     if let Some(limit) = &limit {
@@ -5314,8 +5402,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Enumerates accounts that the requesting account (actor) currently has muted. Requires auth.
@@ -5328,7 +5418,7 @@ impl Atproto {
     &self,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyGraphGetMutesOutput> {
+  ) -> Result<AppBskyGraphGetMutesOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
@@ -5347,8 +5437,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Enumerates public relationships between one account, and a list of other accounts. Does not require auth.
@@ -5365,7 +5457,7 @@ impl Atproto {
     &self,
     actor: &str,
     others: Option<&[&str]>,
-  ) -> anyhow::Result<AppBskyGraphGetRelationshipsOutput> {
+  ) -> Result<AppBskyGraphGetRelationshipsOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
     if let Some(others) = &others {
@@ -5387,8 +5479,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Gets a view of a starter pack.
@@ -5399,7 +5493,7 @@ impl Atproto {
   pub async fn app_bsky_graph_get_starter_pack(
     &self,
     starter_pack: &str,
-  ) -> anyhow::Result<AppBskyGraphGetStarterPackOutput> {
+  ) -> Result<AppBskyGraphGetStarterPackOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("starter_pack"), starter_pack.to_string()));
     let mut request = self
@@ -5413,8 +5507,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get views for a list of starter packs.
@@ -5425,7 +5521,7 @@ impl Atproto {
   pub async fn app_bsky_graph_get_starter_packs(
     &self,
     uris: &[&str],
-  ) -> anyhow::Result<AppBskyGraphGetStarterPacksOutput> {
+  ) -> Result<AppBskyGraphGetStarterPacksOutput> {
     let mut query_ = Vec::new();
     query_.append(
       &mut uris
@@ -5444,8 +5540,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Enumerates follows similar to a given account (actor). Expected use is to recommend additional accounts immediately after following one account.
@@ -5456,7 +5554,7 @@ impl Atproto {
   pub async fn app_bsky_graph_get_suggested_follows_by_actor(
     &self,
     actor: &str,
-  ) -> anyhow::Result<AppBskyGraphGetSuggestedFollowsByActorOutput> {
+  ) -> Result<AppBskyGraphGetSuggestedFollowsByActorOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
     let mut request = self
@@ -5470,8 +5568,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Creates a mute relationship for the specified account. Mutes are private in Bluesky. Requires auth.
@@ -5479,10 +5579,7 @@ impl Atproto {
   /// # Arguments
   ///
   /// * body
-  pub async fn app_bsky_graph_mute_actor(
-    &self,
-    body: AppBskyGraphMuteActorInput,
-  ) -> anyhow::Result<()> {
+  pub async fn app_bsky_graph_mute_actor(&self, body: AppBskyGraphMuteActorInput) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -5505,7 +5602,7 @@ impl Atproto {
   pub async fn app_bsky_graph_mute_actor_list(
     &self,
     body: AppBskyGraphMuteActorListInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -5525,10 +5622,7 @@ impl Atproto {
   /// # Arguments
   ///
   /// * body
-  pub async fn app_bsky_graph_mute_thread(
-    &self,
-    body: AppBskyGraphMuteThreadInput,
-  ) -> anyhow::Result<()> {
+  pub async fn app_bsky_graph_mute_thread(&self, body: AppBskyGraphMuteThreadInput) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -5551,7 +5645,7 @@ impl Atproto {
   pub async fn app_bsky_graph_unmute_actor(
     &self,
     body: AppBskyGraphUnmuteActorInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -5574,7 +5668,7 @@ impl Atproto {
   pub async fn app_bsky_graph_unmute_actor_list(
     &self,
     body: AppBskyGraphUnmuteActorListInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -5597,7 +5691,7 @@ impl Atproto {
   pub async fn app_bsky_graph_unmute_thread(
     &self,
     body: AppBskyGraphUnmuteThreadInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -5622,7 +5716,7 @@ impl Atproto {
     &self,
     dids: &[&str],
     detailed: Option<bool>,
-  ) -> anyhow::Result<AppBskyLabelerGetServicesOutput> {
+  ) -> Result<AppBskyLabelerGetServicesOutput> {
     let mut query_ = Vec::new();
     query_.append(
       &mut dids
@@ -5644,8 +5738,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Count the number of unread notifications for the requesting account. Requires auth.
@@ -5658,7 +5754,7 @@ impl Atproto {
     &self,
     priority: Option<bool>,
     seen_at: Option<&str>,
-  ) -> anyhow::Result<AppBskyNotificationGetUnreadCountOutput> {
+  ) -> Result<AppBskyNotificationGetUnreadCountOutput> {
     let mut query_ = Vec::new();
     if let Some(priority) = &priority {
       query_.push((String::from("priority"), priority.to_string()));
@@ -5677,8 +5773,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Enumerate notifications for the requesting account. Requires auth.
@@ -5695,7 +5793,7 @@ impl Atproto {
     priority: Option<bool>,
     cursor: Option<&str>,
     seen_at: Option<&str>,
-  ) -> anyhow::Result<AppBskyNotificationListNotificationsOutput> {
+  ) -> Result<AppBskyNotificationListNotificationsOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
@@ -5720,8 +5818,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Set notification-related preferences for an account. Requires auth.
@@ -5732,7 +5832,7 @@ impl Atproto {
   pub async fn app_bsky_notification_put_preferences(
     &self,
     body: AppBskyNotificationPutPreferencesInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -5755,7 +5855,7 @@ impl Atproto {
   pub async fn app_bsky_notification_register_push(
     &self,
     body: AppBskyNotificationRegisterPushInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -5778,7 +5878,7 @@ impl Atproto {
   pub async fn app_bsky_notification_update_seen(
     &self,
     body: AppBskyNotificationUpdateSeenInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -5805,7 +5905,7 @@ impl Atproto {
     limit: Option<i64>,
     cursor: Option<&str>,
     query: Option<&str>,
-  ) -> anyhow::Result<AppBskyUnspeccedGetPopularFeedGeneratorsOutput> {
+  ) -> Result<AppBskyUnspeccedGetPopularFeedGeneratorsOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
@@ -5827,8 +5927,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a skeleton of suggested actors. Intended to be called and then hydrated through app.bsky.actor.getSuggestions
@@ -5845,7 +5947,7 @@ impl Atproto {
     limit: Option<i64>,
     cursor: Option<&str>,
     relative_to_did: Option<&str>,
-  ) -> anyhow::Result<AppBskyUnspeccedGetSuggestionsSkeletonOutput> {
+  ) -> Result<AppBskyUnspeccedGetSuggestionsSkeletonOutput> {
     let mut query_ = Vec::new();
     if let Some(viewer) = &viewer {
       query_.push((String::from("viewer"), viewer.to_string()));
@@ -5870,14 +5972,16 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a list of suggestions (feeds and users) tagged with categories
   pub async fn app_bsky_unspecced_get_tagged_suggestions(
     &self,
-  ) -> anyhow::Result<AppBskyUnspeccedGetTaggedSuggestionsOutput> {
+  ) -> Result<AppBskyUnspeccedGetTaggedSuggestionsOutput> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/app.bsky.unspecced.getTaggedSuggestions",
       self.host
@@ -5886,8 +5990,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Backend Actors (profile) search, returns only skeleton.
@@ -5910,7 +6016,7 @@ impl Atproto {
     typeahead: Option<bool>,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyUnspeccedSearchActorsSkeletonOutput> {
+  ) -> Result<AppBskyUnspeccedSearchActorsSkeletonOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("q"), q.to_string()));
     if let Some(viewer) = &viewer {
@@ -5936,8 +6042,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Backend Posts search, returns only skeleton
@@ -5976,7 +6084,7 @@ impl Atproto {
     viewer: Option<&str>,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<AppBskyUnspeccedSearchPostsSkeletonOutput> {
+  ) -> Result<AppBskyUnspeccedSearchPostsSkeletonOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("q"), q.to_string()));
     if let Some(sort) = &sort {
@@ -6031,8 +6139,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get status details for a video processing job.
@@ -6043,7 +6153,7 @@ impl Atproto {
   pub async fn app_bsky_video_get_job_status(
     &self,
     job_id: &str,
-  ) -> anyhow::Result<AppBskyVideoGetJobStatusOutput> {
+  ) -> Result<AppBskyVideoGetJobStatusOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("job_id"), job_id.to_string()));
     let mut request = self
@@ -6057,14 +6167,16 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get video upload limits for the authenticated user.
   pub async fn app_bsky_video_get_upload_limits(
     &self,
-  ) -> anyhow::Result<AppBskyVideoGetUploadLimitsOutput> {
+  ) -> Result<AppBskyVideoGetUploadLimitsOutput> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/app.bsky.video.getUploadLimits",
       self.host
@@ -6073,8 +6185,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Upload a video to be processed then stored on the PDS.
@@ -6085,7 +6199,7 @@ impl Atproto {
   pub async fn app_bsky_video_upload_video(
     &self,
     body: Vec<u8>,
-  ) -> anyhow::Result<AppBskyVideoUploadVideoOutput> {
+  ) -> Result<AppBskyVideoUploadVideoOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -6099,10 +6213,10 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
-  pub async fn chat_bsky_actor_delete_account(&self) -> anyhow::Result<serde_json::Value> {
+  pub async fn chat_bsky_actor_delete_account(&self) -> Result<serde_json::Value> {
     let mut request = self.client.post(&format!(
       "https://{}/xrpc/chat.bsky.actor.deleteAccount",
       self.host
@@ -6112,12 +6226,10 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
-  pub async fn chat_bsky_actor_export_account_data(
-    &self,
-  ) -> anyhow::Result<Vec<serde_json::Value>> {
+  pub async fn chat_bsky_actor_export_account_data(&self) -> Result<Vec<serde_json::Value>> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/chat.bsky.actor.exportAccountData",
       self.host
@@ -6126,6 +6238,8 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     Ok(
       response
         .text()
@@ -6142,7 +6256,7 @@ impl Atproto {
   pub async fn chat_bsky_convo_delete_message_for_self(
     &self,
     body: ChatBskyConvoDeleteMessageForSelfInput,
-  ) -> anyhow::Result<ChatBskyConvoDefsDeletedMessageView> {
+  ) -> Result<ChatBskyConvoDefsDeletedMessageView> {
     let mut request = self
       .client
       .post(&format!(
@@ -6155,7 +6269,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6164,7 +6278,7 @@ impl Atproto {
   pub async fn chat_bsky_convo_get_convo(
     &self,
     convo_id: &str,
-  ) -> anyhow::Result<ChatBskyConvoGetConvoOutput> {
+  ) -> Result<ChatBskyConvoGetConvoOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("convo_id"), convo_id.to_string()));
     let mut request = self
@@ -6178,8 +6292,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6188,7 +6304,7 @@ impl Atproto {
   pub async fn chat_bsky_convo_get_convo_for_members(
     &self,
     members: &[&str],
-  ) -> anyhow::Result<ChatBskyConvoGetConvoForMembersOutput> {
+  ) -> Result<ChatBskyConvoGetConvoForMembersOutput> {
     let mut query_ = Vec::new();
     query_.append(
       &mut members
@@ -6207,8 +6323,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6217,7 +6335,7 @@ impl Atproto {
   pub async fn chat_bsky_convo_get_log(
     &self,
     cursor: Option<&str>,
-  ) -> anyhow::Result<ChatBskyConvoGetLogOutput> {
+  ) -> Result<ChatBskyConvoGetLogOutput> {
     let mut query_ = Vec::new();
     if let Some(cursor) = &cursor {
       query_.push((String::from("cursor"), cursor.to_string()));
@@ -6233,8 +6351,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6247,7 +6367,7 @@ impl Atproto {
     convo_id: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<ChatBskyConvoGetMessagesOutput> {
+  ) -> Result<ChatBskyConvoGetMessagesOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("convo_id"), convo_id.to_string()));
     if let Some(limit) = &limit {
@@ -6267,8 +6387,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6277,7 +6399,7 @@ impl Atproto {
   pub async fn chat_bsky_convo_leave_convo(
     &self,
     body: ChatBskyConvoLeaveConvoInput,
-  ) -> anyhow::Result<ChatBskyConvoLeaveConvoOutput> {
+  ) -> Result<ChatBskyConvoLeaveConvoOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -6290,7 +6412,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6301,7 +6423,7 @@ impl Atproto {
     &self,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<ChatBskyConvoListConvosOutput> {
+  ) -> Result<ChatBskyConvoListConvosOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
@@ -6320,8 +6442,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6330,7 +6454,7 @@ impl Atproto {
   pub async fn chat_bsky_convo_mute_convo(
     &self,
     body: ChatBskyConvoMuteConvoInput,
-  ) -> anyhow::Result<ChatBskyConvoMuteConvoOutput> {
+  ) -> Result<ChatBskyConvoMuteConvoOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -6343,7 +6467,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6352,7 +6476,7 @@ impl Atproto {
   pub async fn chat_bsky_convo_send_message(
     &self,
     body: ChatBskyConvoSendMessageInput,
-  ) -> anyhow::Result<ChatBskyConvoDefsMessageView> {
+  ) -> Result<ChatBskyConvoDefsMessageView> {
     let mut request = self
       .client
       .post(&format!(
@@ -6365,7 +6489,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6374,7 +6498,7 @@ impl Atproto {
   pub async fn chat_bsky_convo_send_message_batch(
     &self,
     body: ChatBskyConvoSendMessageBatchInput,
-  ) -> anyhow::Result<ChatBskyConvoSendMessageBatchOutput> {
+  ) -> Result<ChatBskyConvoSendMessageBatchOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -6387,7 +6511,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6396,7 +6520,7 @@ impl Atproto {
   pub async fn chat_bsky_convo_unmute_convo(
     &self,
     body: ChatBskyConvoUnmuteConvoInput,
-  ) -> anyhow::Result<ChatBskyConvoUnmuteConvoOutput> {
+  ) -> Result<ChatBskyConvoUnmuteConvoOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -6409,7 +6533,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6418,7 +6542,7 @@ impl Atproto {
   pub async fn chat_bsky_convo_update_read(
     &self,
     body: ChatBskyConvoUpdateReadInput,
-  ) -> anyhow::Result<ChatBskyConvoUpdateReadOutput> {
+  ) -> Result<ChatBskyConvoUpdateReadOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -6431,7 +6555,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6440,7 +6564,7 @@ impl Atproto {
   pub async fn chat_bsky_moderation_get_actor_metadata(
     &self,
     actor: &str,
-  ) -> anyhow::Result<ChatBskyModerationGetActorMetadataOutput> {
+  ) -> Result<ChatBskyModerationGetActorMetadataOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
     let mut request = self
@@ -6454,8 +6578,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6470,7 +6596,7 @@ impl Atproto {
     message_id: &str,
     before: Option<i64>,
     after: Option<i64>,
-  ) -> anyhow::Result<ChatBskyModerationGetMessageContextOutput> {
+  ) -> Result<ChatBskyModerationGetMessageContextOutput> {
     let mut query_ = Vec::new();
     if let Some(convo_id) = &convo_id {
       query_.push((String::from("convo_id"), convo_id.to_string()));
@@ -6493,8 +6619,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// # Arguments
@@ -6503,7 +6631,7 @@ impl Atproto {
   pub async fn chat_bsky_moderation_update_actor_access(
     &self,
     body: ChatBskyModerationUpdateActorAccessInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -6526,7 +6654,7 @@ impl Atproto {
   pub async fn com_atproto_admin_delete_account(
     &self,
     body: ComAtprotoAdminDeleteAccountInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -6549,7 +6677,7 @@ impl Atproto {
   pub async fn com_atproto_admin_disable_account_invites(
     &self,
     body: ComAtprotoAdminDisableAccountInvitesInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -6572,7 +6700,7 @@ impl Atproto {
   pub async fn com_atproto_admin_disable_invite_codes(
     &self,
     body: ComAtprotoAdminDisableInviteCodesInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -6595,7 +6723,7 @@ impl Atproto {
   pub async fn com_atproto_admin_enable_account_invites(
     &self,
     body: ComAtprotoAdminEnableAccountInvitesInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -6618,7 +6746,7 @@ impl Atproto {
   pub async fn com_atproto_admin_get_account_info(
     &self,
     did: &str,
-  ) -> anyhow::Result<ComAtprotoAdminDefsAccountView> {
+  ) -> Result<ComAtprotoAdminDefsAccountView> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
     let mut request = self
@@ -6632,8 +6760,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get details about some accounts.
@@ -6644,7 +6774,7 @@ impl Atproto {
   pub async fn com_atproto_admin_get_account_infos(
     &self,
     dids: &[&str],
-  ) -> anyhow::Result<ComAtprotoAdminGetAccountInfosOutput> {
+  ) -> Result<ComAtprotoAdminGetAccountInfosOutput> {
     let mut query_ = Vec::new();
     query_.append(
       &mut dids
@@ -6663,8 +6793,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get an admin view of invite codes.
@@ -6679,7 +6811,7 @@ impl Atproto {
     sort: Option<&str>,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<ComAtprotoAdminGetInviteCodesOutput> {
+  ) -> Result<ComAtprotoAdminGetInviteCodesOutput> {
     let mut query_ = Vec::new();
     if let Some(sort) = &sort {
       query_.push((String::from("sort"), sort.to_string()));
@@ -6701,8 +6833,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get the service-specific admin status of a subject (account, record, or blob).
@@ -6717,7 +6851,7 @@ impl Atproto {
     did: Option<&str>,
     uri: Option<&str>,
     blob: Option<&str>,
-  ) -> anyhow::Result<ComAtprotoAdminGetSubjectStatusOutput> {
+  ) -> Result<ComAtprotoAdminGetSubjectStatusOutput> {
     let mut query_ = Vec::new();
     if let Some(did) = &did {
       query_.push((String::from("did"), did.to_string()));
@@ -6739,8 +6873,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get list of accounts that matches your search query.
@@ -6755,7 +6891,7 @@ impl Atproto {
     email: Option<&str>,
     cursor: Option<&str>,
     limit: Option<i64>,
-  ) -> anyhow::Result<ComAtprotoAdminSearchAccountsOutput> {
+  ) -> Result<ComAtprotoAdminSearchAccountsOutput> {
     let mut query_ = Vec::new();
     if let Some(email) = &email {
       query_.push((String::from("email"), email.to_string()));
@@ -6777,8 +6913,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Send email to a user's account email address.
@@ -6789,7 +6927,7 @@ impl Atproto {
   pub async fn com_atproto_admin_send_email(
     &self,
     body: ComAtprotoAdminSendEmailInput,
-  ) -> anyhow::Result<ComAtprotoAdminSendEmailOutput> {
+  ) -> Result<ComAtprotoAdminSendEmailOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -6802,7 +6940,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Administrative action to update an account's email.
@@ -6813,7 +6951,7 @@ impl Atproto {
   pub async fn com_atproto_admin_update_account_email(
     &self,
     body: ComAtprotoAdminUpdateAccountEmailInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -6836,7 +6974,7 @@ impl Atproto {
   pub async fn com_atproto_admin_update_account_handle(
     &self,
     body: ComAtprotoAdminUpdateAccountHandleInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -6859,7 +6997,7 @@ impl Atproto {
   pub async fn com_atproto_admin_update_account_password(
     &self,
     body: ComAtprotoAdminUpdateAccountPasswordInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -6882,7 +7020,7 @@ impl Atproto {
   pub async fn com_atproto_admin_update_subject_status(
     &self,
     body: ComAtprotoAdminUpdateSubjectStatusInput,
-  ) -> anyhow::Result<ComAtprotoAdminUpdateSubjectStatusOutput> {
+  ) -> Result<ComAtprotoAdminUpdateSubjectStatusOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -6895,13 +7033,13 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Describe the credentials that should be included in the DID doc of an account that is migrating to this service.
   pub async fn com_atproto_identity_get_recommended_did_credentials(
     &self,
-  ) -> anyhow::Result<ComAtprotoIdentityGetRecommendedDidCredentialsOutput> {
+  ) -> Result<ComAtprotoIdentityGetRecommendedDidCredentialsOutput> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/com.atproto.identity.getRecommendedDidCredentials",
       self.host
@@ -6910,12 +7048,14 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Request an email with a code to in order to request a signed PLC operation. Requires Auth.
-  pub async fn com_atproto_identity_request_plc_operation_signature(&self) -> anyhow::Result<()> {
+  pub async fn com_atproto_identity_request_plc_operation_signature(&self) -> Result<()> {
     let mut request = self.client.post(&format!(
       "https://{}/xrpc/com.atproto.identity.requestPlcOperationSignature",
       self.host
@@ -6935,7 +7075,7 @@ impl Atproto {
   pub async fn com_atproto_identity_resolve_handle(
     &self,
     handle: &str,
-  ) -> anyhow::Result<ComAtprotoIdentityResolveHandleOutput> {
+  ) -> Result<ComAtprotoIdentityResolveHandleOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("handle"), handle.to_string()));
     let mut request = self
@@ -6949,8 +7089,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Signs a PLC operation to update some value(s) in the requesting DID's document.
@@ -6961,7 +7103,7 @@ impl Atproto {
   pub async fn com_atproto_identity_sign_plc_operation(
     &self,
     body: ComAtprotoIdentitySignPlcOperationInput,
-  ) -> anyhow::Result<ComAtprotoIdentitySignPlcOperationOutput> {
+  ) -> Result<ComAtprotoIdentitySignPlcOperationOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -6974,7 +7116,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Validates a PLC operation to ensure that it doesn't violate a service's constraints or get the identity into a bad state, then submits it to the PLC registry
@@ -6985,7 +7127,7 @@ impl Atproto {
   pub async fn com_atproto_identity_submit_plc_operation(
     &self,
     body: ComAtprotoIdentitySubmitPlcOperationInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -7008,7 +7150,7 @@ impl Atproto {
   pub async fn com_atproto_identity_update_handle(
     &self,
     body: ComAtprotoIdentityUpdateHandleInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -7037,7 +7179,7 @@ impl Atproto {
     sources: Option<&[&str]>,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<ComAtprotoLabelQueryLabelsOutput> {
+  ) -> Result<ComAtprotoLabelQueryLabelsOutput> {
     let mut query_ = Vec::new();
     query_.append(
       &mut uri_patterns
@@ -7070,8 +7212,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Subscribe to stream of labels (and negations). Public endpoint implemented by mod services. Uses same sequencing scheme as repo event stream.
@@ -7091,7 +7235,7 @@ impl Atproto {
   pub async fn com_atproto_label_subscribe_labels(
     &self,
     cursor: Option<i64>,
-  ) -> anyhow::Result<reqwest_websocket::WebSocket> {
+  ) -> Result<reqwest_websocket::WebSocket> {
     let mut query_ = Vec::new();
     if let Some(cursor) = &cursor {
       query_.push((String::from("cursor"), cursor.to_string()));
@@ -7123,7 +7267,7 @@ impl Atproto {
   pub async fn com_atproto_moderation_create_report(
     &self,
     body: ComAtprotoModerationCreateReportInput,
-  ) -> anyhow::Result<ComAtprotoModerationCreateReportOutput> {
+  ) -> Result<ComAtprotoModerationCreateReportOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -7136,7 +7280,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Apply a batch transaction of repository creates, updates, and deletes. Requires auth, implemented by PDS.
@@ -7151,7 +7295,7 @@ impl Atproto {
   pub async fn com_atproto_repo_apply_writes(
     &self,
     body: ComAtprotoRepoApplyWritesInput,
-  ) -> anyhow::Result<ComAtprotoRepoApplyWritesOutput> {
+  ) -> Result<ComAtprotoRepoApplyWritesOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -7164,7 +7308,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Create a single new repository record. Requires auth, implemented by PDS.
@@ -7179,7 +7323,7 @@ impl Atproto {
   pub async fn com_atproto_repo_create_record(
     &self,
     body: ComAtprotoRepoCreateRecordInput,
-  ) -> anyhow::Result<ComAtprotoRepoCreateRecordOutput> {
+  ) -> Result<ComAtprotoRepoCreateRecordOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -7192,7 +7336,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Delete a repository record, or ensure it doesn't exist. Requires auth, implemented by PDS.
@@ -7207,7 +7351,7 @@ impl Atproto {
   pub async fn com_atproto_repo_delete_record(
     &self,
     body: ComAtprotoRepoDeleteRecordInput,
-  ) -> anyhow::Result<ComAtprotoRepoDeleteRecordOutput> {
+  ) -> Result<ComAtprotoRepoDeleteRecordOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -7220,7 +7364,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get information about an account and repository, including the list of collections. Does not require auth.
@@ -7231,7 +7375,7 @@ impl Atproto {
   pub async fn com_atproto_repo_describe_repo(
     &self,
     repo: &str,
-  ) -> anyhow::Result<ComAtprotoRepoDescribeRepoOutput> {
+  ) -> Result<ComAtprotoRepoDescribeRepoOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("repo"), repo.to_string()));
     let mut request = self
@@ -7245,8 +7389,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a single record from a repository. Does not require auth.
@@ -7263,7 +7409,7 @@ impl Atproto {
     collection: &str,
     rkey: &str,
     cid: Option<&str>,
-  ) -> anyhow::Result<ComAtprotoRepoGetRecordOutput> {
+  ) -> Result<ComAtprotoRepoGetRecordOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("repo"), repo.to_string()));
     query_.push((String::from("collection"), collection.to_string()));
@@ -7282,8 +7428,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Import a repo in the form of a CAR file. Requires Content-Length HTTP header to be set.
@@ -7291,7 +7439,7 @@ impl Atproto {
   /// # Arguments
   ///
   /// * body
-  pub async fn com_atproto_repo_import_repo(&self, body: Vec<u8>) -> anyhow::Result<()> {
+  pub async fn com_atproto_repo_import_repo(&self, body: Vec<u8>) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -7317,7 +7465,7 @@ impl Atproto {
     &self,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<ComAtprotoRepoListMissingBlobsOutput> {
+  ) -> Result<ComAtprotoRepoListMissingBlobsOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
@@ -7336,8 +7484,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// List a range of records in a repository, matching a specific collection. Does not require auth.
@@ -7360,7 +7510,7 @@ impl Atproto {
     rkey_start: Option<&str>,
     rkey_end: Option<&str>,
     reverse: Option<bool>,
-  ) -> anyhow::Result<ComAtprotoRepoListRecordsOutput> {
+  ) -> Result<ComAtprotoRepoListRecordsOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("repo"), repo.to_string()));
     query_.push((String::from("collection"), collection.to_string()));
@@ -7390,8 +7540,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Write a repository record, creating or updating it as needed. Requires auth, implemented by PDS.
@@ -7406,7 +7558,7 @@ impl Atproto {
   pub async fn com_atproto_repo_put_record(
     &self,
     body: ComAtprotoRepoPutRecordInput,
-  ) -> anyhow::Result<ComAtprotoRepoPutRecordOutput> {
+  ) -> Result<ComAtprotoRepoPutRecordOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -7419,7 +7571,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Upload a new blob, to be referenced from a repository record. The blob will be deleted if it is not referenced within a time window (eg, minutes). Blob restrictions (mimetype, size, etc) are enforced when the reference is created. Requires auth, implemented by PDS.
@@ -7431,7 +7583,7 @@ impl Atproto {
     &self,
     body: Vec<u8>,
     content_type: &str,
-  ) -> anyhow::Result<ComAtprotoRepoUploadBlobOutput> {
+  ) -> Result<ComAtprotoRepoUploadBlobOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -7445,11 +7597,11 @@ impl Atproto {
     request = request.header("Content-Type", content_type);
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Activates a currently deactivated account. Used to finalize account migration after the account's repo is imported and identity is setup.
-  pub async fn com_atproto_server_activate_account(&self) -> anyhow::Result<()> {
+  pub async fn com_atproto_server_activate_account(&self) -> Result<()> {
     let mut request = self.client.post(&format!(
       "https://{}/xrpc/com.atproto.server.activateAccount",
       self.host
@@ -7464,7 +7616,7 @@ impl Atproto {
   /// Returns the status of an account, especially as pertaining to import or recovery. Can be called many times over the course of an account migration. Requires auth and can only be called pertaining to oneself.
   pub async fn com_atproto_server_check_account_status(
     &self,
-  ) -> anyhow::Result<ComAtprotoServerCheckAccountStatusOutput> {
+  ) -> Result<ComAtprotoServerCheckAccountStatusOutput> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/com.atproto.server.checkAccountStatus",
       self.host
@@ -7473,8 +7625,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Confirm an email using a token from com.atproto.server.requestEmailConfirmation.
@@ -7492,7 +7646,7 @@ impl Atproto {
   pub async fn com_atproto_server_confirm_email(
     &self,
     body: ComAtprotoServerConfirmEmailInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -7525,7 +7679,7 @@ impl Atproto {
   pub async fn com_atproto_server_create_account(
     &self,
     body: ComAtprotoServerCreateAccountInput,
-  ) -> anyhow::Result<ComAtprotoServerCreateAccountOutput> {
+  ) -> Result<ComAtprotoServerCreateAccountOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -7538,7 +7692,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Create an App Password.
@@ -7553,7 +7707,7 @@ impl Atproto {
   pub async fn com_atproto_server_create_app_password(
     &self,
     body: ComAtprotoServerCreateAppPasswordInput,
-  ) -> anyhow::Result<ComAtprotoServerCreateAppPasswordAppPassword> {
+  ) -> Result<ComAtprotoServerCreateAppPasswordAppPassword> {
     let mut request = self
       .client
       .post(&format!(
@@ -7566,7 +7720,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Create an invite code.
@@ -7577,7 +7731,7 @@ impl Atproto {
   pub async fn com_atproto_server_create_invite_code(
     &self,
     body: ComAtprotoServerCreateInviteCodeInput,
-  ) -> anyhow::Result<ComAtprotoServerCreateInviteCodeOutput> {
+  ) -> Result<ComAtprotoServerCreateInviteCodeOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -7590,7 +7744,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Create invite codes.
@@ -7601,7 +7755,7 @@ impl Atproto {
   pub async fn com_atproto_server_create_invite_codes(
     &self,
     body: ComAtprotoServerCreateInviteCodesInput,
-  ) -> anyhow::Result<ComAtprotoServerCreateInviteCodesOutput> {
+  ) -> Result<ComAtprotoServerCreateInviteCodesOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -7614,7 +7768,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Create an authentication session.
@@ -7630,7 +7784,7 @@ impl Atproto {
   pub async fn com_atproto_server_create_session(
     &self,
     body: ComAtprotoServerCreateSessionInput,
-  ) -> anyhow::Result<ComAtprotoServerCreateSessionOutput> {
+  ) -> Result<ComAtprotoServerCreateSessionOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -7643,7 +7797,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Deactivates a currently active account. Stops serving of repo, and future writes to repo until reactivated. Used to finalize account migration with the old host after the account has been activated on the new host.
@@ -7654,7 +7808,7 @@ impl Atproto {
   pub async fn com_atproto_server_deactivate_account(
     &self,
     body: ComAtprotoServerDeactivateAccountInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -7682,7 +7836,7 @@ impl Atproto {
   pub async fn com_atproto_server_delete_account(
     &self,
     body: ComAtprotoServerDeleteAccountInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -7698,7 +7852,7 @@ impl Atproto {
   }
 
   /// Delete the current session. Requires auth.
-  pub async fn com_atproto_server_delete_session(&self) -> anyhow::Result<()> {
+  pub async fn com_atproto_server_delete_session(&self) -> Result<()> {
     let mut request = self.client.post(&format!(
       "https://{}/xrpc/com.atproto.server.deleteSession",
       self.host
@@ -7713,7 +7867,7 @@ impl Atproto {
   /// Describes the server's account creation requirements and capabilities. Implemented by PDS.
   pub async fn com_atproto_server_describe_server(
     &self,
-  ) -> anyhow::Result<ComAtprotoServerDescribeServerOutput> {
+  ) -> Result<ComAtprotoServerDescribeServerOutput> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/com.atproto.server.describeServer",
       self.host
@@ -7722,8 +7876,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get all invite codes for the current account. Requires auth.
@@ -7740,7 +7896,7 @@ impl Atproto {
     &self,
     include_used: Option<bool>,
     create_available: Option<bool>,
-  ) -> anyhow::Result<ComAtprotoServerGetAccountInviteCodesOutput> {
+  ) -> Result<ComAtprotoServerGetAccountInviteCodesOutput> {
     let mut query_ = Vec::new();
     if let Some(include_used) = &include_used {
       query_.push((String::from("include_used"), include_used.to_string()));
@@ -7762,8 +7918,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get a signed token on behalf of the requesting DID for the requested service.
@@ -7782,7 +7940,7 @@ impl Atproto {
     aud: &str,
     exp: Option<i64>,
     lxm: Option<&str>,
-  ) -> anyhow::Result<ComAtprotoServerGetServiceAuthOutput> {
+  ) -> Result<ComAtprotoServerGetServiceAuthOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("aud"), aud.to_string()));
     if let Some(exp) = &exp {
@@ -7802,14 +7960,14 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get information about the current auth session. Requires auth.
-  pub async fn com_atproto_server_get_session(
-    &self,
-  ) -> anyhow::Result<ComAtprotoServerGetSessionOutput> {
+  pub async fn com_atproto_server_get_session(&self) -> Result<ComAtprotoServerGetSessionOutput> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/com.atproto.server.getSession",
       self.host
@@ -7818,8 +7976,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// List all App Passwords.
@@ -7829,7 +7989,7 @@ impl Atproto {
   /// * `AccountTakedown`
   pub async fn com_atproto_server_list_app_passwords(
     &self,
-  ) -> anyhow::Result<ComAtprotoServerListAppPasswordsOutput> {
+  ) -> Result<ComAtprotoServerListAppPasswordsOutput> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/com.atproto.server.listAppPasswords",
       self.host
@@ -7838,8 +7998,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Refresh an authentication session. Requires auth using the 'refreshJwt' (not the 'accessJwt').
@@ -7849,7 +8011,7 @@ impl Atproto {
   /// * `AccountTakedown`
   pub async fn com_atproto_server_refresh_session(
     &self,
-  ) -> anyhow::Result<ComAtprotoServerRefreshSessionOutput> {
+  ) -> Result<ComAtprotoServerRefreshSessionOutput> {
     let mut request = self.client.post(&format!(
       "https://{}/xrpc/com.atproto.server.refreshSession",
       self.host
@@ -7859,11 +8021,11 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Initiate a user account deletion via email.
-  pub async fn com_atproto_server_request_account_delete(&self) -> anyhow::Result<()> {
+  pub async fn com_atproto_server_request_account_delete(&self) -> Result<()> {
     let mut request = self.client.post(&format!(
       "https://{}/xrpc/com.atproto.server.requestAccountDelete",
       self.host
@@ -7876,7 +8038,7 @@ impl Atproto {
   }
 
   /// Request an email with a code to confirm ownership of email.
-  pub async fn com_atproto_server_request_email_confirmation(&self) -> anyhow::Result<()> {
+  pub async fn com_atproto_server_request_email_confirmation(&self) -> Result<()> {
     let mut request = self.client.post(&format!(
       "https://{}/xrpc/com.atproto.server.requestEmailConfirmation",
       self.host
@@ -7891,7 +8053,7 @@ impl Atproto {
   /// Request a token in order to update email.
   pub async fn com_atproto_server_request_email_update(
     &self,
-  ) -> anyhow::Result<ComAtprotoServerRequestEmailUpdateOutput> {
+  ) -> Result<ComAtprotoServerRequestEmailUpdateOutput> {
     let mut request = self.client.post(&format!(
       "https://{}/xrpc/com.atproto.server.requestEmailUpdate",
       self.host
@@ -7901,7 +8063,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Initiate a user account password reset via email.
@@ -7912,7 +8074,7 @@ impl Atproto {
   pub async fn com_atproto_server_request_password_reset(
     &self,
     body: ComAtprotoServerRequestPasswordResetInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -7935,7 +8097,7 @@ impl Atproto {
   pub async fn com_atproto_server_reserve_signing_key(
     &self,
     body: ComAtprotoServerReserveSigningKeyInput,
-  ) -> anyhow::Result<ComAtprotoServerReserveSigningKeyOutput> {
+  ) -> Result<ComAtprotoServerReserveSigningKeyOutput> {
     let mut request = self
       .client
       .post(&format!(
@@ -7948,7 +8110,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Reset a user account password using a token.
@@ -7964,7 +8126,7 @@ impl Atproto {
   pub async fn com_atproto_server_reset_password(
     &self,
     body: ComAtprotoServerResetPasswordInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -7987,7 +8149,7 @@ impl Atproto {
   pub async fn com_atproto_server_revoke_app_password(
     &self,
     body: ComAtprotoServerRevokeAppPasswordInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -8016,7 +8178,7 @@ impl Atproto {
   pub async fn com_atproto_server_update_email(
     &self,
     body: ComAtprotoServerUpdateEmailInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -8045,7 +8207,7 @@ impl Atproto {
   /// * `RepoTakendown`
   /// * `RepoSuspended`
   /// * `RepoDeactivated`
-  pub async fn com_atproto_sync_get_blob(&self, did: &str, cid: &str) -> anyhow::Result<Vec<u8>> {
+  pub async fn com_atproto_sync_get_blob(&self, did: &str, cid: &str) -> Result<Vec<u8>> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
     query_.push((String::from("cid"), cid.to_string()));
@@ -8060,6 +8222,8 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     Ok(response.bytes().await?.to_vec())
   }
 
@@ -8077,11 +8241,7 @@ impl Atproto {
   /// * `RepoTakendown`
   /// * `RepoSuspended`
   /// * `RepoDeactivated`
-  pub async fn com_atproto_sync_get_blocks(
-    &self,
-    did: &str,
-    cids: &[&str],
-  ) -> anyhow::Result<Vec<u8>> {
+  pub async fn com_atproto_sync_get_blocks(&self, did: &str, cids: &[&str]) -> Result<Vec<u8>> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
     query_.append(
@@ -8101,6 +8261,8 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     Ok(response.bytes().await?.to_vec())
   }
 
@@ -8109,7 +8271,7 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `did` - The DID of the repo.
-  pub async fn com_atproto_sync_get_checkout(&self, did: &str) -> anyhow::Result<Vec<u8>> {
+  pub async fn com_atproto_sync_get_checkout(&self, did: &str) -> Result<Vec<u8>> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
     let mut request = self
@@ -8123,6 +8285,8 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     Ok(response.bytes().await?.to_vec())
   }
 
@@ -8135,10 +8299,7 @@ impl Atproto {
   /// # Errors
   ///
   /// * `HeadNotFound`
-  pub async fn com_atproto_sync_get_head(
-    &self,
-    did: &str,
-  ) -> anyhow::Result<ComAtprotoSyncGetHeadOutput> {
+  pub async fn com_atproto_sync_get_head(&self, did: &str) -> Result<ComAtprotoSyncGetHeadOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
     let mut request = self
@@ -8152,8 +8313,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get the current commit CID & revision of the specified repo. Does not require auth.
@@ -8171,7 +8334,7 @@ impl Atproto {
   pub async fn com_atproto_sync_get_latest_commit(
     &self,
     did: &str,
-  ) -> anyhow::Result<ComAtprotoSyncGetLatestCommitOutput> {
+  ) -> Result<ComAtprotoSyncGetLatestCommitOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
     let mut request = self
@@ -8185,8 +8348,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get data blocks needed to prove the existence or non-existence of record in the current version of repo. Does not require auth.
@@ -8211,7 +8376,7 @@ impl Atproto {
     collection: &str,
     rkey: &str,
     commit: Option<&str>,
-  ) -> anyhow::Result<Vec<u8>> {
+  ) -> Result<Vec<u8>> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
     query_.push((String::from("collection"), collection.to_string()));
@@ -8230,6 +8395,8 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     Ok(response.bytes().await?.to_vec())
   }
 
@@ -8246,11 +8413,7 @@ impl Atproto {
   /// * `RepoTakendown`
   /// * `RepoSuspended`
   /// * `RepoDeactivated`
-  pub async fn com_atproto_sync_get_repo(
-    &self,
-    did: &str,
-    since: Option<&str>,
-  ) -> anyhow::Result<Vec<u8>> {
+  pub async fn com_atproto_sync_get_repo(&self, did: &str, since: Option<&str>) -> Result<Vec<u8>> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
     if let Some(since) = &since {
@@ -8267,6 +8430,8 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     Ok(response.bytes().await?.to_vec())
   }
 
@@ -8282,7 +8447,7 @@ impl Atproto {
   pub async fn com_atproto_sync_get_repo_status(
     &self,
     did: &str,
-  ) -> anyhow::Result<ComAtprotoSyncGetRepoStatusOutput> {
+  ) -> Result<ComAtprotoSyncGetRepoStatusOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
     let mut request = self
@@ -8296,8 +8461,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// List blob CIDs for an account, since some repo revision. Does not require auth; implemented by PDS.
@@ -8321,7 +8488,7 @@ impl Atproto {
     since: Option<&str>,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<ComAtprotoSyncListBlobsOutput> {
+  ) -> Result<ComAtprotoSyncListBlobsOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
     if let Some(since) = &since {
@@ -8344,8 +8511,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Enumerates all the DID, rev, and commit CID for all repos hosted by this service. Does not require auth; implemented by PDS and Relay.
@@ -8358,7 +8527,7 @@ impl Atproto {
     &self,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<ComAtprotoSyncListReposOutput> {
+  ) -> Result<ComAtprotoSyncListReposOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
@@ -8377,8 +8546,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Notify a crawling service of a recent update, and that crawling should resume. Intended use is after a gap between repo stream events caused the crawling service to disconnect. Does not require auth; implemented by Relay.
@@ -8389,7 +8560,7 @@ impl Atproto {
   pub async fn com_atproto_sync_notify_of_update(
     &self,
     body: ComAtprotoSyncNotifyOfUpdateInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -8412,7 +8583,7 @@ impl Atproto {
   pub async fn com_atproto_sync_request_crawl(
     &self,
     body: ComAtprotoSyncRequestCrawlInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -8450,7 +8621,7 @@ impl Atproto {
   pub async fn com_atproto_sync_subscribe_repos(
     &self,
     cursor: Option<i64>,
-  ) -> anyhow::Result<reqwest_websocket::WebSocket> {
+  ) -> Result<reqwest_websocket::WebSocket> {
     let mut query_ = Vec::new();
     if let Some(cursor) = &cursor {
       query_.push((String::from("cursor"), cursor.to_string()));
@@ -8477,7 +8648,7 @@ impl Atproto {
   /// Check accounts location in signup queue.
   pub async fn com_atproto_temp_check_signup_queue(
     &self,
-  ) -> anyhow::Result<ComAtprotoTempCheckSignupQueueOutput> {
+  ) -> Result<ComAtprotoTempCheckSignupQueueOutput> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/com.atproto.temp.checkSignupQueue",
       self.host
@@ -8486,8 +8657,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// DEPRECATED: use queryLabels or subscribeLabels instead -- Fetch all labels from a labeler created after a certain date.
@@ -8500,7 +8673,7 @@ impl Atproto {
     &self,
     since: Option<i64>,
     limit: Option<i64>,
-  ) -> anyhow::Result<ComAtprotoTempFetchLabelsOutput> {
+  ) -> Result<ComAtprotoTempFetchLabelsOutput> {
     let mut query_ = Vec::new();
     if let Some(since) = &since {
       query_.push((String::from("since"), since.to_string()));
@@ -8519,8 +8692,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Request a verification code to be sent to the supplied phone number
@@ -8531,7 +8706,7 @@ impl Atproto {
   pub async fn com_atproto_temp_request_phone_verification(
     &self,
     body: ComAtprotoTempRequestPhoneVerificationInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -8551,10 +8726,14 @@ impl Atproto {
   /// # Arguments
   ///
   /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `DuplicateTemplateName`
   pub async fn tools_ozone_communication_create_template(
     &self,
     body: ToolsOzoneCommunicationCreateTemplateInput,
-  ) -> anyhow::Result<ToolsOzoneCommunicationDefsTemplateView> {
+  ) -> Result<ToolsOzoneCommunicationDefsTemplateView> {
     let mut request = self
       .client
       .post(&format!(
@@ -8567,7 +8746,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Delete a communication template.
@@ -8578,7 +8757,7 @@ impl Atproto {
   pub async fn tools_ozone_communication_delete_template(
     &self,
     body: ToolsOzoneCommunicationDeleteTemplateInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -8596,7 +8775,7 @@ impl Atproto {
   /// Get list of all communication templates.
   pub async fn tools_ozone_communication_list_templates(
     &self,
-  ) -> anyhow::Result<ToolsOzoneCommunicationListTemplatesOutput> {
+  ) -> Result<ToolsOzoneCommunicationListTemplatesOutput> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/tools.ozone.communication.listTemplates",
       self.host
@@ -8605,8 +8784,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Administrative action to update an existing communication template. Allows passing partial fields to patch specific fields only.
@@ -8614,10 +8795,14 @@ impl Atproto {
   /// # Arguments
   ///
   /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `DuplicateTemplateName`
   pub async fn tools_ozone_communication_update_template(
     &self,
     body: ToolsOzoneCommunicationUpdateTemplateInput,
-  ) -> anyhow::Result<ToolsOzoneCommunicationDefsTemplateView> {
+  ) -> Result<ToolsOzoneCommunicationDefsTemplateView> {
     let mut request = self
       .client
       .post(&format!(
@@ -8630,7 +8815,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Take a moderation action on an actor.
@@ -8645,7 +8830,7 @@ impl Atproto {
   pub async fn tools_ozone_moderation_emit_event(
     &self,
     body: ToolsOzoneModerationEmitEventInput,
-  ) -> anyhow::Result<ToolsOzoneModerationDefsModEventView> {
+  ) -> Result<ToolsOzoneModerationDefsModEventView> {
     let mut request = self
       .client
       .post(&format!(
@@ -8658,7 +8843,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get details about a moderation event.
@@ -8669,7 +8854,7 @@ impl Atproto {
   pub async fn tools_ozone_moderation_get_event(
     &self,
     id: i64,
-  ) -> anyhow::Result<ToolsOzoneModerationDefsModEventViewDetail> {
+  ) -> Result<ToolsOzoneModerationDefsModEventViewDetail> {
     let mut query_ = Vec::new();
     query_.push((String::from("id"), id.to_string()));
     let mut request = self
@@ -8683,8 +8868,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get details about a record.
@@ -8701,7 +8888,7 @@ impl Atproto {
     &self,
     uri: &str,
     cid: Option<&str>,
-  ) -> anyhow::Result<ToolsOzoneModerationDefsRecordViewDetail> {
+  ) -> Result<ToolsOzoneModerationDefsRecordViewDetail> {
     let mut query_ = Vec::new();
     query_.push((String::from("uri"), uri.to_string()));
     if let Some(cid) = &cid {
@@ -8718,8 +8905,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get details about a repository.
@@ -8734,7 +8923,7 @@ impl Atproto {
   pub async fn tools_ozone_moderation_get_repo(
     &self,
     did: &str,
-  ) -> anyhow::Result<ToolsOzoneModerationDefsRepoViewDetail> {
+  ) -> Result<ToolsOzoneModerationDefsRepoViewDetail> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
     let mut request = self
@@ -8748,8 +8937,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// List moderation events related to a subject.
@@ -8790,7 +8981,7 @@ impl Atproto {
     removed_tags: Option<&[&str]>,
     report_types: Option<&[&str]>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<ToolsOzoneModerationQueryEventsOutput> {
+  ) -> Result<ToolsOzoneModerationQueryEventsOutput> {
     let mut query_ = Vec::new();
     if let Some(types) = &types {
       query_.append(
@@ -8884,8 +9075,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// View moderation statuses of subjects (record or repo).
@@ -8932,7 +9125,7 @@ impl Atproto {
     tags: Option<&[&str]>,
     exclude_tags: Option<&[&str]>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<ToolsOzoneModerationQueryStatusesOutput> {
+  ) -> Result<ToolsOzoneModerationQueryStatusesOutput> {
     let mut query_ = Vec::new();
     if let Some(subject) = &subject {
       query_.push((String::from("subject"), subject.to_string()));
@@ -9020,8 +9213,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Find repositories based on a search term.
@@ -9038,7 +9233,7 @@ impl Atproto {
     q: Option<&str>,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<ToolsOzoneModerationSearchReposOutput> {
+  ) -> Result<ToolsOzoneModerationSearchReposOutput> {
     let mut query_ = Vec::new();
     if let Some(term) = &term {
       query_.push((String::from("term"), term.to_string()));
@@ -9063,14 +9258,14 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Get details about ozone's server configuration.
-  pub async fn tools_ozone_server_get_config(
-    &self,
-  ) -> anyhow::Result<ToolsOzoneServerGetConfigOutput> {
+  pub async fn tools_ozone_server_get_config(&self) -> Result<ToolsOzoneServerGetConfigOutput> {
     let mut request = self.client.get(&format!(
       "https://{}/xrpc/tools.ozone.server.getConfig",
       self.host
@@ -9079,8 +9274,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Add a member to the ozone team. Requires admin role.
@@ -9095,7 +9292,7 @@ impl Atproto {
   pub async fn tools_ozone_team_add_member(
     &self,
     body: ToolsOzoneTeamAddMemberInput,
-  ) -> anyhow::Result<ToolsOzoneTeamDefsMember> {
+  ) -> Result<ToolsOzoneTeamDefsMember> {
     let mut request = self
       .client
       .post(&format!(
@@ -9108,7 +9305,7 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Delete a member from ozone team. Requires admin role.
@@ -9124,7 +9321,7 @@ impl Atproto {
   pub async fn tools_ozone_team_delete_member(
     &self,
     body: ToolsOzoneTeamDeleteMemberInput,
-  ) -> anyhow::Result<()> {
+  ) -> Result<()> {
     let mut request = self
       .client
       .post(&format!(
@@ -9149,7 +9346,7 @@ impl Atproto {
     &self,
     limit: Option<i64>,
     cursor: Option<&str>,
-  ) -> anyhow::Result<ToolsOzoneTeamListMembersOutput> {
+  ) -> Result<ToolsOzoneTeamListMembersOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
@@ -9168,8 +9365,10 @@ impl Atproto {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
+    tracing::debug!("{}", response.status());
+    tracing::debug!("{:?}", response.headers());
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Update a member in the ozone service. Requires admin role.
@@ -9184,7 +9383,7 @@ impl Atproto {
   pub async fn tools_ozone_team_update_member(
     &self,
     body: ToolsOzoneTeamUpdateMemberInput,
-  ) -> anyhow::Result<ToolsOzoneTeamDefsMember> {
+  ) -> Result<ToolsOzoneTeamDefsMember> {
     let mut request = self
       .client
       .post(&format!(
@@ -9197,6 +9396,6 @@ impl Atproto {
     }
     let response = request.send().await?;
     let text = response.text().await?;
-    Ok(serde_json::from_str(&text).map_err(|e| anyhow::anyhow!("{e} : {text}"))?)
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 }
