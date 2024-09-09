@@ -54,8 +54,8 @@ impl From<ComAtprotoSyncSubscribeReposInfo> for Object {
 }
 
 impl TryFrom<&reqwest_websocket::Message> for Object {
-  type Error = anyhow::Error;
-  fn try_from(value: &reqwest_websocket::Message) -> Result<Self, Self::Error> {
+  type Error = crate::Error;
+  fn try_from(value: &reqwest_websocket::Message) -> std::result::Result<Self, Self::Error> {
     if let reqwest_websocket::Message::Binary(bin) = value {
       let header = ciborium::from_reader::<ciborium::Value, _>(bin.as_slice())?;
       let mut buf = Vec::new();
@@ -89,10 +89,10 @@ impl TryFrom<&reqwest_websocket::Message> for Object {
       {
         return Ok(info.into());
       } else {
-        anyhow::bail!("unknown data type");
+        return Err(Error::Other(String::from("unknown data type")));
       }
     }
-    anyhow::bail!("not binary message");
+    return Err(Error::Other(String::from("not binary message")));
   }
 }
 

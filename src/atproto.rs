@@ -1,10 +1,15 @@
-type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, Error>;
 
+#[derive(Debug)]
 pub enum Error {
   Reqwest(reqwest::Error),
   WebSocket(reqwest_websocket::Error),
   Parse((serde_json::Error, String)),
+  Io(std::io::Error),
+  CarDecode(String),
+  CarEncode(String),
   Rate((i64, i64, i64, String)),
+  Other(String),
 }
 
 impl From<reqwest::Error> for Error {
@@ -16,6 +21,24 @@ impl From<reqwest::Error> for Error {
 impl From<reqwest_websocket::Error> for Error {
   fn from(value: reqwest_websocket::Error) -> Self {
     Self::WebSocket(value)
+  }
+}
+
+impl From<std::io::Error> for Error {
+  fn from(value: std::io::Error) -> Self {
+    Self::Io(value)
+  }
+}
+
+impl<T: std::fmt::Debug> From<ciborium::de::Error<T>> for Error {
+  fn from(value: ciborium::de::Error<T>) -> Self {
+    Self::CarDecode(format!("{:?}", value))
+  }
+}
+
+impl<T: std::fmt::Debug> From<ciborium::ser::Error<T>> for Error {
+  fn from(value: ciborium::ser::Error<T>) -> Self {
+    Self::CarEncode(format!("{:?}", value))
   }
 }
 

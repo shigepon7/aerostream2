@@ -10,7 +10,6 @@ homepage = "https://github.com/shigepon7/aerostream2/"
 keywords = ["bluesky", "atproto"]
 
 [dependencies]
-anyhow = "1.0.87"
 axum = { version = "0.7.5", features = ["macros"] }
 chrono = { version = "0.4.38", features = ["serde"] }
 ciborium = "0.2.2"

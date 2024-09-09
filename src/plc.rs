@@ -92,7 +92,7 @@ impl Plc {
     }
   }
 
-  pub async fn resolve_did(&self, did: &str) -> anyhow::Result<DidDocument> {
+  pub async fn resolve_did(&self, did: &str) -> crate::Result<DidDocument> {
     let text = self
       .client
       .get(format!("https://{}/{did}", self.host))
@@ -100,10 +100,10 @@ impl Plc {
       .await?
       .text()
       .await?;
-    Ok(serde_json::from_str(&text)?)
+    Ok(serde_json::from_str(&text).map_err(|e| crate::Error::from((e, text)))?)
   }
 
-  pub async fn export(&self) -> anyhow::Result<Vec<PlcEntry>> {
+  pub async fn export(&self) -> crate::Result<Vec<PlcEntry>> {
     let text = self
       .client
       .get(format!("https://{}/export", self.host))

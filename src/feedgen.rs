@@ -203,7 +203,7 @@ impl FeedGenerator {
     server: &str,
     handle: &str,
     password: &str,
-  ) -> anyhow::Result<()> {
+  ) -> crate::Result<()> {
     let mut atproto = Atproto::default();
     atproto.login(handle, password).await?;
     let avatar = match &feed.avatar {
@@ -220,7 +220,8 @@ impl FeedGenerator {
       rkey: feed.rkey.clone(),
       validate: None,
       record: serde_json::to_string(&feed.to_atproto(server, avatar))
-        .and_then(|v| serde_json::from_str(&v))?,
+        .and_then(|v| serde_json::from_str(&v))
+        .map_err(|e| crate::Error::Parse((e, String::new())))?,
       swap_record: None,
       swap_commit: None,
     };
@@ -237,7 +238,7 @@ impl FeedGenerator {
     self.terms_of_service = (!terms_of_service.is_empty()).then(|| terms_of_service.to_string());
   }
 
-  pub async fn start(&self) -> anyhow::Result<()> {
+  pub async fn start(&self) -> crate::Result<()> {
     let app = axum::Router::new()
       .route("/xrpc/:nsid", axum::routing::get(xrpc_server))
       .route("/.well-known/did.json", axum::routing::get(did_document))
@@ -248,7 +249,6 @@ impl FeedGenerator {
   }
 }
 
-#[axum::debug_handler]
 async fn did_document(
   axum::extract::State(server): axum::extract::State<FeedGenerator>,
 ) -> axum::response::Response {
@@ -263,11 +263,12 @@ async fn did_document(
   axum::response::IntoResponse::into_response(axum::Json(document))
 }
 
+#[axum::debug_handler]
 async fn xrpc_server(
   axum::extract::Path(nsid): axum::extract::Path<String>,
   axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
   axum::extract::State(server): axum::extract::State<FeedGenerator>,
-) -> Result<axum::response::Response, axum::http::StatusCode> {
+) -> std::result::Result<axum::response::Response, axum::http::StatusCode> {
   match nsid.as_str() {
     "app.bsky.feed.describeFeedGenerator" => {
       let links =

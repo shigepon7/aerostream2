@@ -15,7 +15,7 @@ pub async fn firehose_thread(
     let mut ws = match atproto.com_atproto_sync_subscribe_repos(cursor).await {
       Ok(ws) => ws,
       Err(e) => {
-        tracing::warn!("FIREHOSE : {hostname} : connect websocket error : {e}");
+        tracing::warn!("FIREHOSE : {hostname} : connect websocket error : {e:?}");
         tokio::time::sleep(std::time::Duration::from_secs(10)).await;
         continue;
       }
