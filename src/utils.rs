@@ -462,3 +462,25 @@ impl ComAtprotoSyncSubscribeReposCommit {
       .map(|op| format!("at://{}/{}", self.repo, op.path))
   }
 }
+
+pub fn get_did_from_request_header(headers: &axum::http::HeaderMap) -> Result<String> {
+  let authorization = headers
+    .get("Authorization")
+    .ok_or_else(|| Error::Other(String::from("no authorization header")))?;
+  let authorization = authorization
+    .to_str()
+    .map_err(|e| Error::Other(e.to_string()))?;
+  let body = authorization
+    .split(".")
+    .nth(1)
+    .ok_or_else(|| Error::Other(String::from("invalid jwt format")))?;
+  let data = base64::Engine::decode(&base64::prelude::BASE64_STANDARD, &body)
+    .map_err(|e| Error::Other(e.to_string()))?;
+  let data = String::from_utf8(data).map_err(|e| Error::Other(e.to_string()))?;
+  let object =
+    serde_json::from_str::<serde_json::Value>(&data).map_err(|e| Error::Other(e.to_string()))?;
+  let iss = object
+    .get("iss")
+    .ok_or_else(|| Error::Other(String::from("no iss entry")))?;
+  Ok(iss.to_string())
+}
