@@ -349,6 +349,15 @@ async fn xrpc_server(
         }
       };
       if let Some(alias) = &feed.alias {
+        {
+          if let Some(d) = server.dynamic_feeds.read().await.get(alias) {
+            tracing::debug!("dynamic alias : {alias}");
+            return d
+              .algorithm(&headers)
+              .await
+              .map(|r| axum::response::IntoResponse::into_response(axum::Json(r)));
+          }
+        }
         if let Some(destination) = feeds.get(alias) {
           tracing::debug!("alias {} to {}", feed.to_aturi(), alias);
           feed = destination;
