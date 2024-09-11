@@ -325,9 +325,11 @@ async fn xrpc_server(
           return Err(axum::http::StatusCode::BAD_REQUEST);
         }
       };
+      tracing::debug!("app.bsky.feed.getFeedSkeleton : {feed}");
 
       {
         if let Some(d) = server.dynamic_feeds.read().await.get(feed) {
+          tracing::debug!("dynamic : {feed}");
           return d
             .algorithm()
             .await
@@ -335,6 +337,7 @@ async fn xrpc_server(
         }
       }
 
+      tracing::debug!("static : {feed}");
       let feeds = { server.feeds.read().await.clone() };
       let mut feed = match feeds.get(feed).clone() {
         Some(f) => f,
