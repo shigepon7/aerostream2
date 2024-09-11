@@ -1,6 +1,6 @@
 use crate::*;
 
-#[async_trait]
+#[async_trait::async_trait]
 pub trait FeedGeneratorDynamic: Sync + Send {
   fn feed(&self) -> FeedGeneratorFeed;
   async fn algorithm(
