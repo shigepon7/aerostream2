@@ -481,6 +481,7 @@ pub fn get_did_from_request_header(headers: &axum::http::HeaderMap) -> Result<St
     serde_json::from_str::<serde_json::Value>(&data).map_err(|e| Error::Other(e.to_string()))?;
   let iss = object
     .get("iss")
+    .and_then(|iss| iss.as_str())
     .ok_or_else(|| Error::Other(String::from("no iss entry")))?;
   Ok(iss.to_string())
 }
