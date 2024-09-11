@@ -5,6 +5,7 @@ pub trait FeedGeneratorDynamic: Sync + Send {
   fn feed(&self) -> FeedGeneratorFeed;
   async fn algorithm(
     &self,
+    headers: &axum::http::HeaderMap,
   ) -> std::result::Result<AppBskyFeedGetFeedSkeletonOutput, axum::http::StatusCode>;
 }
 
@@ -290,6 +291,7 @@ async fn did_document(
 
 #[axum::debug_handler]
 async fn xrpc_server(
+  headers: axum::http::HeaderMap,
   axum::extract::Path(nsid): axum::extract::Path<String>,
   axum::extract::Query(query): axum::extract::Query<std::collections::HashMap<String, String>>,
   axum::extract::State(server): axum::extract::State<FeedGenerator>,
@@ -331,7 +333,7 @@ async fn xrpc_server(
         if let Some(d) = server.dynamic_feeds.read().await.get(feed) {
           tracing::debug!("dynamic : {feed}");
           return d
-            .algorithm()
+            .algorithm(&headers)
             .await
             .map(|r| axum::response::IntoResponse::into_response(axum::Json(r)));
         }
