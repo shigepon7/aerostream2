@@ -1,5 +1,13 @@
 use crate::*;
 
+#[async_trait]
+pub trait FeedGeneratorDynamic: Sync + Send {
+  fn feed(&self) -> FeedGeneratorFeed;
+  async fn algorithm(
+    &self,
+  ) -> std::result::Result<AppBskyFeedGetFeedSkeletonOutput, axum::http::StatusCode>;
+}
+
 #[derive(Clone)]
 pub struct FeedGeneratorFeed {
   pub owner: String,
@@ -183,6 +191,8 @@ impl FeedGeneratorFeed {
 pub struct FeedGenerator {
   pub hostname: String,
   pub feeds: std::sync::Arc<tokio::sync::RwLock<indexmap::IndexMap<String, FeedGeneratorFeed>>>,
+  pub dynamic_feeds:
+    std::sync::Arc<tokio::sync::RwLock<indexmap::IndexMap<String, Box<dyn FeedGeneratorDynamic>>>>,
   pub privacy_policy: Option<String>,
   pub terms_of_service: Option<String>,
 }
@@ -192,6 +202,7 @@ impl FeedGenerator {
     Self {
       hostname: hostname.to_string(),
       feeds: std::sync::Arc::new(tokio::sync::RwLock::new(indexmap::IndexMap::new())),
+      dynamic_feeds: std::sync::Arc::new(tokio::sync::RwLock::new(indexmap::IndexMap::new())),
       privacy_policy: None,
       terms_of_service: None,
     }
@@ -227,6 +238,20 @@ impl FeedGenerator {
     };
     atproto.com_atproto_repo_put_record(input.clone()).await?;
     self.feeds.write().await.insert(feed.to_aturi(), feed);
+    Ok(())
+  }
+
+  pub async fn insert_dynamic(
+    &mut self,
+    dynamic: Box<dyn FeedGeneratorDynamic>,
+    server: &str,
+    handle: &str,
+    password: &str,
+  ) -> crate::Result<()> {
+    let feed = dynamic.feed();
+    let uri = feed.to_aturi();
+    self.insert_feed(feed, server, handle, password).await?;
+    self.dynamic_feeds.write().await.insert(uri, dynamic);
     Ok(())
   }
 
@@ -300,6 +325,16 @@ async fn xrpc_server(
           return Err(axum::http::StatusCode::BAD_REQUEST);
         }
       };
+
+      {
+        if let Some(d) = server.dynamic_feeds.read().await.get(feed) {
+          return d
+            .algorithm()
+            .await
+            .map(|r| axum::response::IntoResponse::into_response(axum::Json(r)));
+        }
+      }
+
       let feeds = { server.feeds.read().await.clone() };
       let mut feed = match feeds.get(feed).clone() {
         Some(f) => f,

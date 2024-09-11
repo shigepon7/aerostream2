@@ -28,3 +28,4 @@ mime_guess = "2.0.5"
 indexmap = "2.5.0"
 lindera = { version = "0.32.2", features = ["ipadic"] }
 async-std = "1.13.0"
+async-trait = "0.1.82"
