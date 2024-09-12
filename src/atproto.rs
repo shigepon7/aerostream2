@@ -337,6 +337,8 @@ pub struct AppBskyActorDefsBskyAppStatePref {
   pub active_progress_guide: Option<AppBskyActorDefsBskyAppProgressGuide>,
   /// An array of tokens which identify nudges (modals, popups, tours, highlight dots) that should be shown to the user.,
   pub queued_nudges: Option<Vec<String>>,
+  /// Storage for NUXs the user has encountered.,
+  pub nuxs: Option<Vec<AppBskyActorDefsNux>>,
 }
 
 /// If set, an active progress guide. Once completed, can be set to undefined. Should have unspecced fields tracking progress.
@@ -345,6 +347,19 @@ pub struct AppBskyActorDefsBskyAppStatePref {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsBskyAppProgressGuide {
   pub guide: String,
+}
+
+/// A new user experiences (NUX) storage object
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyActorDefsNux {
+  pub id: String,
+  pub completed: bool,
+  /// Arbitrary data for the NUX. The structure is defined by the NUX itself. Limited to 300 characters.,
+  pub data: Option<String>,
+  /// The date and time at which the NUX will expire and should be considered completed.,
+  pub expires_at: Option<String>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3697,6 +3712,8 @@ pub struct ToolsOzoneModerationDefsModEventTakedown {
   pub comment: Option<String>,
   /// Indicates how long the takedown should be in effect before automatically expiring.,
   pub duration_in_hours: Option<i64>,
+  /// If true, all other reports on content authored by this account will be resolved (acknowledged).,
+  pub acknowledge_account_subjects: Option<bool>,
 }
 
 /// Revert take down action on a subject
@@ -13167,7 +13184,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `subject`
+  /// * `include_all_user_records` - All subjects belonging to the account specified in the 'subject' param will be returned.
+  /// * `subject` - The subject to get the status for.
   /// * `comment` - Search subjects by keyword from comments
   /// * `reported_after` - Search subjects reported after a given timestamp
   /// * `reported_before` - Search subjects reported before a given timestamp
@@ -13188,6 +13206,7 @@ impl Atproto {
   /// * `cursor`
   pub async fn tools_ozone_moderation_query_statuses(
     &self,
+    include_all_user_records: Option<bool>,
     subject: Option<&str>,
     comment: Option<&str>,
     reported_after: Option<&str>,
@@ -13209,6 +13228,12 @@ impl Atproto {
     cursor: Option<&str>,
   ) -> Result<ToolsOzoneModerationQueryStatusesOutput> {
     let mut query_ = Vec::new();
+    if let Some(include_all_user_records) = &include_all_user_records {
+      query_.push((
+        String::from("include_all_user_records"),
+        include_all_user_records.to_string(),
+      ));
+    }
     if let Some(subject) = &subject {
       query_.push((String::from("subject"), subject.to_string()));
     }

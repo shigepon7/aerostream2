@@ -188,6 +188,47 @@ impl FeedGeneratorFeed {
   }
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct FeedGeneratorAccessLog {
+  feed: String,
+  cursor: Option<String>,
+  limit: Option<usize>,
+  status_code: u16,
+  len: Option<usize>,
+  next: Option<String>,
+  accessed_at: chrono::DateTime<chrono::Utc>,
+  returned_at: chrono::DateTime<chrono::Utc>,
+}
+
+impl FeedGeneratorAccessLog {
+  pub fn new(feed: &str, cursor: &Option<String>, limit: &Option<usize>) -> Self {
+    Self {
+      feed: feed.to_string(),
+      cursor: cursor.clone(),
+      limit: limit.clone(),
+      status_code: 0,
+      len: None,
+      next: None,
+      accessed_at: chrono::Utc::now(),
+      returned_at: chrono::DateTime::default(),
+    }
+  }
+
+  pub fn success(&mut self, len: usize, next: &Option<String>) {
+    self.status_code = axum::http::StatusCode::OK.as_u16();
+    self.len = Some(len);
+    self.next = next.clone();
+    self.returned_at = chrono::Utc::now();
+  }
+
+  pub fn error(&mut self, code: &axum::http::StatusCode) {
+    self.status_code = code.as_u16();
+    self.len = None;
+    self.next = None;
+    self.returned_at = chrono::Utc::now();
+  }
+}
+
 #[derive(Clone)]
 pub struct FeedGenerator {
   pub hostname: String,
@@ -196,6 +237,7 @@ pub struct FeedGenerator {
     std::sync::Arc<tokio::sync::RwLock<indexmap::IndexMap<String, Box<dyn FeedGeneratorDynamic>>>>,
   pub privacy_policy: Option<String>,
   pub terms_of_service: Option<String>,
+  pub access_log: std::sync::Arc<tokio::sync::RwLock<Vec<FeedGeneratorAccessLog>>>,
 }
 
 impl FeedGenerator {
@@ -206,6 +248,7 @@ impl FeedGenerator {
       dynamic_feeds: std::sync::Arc::new(tokio::sync::RwLock::new(indexmap::IndexMap::new())),
       privacy_policy: None,
       terms_of_service: None,
+      access_log: std::sync::Arc::new(tokio::sync::RwLock::new(Vec::new())),
     }
   }
 
@@ -273,6 +316,21 @@ impl FeedGenerator {
     axum::serve(listener, app).await?;
     Ok(())
   }
+
+  pub async fn insert_log(&self, log: FeedGeneratorAccessLog) {
+    self.access_log.write().await.push(log);
+  }
+
+  pub async fn read_log(&self) -> Vec<FeedGeneratorAccessLog> {
+    self.access_log.read().await.clone()
+  }
+
+  pub async fn read_log_and_clean(&self) -> Vec<FeedGeneratorAccessLog> {
+    let mut lock = self.access_log.write().await;
+    let ret = lock.clone();
+    *lock = Vec::new();
+    ret
+  }
 }
 
 async fn did_document(
@@ -327,15 +385,26 @@ async fn xrpc_server(
           return Err(axum::http::StatusCode::BAD_REQUEST);
         }
       };
+      let cursor = query.get("cursor").cloned();
+      let limit = query.get("limit").and_then(|l| l.parse().ok());
+      let mut log = FeedGeneratorAccessLog::new(&feed, &cursor, &limit);
       tracing::debug!("app.bsky.feed.getFeedSkeleton : {feed}");
 
       {
         if let Some(d) = server.dynamic_feeds.read().await.get(feed) {
           tracing::debug!("dynamic : {feed}");
-          return d
-            .algorithm(&headers)
-            .await
-            .map(|r| axum::response::IntoResponse::into_response(axum::Json(r)));
+          match d.algorithm(&headers).await {
+            Ok(r) => {
+              log.success(r.feed.len(), &r.cursor);
+              server.insert_log(log).await;
+              return Ok(axum::response::IntoResponse::into_response(axum::Json(r)));
+            }
+            Err(e) => {
+              log.error(&e);
+              server.insert_log(log).await;
+              return Err(e);
+            }
+          }
         }
       }
 
@@ -345,6 +414,8 @@ async fn xrpc_server(
         Some(f) => f,
         None => {
           tracing::warn!("no such feed {feed}");
+          log.error(&axum::http::StatusCode::NOT_FOUND);
+          server.insert_log(log).await;
           return Err(axum::http::StatusCode::NOT_FOUND);
         }
       };
@@ -352,10 +423,18 @@ async fn xrpc_server(
         {
           if let Some(d) = server.dynamic_feeds.read().await.get(alias) {
             tracing::debug!("dynamic alias : {alias}");
-            return d
-              .algorithm(&headers)
-              .await
-              .map(|r| axum::response::IntoResponse::into_response(axum::Json(r)));
+            match d.algorithm(&headers).await {
+              Ok(r) => {
+                log.success(r.feed.len(), &r.cursor);
+                server.insert_log(log).await;
+                return Ok(axum::response::IntoResponse::into_response(axum::Json(r)));
+              }
+              Err(e) => {
+                log.error(&e);
+                server.insert_log(log).await;
+                return Err(e);
+              }
+            }
           }
         }
         if let Some(destination) = feeds.get(alias) {
@@ -363,13 +442,10 @@ async fn xrpc_server(
           feed = destination;
         }
       }
-      let limit = query
-        .get("limit")
-        .and_then(|l| l.parse::<usize>().ok())
-        .unwrap_or(30);
+      let limit = limit.unwrap_or(30);
       tracing::debug!("LIMIT : {limit}");
       let cache = { feed.cache.read().await.clone() };
-      let feeds = match query.get("cursor") {
+      let feeds = match &cursor {
         Some(cursor) => cache
           .iter()
           .skip_while(|c| cursor != *c)
@@ -398,6 +474,8 @@ async fn xrpc_server(
           .last()
           .and_then(|l| (p != l).then(|| p.clone()))
       });
+      log.success(feeds.len(), &cursor);
+      server.insert_log(log).await;
       tracing::debug!("CURSOR : {cursor:?}");
       Ok(axum::response::IntoResponse::into_response(axum::Json(
         AppBskyFeedGetFeedSkeletonOutput {
