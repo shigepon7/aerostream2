@@ -190,14 +190,14 @@ impl FeedGeneratorFeed {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FeedGeneratorAccessLog {
-  feed: String,
-  cursor: Option<String>,
-  limit: Option<usize>,
-  status_code: u16,
-  len: Option<usize>,
-  next: Option<String>,
-  accessed_at: chrono::DateTime<chrono::Utc>,
-  returned_at: chrono::DateTime<chrono::Utc>,
+  pub feed: String,
+  pub cursor: Option<String>,
+  pub limit: Option<usize>,
+  pub status_code: u16,
+  pub len: Option<usize>,
+  pub next: Option<String>,
+  pub accessed_at: chrono::DateTime<chrono::Utc>,
+  pub returned_at: chrono::DateTime<chrono::Utc>,
 }
 
 impl FeedGeneratorAccessLog {
