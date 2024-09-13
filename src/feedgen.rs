@@ -190,6 +190,7 @@ impl FeedGeneratorFeed {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FeedGeneratorAccessLog {
+  pub did: String,
   pub feed: String,
   pub cursor: Option<String>,
   pub limit: Option<usize>,
@@ -201,8 +202,14 @@ pub struct FeedGeneratorAccessLog {
 }
 
 impl FeedGeneratorAccessLog {
-  pub fn new(feed: &str, cursor: &Option<String>, limit: &Option<usize>) -> Self {
-    Self {
+  pub fn new(
+    feed: &str,
+    cursor: &Option<String>,
+    limit: &Option<usize>,
+    headers: &axum::http::HeaderMap<axum::http::HeaderValue>,
+  ) -> Result<Self> {
+    Ok(Self {
+      did: get_did_from_request_header(headers)?,
       feed: feed.to_string(),
       cursor: cursor.clone(),
       limit: limit.clone(),
@@ -211,7 +218,7 @@ impl FeedGeneratorAccessLog {
       next: None,
       accessed_at: chrono::Utc::now(),
       returned_at: chrono::DateTime::default(),
-    }
+    })
   }
 
   pub fn success(&mut self, len: usize, next: &Option<String>) {
@@ -387,7 +394,7 @@ async fn xrpc_server(
       };
       let cursor = query.get("cursor").cloned();
       let limit = query.get("limit").and_then(|l| l.parse().ok());
-      let mut log = FeedGeneratorAccessLog::new(&feed, &cursor, &limit);
+      let mut log = FeedGeneratorAccessLog::new(&feed, &cursor, &limit, &headers).ok();
       tracing::debug!("app.bsky.feed.getFeedSkeleton : {feed}");
 
       {
@@ -395,13 +402,17 @@ async fn xrpc_server(
           tracing::debug!("dynamic : {feed}");
           match d.algorithm(&headers).await {
             Ok(r) => {
-              log.success(r.feed.len(), &r.cursor);
-              server.insert_log(log).await;
+              if let Some(log) = log.as_mut() {
+                log.success(r.feed.len(), &r.cursor);
+                server.insert_log(log.clone()).await;
+              }
               return Ok(axum::response::IntoResponse::into_response(axum::Json(r)));
             }
             Err(e) => {
-              log.error(&e);
-              server.insert_log(log).await;
+              if let Some(log) = log.as_mut() {
+                log.error(&e);
+                server.insert_log(log.clone()).await;
+              }
               return Err(e);
             }
           }
@@ -414,8 +425,10 @@ async fn xrpc_server(
         Some(f) => f,
         None => {
           tracing::warn!("no such feed {feed}");
-          log.error(&axum::http::StatusCode::NOT_FOUND);
-          server.insert_log(log).await;
+          if let Some(log) = log.as_mut() {
+            log.error(&axum::http::StatusCode::NOT_FOUND);
+            server.insert_log(log.clone()).await;
+          }
           return Err(axum::http::StatusCode::NOT_FOUND);
         }
       };
@@ -425,13 +438,17 @@ async fn xrpc_server(
             tracing::debug!("dynamic alias : {alias}");
             match d.algorithm(&headers).await {
               Ok(r) => {
-                log.success(r.feed.len(), &r.cursor);
-                server.insert_log(log).await;
+                if let Some(log) = log.as_mut() {
+                  log.success(r.feed.len(), &r.cursor);
+                  server.insert_log(log.clone()).await;
+                }
                 return Ok(axum::response::IntoResponse::into_response(axum::Json(r)));
               }
               Err(e) => {
-                log.error(&e);
-                server.insert_log(log).await;
+                if let Some(log) = log.as_mut() {
+                  log.error(&e);
+                  server.insert_log(log.clone()).await;
+                }
                 return Err(e);
               }
             }
@@ -474,8 +491,10 @@ async fn xrpc_server(
           .last()
           .and_then(|l| (p != l).then(|| p.clone()))
       });
-      log.success(feeds.len(), &cursor);
-      server.insert_log(log).await;
+      if let Some(log) = log.as_mut() {
+        log.success(feeds.len(), &cursor);
+        server.insert_log(log.clone()).await;
+      }
       tracing::debug!("CURSOR : {cursor:?}");
       Ok(axum::response::IntoResponse::into_response(axum::Json(
         AppBskyFeedGetFeedSkeletonOutput {
