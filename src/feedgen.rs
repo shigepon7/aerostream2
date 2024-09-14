@@ -6,6 +6,8 @@ pub trait FeedGeneratorDynamic: Sync + Send {
   async fn algorithm(
     &self,
     headers: &axum::http::HeaderMap,
+    cursor: Option<String>,
+    limit: Option<usize>,
   ) -> std::result::Result<AppBskyFeedGetFeedSkeletonOutput, axum::http::StatusCode>;
 }
 
@@ -400,7 +402,7 @@ async fn xrpc_server(
       {
         if let Some(d) = server.dynamic_feeds.read().await.get(feed) {
           tracing::debug!("dynamic : {feed}");
-          match d.algorithm(&headers).await {
+          match d.algorithm(&headers, cursor.clone(), limit.clone()).await {
             Ok(r) => {
               if let Some(log) = log.as_mut() {
                 log.success(r.feed.len(), &r.cursor);
@@ -436,7 +438,7 @@ async fn xrpc_server(
         {
           if let Some(d) = server.dynamic_feeds.read().await.get(alias) {
             tracing::debug!("dynamic alias : {alias}");
-            match d.algorithm(&headers).await {
+            match d.algorithm(&headers, cursor.clone(), limit.clone()).await {
               Ok(r) => {
                 if let Some(log) = log.as_mut() {
                   log.success(r.feed.len(), &r.cursor);
