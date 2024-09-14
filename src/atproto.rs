@@ -1523,6 +1523,8 @@ pub struct AppBskyGraphGetStarterPacksOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphGetSuggestedFollowsByActorOutput {
   pub suggestions: Vec<AppBskyActorDefsProfileView>,
+  /// If true, response has fallen-back to generic results, and is not scoped using relativeToDid,
+  pub is_fallback: Option<bool>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1849,6 +1851,8 @@ pub struct AppBskyUnspeccedGetPopularFeedGeneratorsOutput {
 pub struct AppBskyUnspeccedGetSuggestionsSkeletonOutput {
   pub cursor: Option<String>,
   pub actors: Vec<AppBskyUnspeccedDefsSkeletonSearchActor>,
+  /// DID of the account these suggestions are relative to. If this is returned undefined, suggestions are based on the viewer.,
+  pub relative_to_did: Option<String>,
 }
 
 #[serde_with::skip_serializing_none]
