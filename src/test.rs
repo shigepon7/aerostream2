@@ -77,7 +77,7 @@ async fn create_record() {
         langs: Some(vec![String::from("ja")]),
         labels: None,
         tags: None,
-        created_at: chrono::Utc::now().to_rfc3339(),
+        created_at: chrono::Utc::now(),
       }),
       swap_commit: None,
     })

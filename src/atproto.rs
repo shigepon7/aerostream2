@@ -48,6 +48,72 @@ impl From<(serde_json::Error, String)> for Error {
   }
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Tid(pub String);
+
+impl Tid {
+  pub fn encoding() -> Result<data_encoding::Encoding> {
+    let mut spec = data_encoding::Specification::new();
+    spec.symbols.push_str("234567abcdefghijklmnopqrstuvwxyz");
+    spec.bit_order = data_encoding::BitOrder::MostSignificantFirst;
+    spec.check_trailing_bits = true;
+    spec.padding = None;
+    Ok(spec.encoding().map_err(|e| Error::Other(format!("{e}")))?)
+  }
+}
+
+impl From<String> for Tid {
+  fn from(value: String) -> Self {
+    Self(value)
+  }
+}
+
+impl From<&str> for Tid {
+  fn from(value: &str) -> Self {
+    Self(value.to_string())
+  }
+}
+
+impl Tid {
+  pub fn new(datetime: chrono::DateTime<chrono::Utc>, clock_id: u16) -> Self {
+    let ts = ((datetime.timestamp_micros() as i128) << 73) & 0x7ffffffffffffe000000000000000000;
+    let id = ((clock_id as i128) << 63) & 0x00000000000001ff8000000000000000;
+    let data = ts | id;
+    Self(
+      Tid::encoding()
+        .unwrap()
+        .encode(&data.to_be_bytes())
+        .chars()
+        .take(13)
+        .collect(),
+    )
+  }
+
+  pub fn get_datetime(&self) -> Result<chrono::DateTime<chrono::Utc>> {
+    let bytes = Tid::encoding()?
+      .decode(format!("{}2222222222222", &self.0).as_bytes())
+      .map_err(|e| Error::Other(format!("{e}")))?;
+    let mut array = [0u8; 16];
+    array.copy_from_slice(&bytes);
+    let ts = (i128::from_be_bytes(array) & 0x7ffffffffffffe000000000000000000) >> 73;
+    Ok(
+      chrono::TimeZone::timestamp_micros(&chrono::Utc, ts as i64)
+        .earliest()
+        .ok_or_else(|| Error::Other(format!("cannot convert to datetime {}", &self.0)))?,
+    )
+  }
+
+  pub fn get_clock_id(&self) -> Result<u16> {
+    let bytes = Tid::encoding()?
+      .decode(format!("{}2222222222222", self.0).as_bytes())
+      .map_err(|e| Error::Other(format!("{e}")))?;
+    let mut array = [0u8; 16];
+    array.copy_from_slice(&bytes);
+    let ts = (i128::from_be_bytes(array) & 0x70000000000001ff8000000000000000) >> 63;
+    Ok(ts as u16)
+  }
+}
+
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Link {
@@ -79,7 +145,7 @@ pub struct AppBskyActorDefsProfileViewBasic {
   pub associated: Option<AppBskyActorDefsProfileAssociated>,
   pub viewer: Option<AppBskyActorDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
-  pub created_at: Option<String>,
+  pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -92,8 +158,8 @@ pub struct AppBskyActorDefsProfileView {
   pub description: Option<String>,
   pub avatar: Option<String>,
   pub associated: Option<AppBskyActorDefsProfileAssociated>,
-  pub indexed_at: Option<String>,
-  pub created_at: Option<String>,
+  pub indexed_at: Option<chrono::DateTime<chrono::Utc>>,
+  pub created_at: Option<chrono::DateTime<chrono::Utc>>,
   pub viewer: Option<AppBskyActorDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
 }
@@ -113,8 +179,8 @@ pub struct AppBskyActorDefsProfileViewDetailed {
   pub posts_count: Option<i64>,
   pub associated: Option<AppBskyActorDefsProfileAssociated>,
   pub joined_via_starter_pack: Option<AppBskyGraphDefsStarterPackViewBasic>,
-  pub indexed_at: Option<String>,
-  pub created_at: Option<String>,
+  pub indexed_at: Option<chrono::DateTime<chrono::Utc>>,
+  pub created_at: Option<chrono::DateTime<chrono::Utc>>,
   pub viewer: Option<AppBskyActorDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
 }
@@ -241,7 +307,7 @@ pub struct AppBskyActorDefsSavedFeedsPref {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsPersonalDetailsPref {
   /// The birth date of account owner.,
-  pub birth_date: Option<String>,
+  pub birth_date: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -296,7 +362,7 @@ pub struct AppBskyActorDefsMutedWord {
   /// Groups of users to apply the muted word to. If undefined, applies to all users.,
   pub actor_target: Option<String>,
   /// The date and time at which the muted word will expire and no longer be applied.,
-  pub expires_at: Option<String>,
+  pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -359,7 +425,7 @@ pub struct AppBskyActorDefsNux {
   /// Arbitrary data for the NUX. The structure is defined by the NUX itself. Limited to 300 characters.,
   pub data: Option<String>,
   /// The date and time at which the NUX will expire and should be considered completed.,
-  pub expires_at: Option<String>,
+  pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -408,7 +474,7 @@ pub struct AppBskyActorProfile {
   /// Self-label values, specific to the Bluesky application, on the overall account.,
   pub labels: Option<AppBskyActorProfileLabelsUnion>,
   pub joined_via_starter_pack: Option<ComAtprotoRepoStrongRef>,
-  pub created_at: Option<String>,
+  pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -579,7 +645,7 @@ pub struct AppBskyEmbedRecordViewRecord {
   pub like_count: Option<i64>,
   pub quote_count: Option<i64>,
   pub embeds: Option<Vec<AppBskyEmbedRecordViewRecordEmbedsUnion>>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -703,7 +769,7 @@ pub struct AppBskyFeedDefsPostView {
   pub repost_count: Option<i64>,
   pub like_count: Option<i64>,
   pub quote_count: Option<i64>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub viewer: Option<AppBskyFeedDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub threadgate: Option<AppBskyFeedDefsThreadgateView>,
@@ -776,7 +842,7 @@ pub struct AppBskyFeedDefsReplyRef {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsReasonRepost {
   pub by: AppBskyActorDefsProfileViewBasic,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -851,7 +917,7 @@ pub struct AppBskyFeedDefsGeneratorView {
   pub accepts_interactions: Option<bool>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub viewer: Option<AppBskyFeedDefsGeneratorViewerState>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -952,7 +1018,7 @@ pub struct AppBskyFeedGenerator {
   pub accepts_interactions: Option<bool>,
   /// Self-label values,
   pub labels: Option<AppBskyFeedGeneratorLabelsUnion>,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1027,8 +1093,8 @@ pub struct AppBskyFeedGetLikesOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedGetLikesLike {
-  pub indexed_at: String,
-  pub created_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
+  pub created_at: chrono::DateTime<chrono::Utc>,
   pub actor: AppBskyActorDefsProfileView,
 }
 
@@ -1108,7 +1174,7 @@ pub struct AppBskyFeedGetTimelineOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedLike {
   pub subject: ComAtprotoRepoStrongRef,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1155,7 +1221,7 @@ pub struct AppBskyFeedPost {
   /// Additional hashtags, in addition to any included in post text and facets.,
   pub tags: Option<Vec<String>>,
   /// Client-declared timestamp when this post was originally created.,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1198,7 +1264,7 @@ pub enum AppBskyFeedPostgateEmbeddingRulesUnion {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedPostgate {
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
   /// Reference (AT-URI) to the post record.,
   pub post: String,
   /// List of AT-URIs embedding this post that the author has detached from.,
@@ -1216,7 +1282,7 @@ pub struct AppBskyFeedPostgateDisableRule(pub serde_json::Value);
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedRepost {
   pub subject: ComAtprotoRepoStrongRef,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1258,7 +1324,7 @@ pub struct AppBskyFeedThreadgate {
   /// Reference (AT-URI) to the post record.,
   pub post: String,
   pub allow: Option<Vec<AppBskyFeedThreadgateAllowUnion>>,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
   /// List of hidden reply URIs.,
   pub hidden_replies: Option<Vec<String>>,
 }
@@ -1286,7 +1352,7 @@ pub struct AppBskyFeedThreadgateListRule {
 pub struct AppBskyGraphBlock {
   /// DID of the account to be blocked.,
   pub subject: String,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1301,7 +1367,7 @@ pub struct AppBskyGraphDefsListViewBasic {
   pub list_item_count: Option<i64>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub viewer: Option<AppBskyGraphDefsListViewerState>,
-  pub indexed_at: Option<String>,
+  pub indexed_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1319,7 +1385,7 @@ pub struct AppBskyGraphDefsListView {
   pub list_item_count: Option<i64>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub viewer: Option<AppBskyGraphDefsListViewerState>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1344,7 +1410,7 @@ pub struct AppBskyGraphDefsStarterPackView {
   pub joined_week_count: Option<i64>,
   pub joined_all_time_count: Option<i64>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1359,7 +1425,7 @@ pub struct AppBskyGraphDefsStarterPackViewBasic {
   pub joined_week_count: Option<i64>,
   pub joined_all_time_count: Option<i64>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1400,7 +1466,7 @@ pub struct AppBskyGraphDefsRelationship {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphFollow {
   pub subject: String,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1547,7 +1613,7 @@ pub struct AppBskyGraphList {
   pub description_facets: Option<Vec<AppBskyRichtextFacet>>,
   pub avatar: Option<Blob>,
   pub labels: Option<AppBskyGraphListLabelsUnion>,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 /// Record representing a block relationship against an entire an entire list of accounts (actors).
@@ -1557,7 +1623,7 @@ pub struct AppBskyGraphList {
 pub struct AppBskyGraphListblock {
   /// Reference (AT-URI) to the mod list record.,
   pub subject: String,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 /// Record representing an account's inclusion on a specific list. The AppView will ignore duplicate listitem records.
@@ -1569,7 +1635,7 @@ pub struct AppBskyGraphListitem {
   pub subject: String,
   /// Reference (AT-URI) to the list record (app.bsky.graph.list).,
   pub list: String,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1605,7 +1671,7 @@ pub struct AppBskyGraphStarterpack {
   /// Reference (AT-URI) to the list record.,
   pub list: String,
   pub feeds: Option<Vec<AppBskyGraphStarterpackFeedItem>>,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1645,7 +1711,7 @@ pub struct AppBskyLabelerDefsLabelerView {
   pub creator: AppBskyActorDefsProfileView,
   pub like_count: Option<i64>,
   pub viewer: Option<AppBskyLabelerDefsLabelerViewerState>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
 }
 
@@ -1659,7 +1725,7 @@ pub struct AppBskyLabelerDefsLabelerViewDetailed {
   pub policies: AppBskyLabelerDefsLabelerPolicies,
   pub like_count: Option<i64>,
   pub viewer: Option<AppBskyLabelerDefsLabelerViewerState>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
 }
 
@@ -1710,7 +1776,7 @@ pub enum AppBskyLabelerServiceLabelsUnion {
 pub struct AppBskyLabelerService {
   pub policies: AppBskyLabelerDefsLabelerPolicies,
   pub labels: Option<AppBskyLabelerServiceLabelsUnion>,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1727,7 +1793,7 @@ pub struct AppBskyNotificationListNotificationsOutput {
   pub cursor: Option<String>,
   pub notifications: Vec<AppBskyNotificationListNotificationsNotification>,
   pub priority: Option<bool>,
-  pub seen_at: Option<String>,
+  pub seen_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1742,7 +1808,7 @@ pub struct AppBskyNotificationListNotificationsNotification {
   pub reason_subject: Option<String>,
   pub record: serde_json::Value,
   pub is_read: bool,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
 }
 
@@ -1767,7 +1833,7 @@ pub struct AppBskyNotificationRegisterPushInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyNotificationUpdateSeenInput {
-  pub seen_at: String,
+  pub seen_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2001,7 +2067,7 @@ pub struct ChatBskyConvoDefsMessageView {
   pub facets: Option<Vec<AppBskyRichtextFacet>>,
   pub embed: Option<ChatBskyConvoDefsMessageViewEmbedUnion>,
   pub sender: ChatBskyConvoDefsMessageViewSender,
-  pub sent_at: String,
+  pub sent_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2011,7 +2077,7 @@ pub struct ChatBskyConvoDefsDeletedMessageView {
   pub id: String,
   pub rev: String,
   pub sender: ChatBskyConvoDefsMessageViewSender,
-  pub sent_at: String,
+  pub sent_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2310,13 +2376,13 @@ pub struct ComAtprotoAdminDefsAccountView {
   pub handle: String,
   pub email: Option<String>,
   pub related_records: Option<Vec<serde_json::Value>>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub invited_by: Option<ComAtprotoServerDefsInviteCode>,
   pub invites: Option<Vec<ComAtprotoServerDefsInviteCode>>,
   pub invites_disabled: Option<bool>,
-  pub email_confirmed_at: Option<String>,
+  pub email_confirmed_at: Option<chrono::DateTime<chrono::Utc>>,
   pub invite_note: Option<String>,
-  pub deactivated_at: Option<String>,
+  pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2565,9 +2631,9 @@ pub struct ComAtprotoLabelDefsLabel {
   /// If true, this is a negation label, overwriting a previous label.,
   pub neg: Option<bool>,
   /// Timestamp when this label was created.,
-  pub cts: String,
+  pub cts: chrono::DateTime<chrono::Utc>,
   /// Timestamp at which this label expires (no longer applies).,
-  pub exp: Option<String>,
+  pub exp: Option<chrono::DateTime<chrono::Utc>>,
   pub sig: Option<Vec<u8>>,
 }
 
@@ -2684,7 +2750,7 @@ pub struct ComAtprotoModerationCreateReportOutput {
   pub reason: Option<String>,
   pub subject: ComAtprotoModerationCreateReportOutputSubjectUnion,
   pub reported_by: String,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -3016,7 +3082,7 @@ pub struct ComAtprotoServerCreateAppPasswordInput {
 pub struct ComAtprotoServerCreateAppPasswordAppPassword {
   pub name: String,
   pub password: String,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
   pub privileged: Option<bool>,
 }
 
@@ -3091,7 +3157,7 @@ pub struct ComAtprotoServerCreateSessionOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerDeactivateAccountInput {
   /// A recommendation to server as to how long they should hold onto the deactivated account before deleting.,
-  pub delete_after: Option<String>,
+  pub delete_after: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3103,7 +3169,7 @@ pub struct ComAtprotoServerDefsInviteCode {
   pub disabled: bool,
   pub for_account: String,
   pub created_by: String,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
   pub uses: Vec<ComAtprotoServerDefsInviteCodeUse>,
 }
 
@@ -3112,7 +3178,7 @@ pub struct ComAtprotoServerDefsInviteCode {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerDefsInviteCodeUse {
   pub used_by: String,
-  pub used_at: String,
+  pub used_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3197,7 +3263,7 @@ pub struct ComAtprotoServerListAppPasswordsOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerListAppPasswordsAppPassword {
   pub name: String,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
   pub privileged: Option<bool>,
 }
 
@@ -3367,7 +3433,7 @@ pub struct ComAtprotoSyncSubscribeReposCommit {
   pub ops: Vec<ComAtprotoSyncSubscribeReposRepoOp>,
   pub blobs: Vec<ciborium::Value>,
   /// Timestamp of when this message was originally broadcast.,
-  pub time: String,
+  pub time: chrono::DateTime<chrono::Utc>,
 }
 
 /// Represents a change to an account's identity. Could be an updated handle, signing key, or pds hosting endpoint. Serves as a prod to all downstream services to refresh their identity cache.
@@ -3377,7 +3443,7 @@ pub struct ComAtprotoSyncSubscribeReposCommit {
 pub struct ComAtprotoSyncSubscribeReposIdentity {
   pub seq: i64,
   pub did: String,
-  pub time: String,
+  pub time: chrono::DateTime<chrono::Utc>,
   /// The current handle for the account, or 'handle.invalid' if validation fails. This field is optional, might have been validated or passed-through from an upstream source. Semantics and behaviors for PDS vs Relay may evolve in the future; see atproto specs for more details.,
   pub handle: Option<String>,
 }
@@ -3389,7 +3455,7 @@ pub struct ComAtprotoSyncSubscribeReposIdentity {
 pub struct ComAtprotoSyncSubscribeReposAccount {
   pub seq: i64,
   pub did: String,
-  pub time: String,
+  pub time: chrono::DateTime<chrono::Utc>,
   /// Indicates that the account has a repository which can be fetched from the host that emitted this event.,
   pub active: bool,
   /// If active=false, this optional field indicates a reason for why the account is not active.,
@@ -3404,7 +3470,7 @@ pub struct ComAtprotoSyncSubscribeReposHandle {
   pub seq: i64,
   pub did: String,
   pub handle: String,
-  pub time: String,
+  pub time: chrono::DateTime<chrono::Utc>,
 }
 
 /// DEPRECATED -- Use #account event instead
@@ -3415,7 +3481,7 @@ pub struct ComAtprotoSyncSubscribeReposMigrate {
   pub seq: i64,
   pub did: String,
   pub migrate_to: Option<String>,
-  pub time: String,
+  pub time: chrono::DateTime<chrono::Utc>,
 }
 
 /// DEPRECATED -- Use #account event instead
@@ -3425,7 +3491,7 @@ pub struct ComAtprotoSyncSubscribeReposMigrate {
 pub struct ComAtprotoSyncSubscribeReposTombstone {
   pub seq: i64,
   pub did: String,
-  pub time: String,
+  pub time: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3502,8 +3568,8 @@ pub struct ToolsOzoneCommunicationDefsTemplateView {
   pub lang: Option<String>,
   /// DID of the user who last updated the template.,
   pub last_updated_by: String,
-  pub created_at: String,
-  pub updated_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3598,7 +3664,7 @@ pub struct ToolsOzoneModerationDefsModEventView {
   pub subject: ToolsOzoneModerationDefsModEventViewSubjectUnion,
   pub subject_blob_cids: Vec<String>,
   pub created_by: String,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
   pub creator_handle: Option<String>,
   pub subject_handle: Option<String>,
 }
@@ -3664,7 +3730,7 @@ pub struct ToolsOzoneModerationDefsModEventViewDetail {
   pub subject: ToolsOzoneModerationDefsModEventViewDetailSubjectUnion,
   pub subject_blobs: Vec<ToolsOzoneModerationDefsBlobView>,
   pub created_by: String,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -3685,23 +3751,23 @@ pub struct ToolsOzoneModerationDefsSubjectStatusView {
   pub subject_blob_cids: Option<Vec<String>>,
   pub subject_repo_handle: Option<String>,
   /// Timestamp referencing when the last update was made to the moderation status of the subject,
-  pub updated_at: String,
+  pub updated_at: chrono::DateTime<chrono::Utc>,
   /// Timestamp referencing the first moderation status impacting event was emitted on the subject,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
   pub review_state: ToolsOzoneModerationDefsSubjectReviewState,
   /// Sticky comment on the subject.,
   pub comment: Option<String>,
-  pub mute_until: Option<String>,
-  pub mute_reporting_until: Option<String>,
+  pub mute_until: Option<chrono::DateTime<chrono::Utc>>,
+  pub mute_reporting_until: Option<chrono::DateTime<chrono::Utc>>,
   pub last_reviewed_by: Option<String>,
-  pub last_reviewed_at: Option<String>,
-  pub last_reported_at: Option<String>,
+  pub last_reviewed_at: Option<chrono::DateTime<chrono::Utc>>,
+  pub last_reported_at: Option<chrono::DateTime<chrono::Utc>>,
   /// Timestamp referencing when the author of the subject appealed a moderation action,
-  pub last_appealed_at: Option<String>,
+  pub last_appealed_at: Option<chrono::DateTime<chrono::Utc>>,
   pub takendown: Option<bool>,
   /// True indicates that the a previously taken moderator action was appealed against, by the author of the content. False indicates last appeal was resolved by moderators.,
   pub appealed: Option<bool>,
-  pub suspend_until: Option<String>,
+  pub suspend_until: Option<chrono::DateTime<chrono::Utc>>,
   pub tags: Option<Vec<String>>,
 }
 
@@ -3863,12 +3929,12 @@ pub struct ToolsOzoneModerationDefsRepoView {
   pub handle: String,
   pub email: Option<String>,
   pub related_records: Vec<serde_json::Value>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub moderation: ToolsOzoneModerationDefsModeration,
   pub invited_by: Option<ComAtprotoServerDefsInviteCode>,
   pub invites_disabled: Option<bool>,
   pub invite_note: Option<String>,
-  pub deactivated_at: Option<String>,
+  pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3879,15 +3945,15 @@ pub struct ToolsOzoneModerationDefsRepoViewDetail {
   pub handle: String,
   pub email: Option<String>,
   pub related_records: Vec<serde_json::Value>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub moderation: ToolsOzoneModerationDefsModerationDetail,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub invited_by: Option<ComAtprotoServerDefsInviteCode>,
   pub invites: Option<Vec<ComAtprotoServerDefsInviteCode>>,
   pub invites_disabled: Option<bool>,
   pub invite_note: Option<String>,
-  pub email_confirmed_at: Option<String>,
-  pub deactivated_at: Option<String>,
+  pub email_confirmed_at: Option<chrono::DateTime<chrono::Utc>>,
+  pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3905,7 +3971,7 @@ pub struct ToolsOzoneModerationDefsRecordView {
   pub cid: String,
   pub value: serde_json::Value,
   pub blob_cids: Vec<String>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub moderation: ToolsOzoneModerationDefsModeration,
   pub repo: ToolsOzoneModerationDefsRepoView,
 }
@@ -3919,7 +3985,7 @@ pub struct ToolsOzoneModerationDefsRecordViewDetail {
   pub value: serde_json::Value,
   pub blobs: Vec<ToolsOzoneModerationDefsBlobView>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
-  pub indexed_at: String,
+  pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub moderation: ToolsOzoneModerationDefsModerationDetail,
   pub repo: ToolsOzoneModerationDefsRepoView,
 }
@@ -3961,7 +4027,7 @@ pub struct ToolsOzoneModerationDefsBlobView {
   pub cid: String,
   pub mime_type: String,
   pub size: i64,
-  pub created_at: String,
+  pub created_at: chrono::DateTime<chrono::Utc>,
   pub details: Option<ToolsOzoneModerationDefsBlobViewDetailsUnion>,
   pub moderation: Option<ToolsOzoneModerationDefsModeration>,
 }
@@ -4103,8 +4169,8 @@ pub struct ToolsOzoneTeamDefsMember {
   pub did: String,
   pub disabled: Option<bool>,
   pub profile: Option<AppBskyActorDefsProfileViewDetailed>,
-  pub created_at: Option<String>,
-  pub updated_at: Option<String>,
+  pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+  pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
   pub last_updated_by: Option<String>,
   pub role: String,
 }
@@ -6963,14 +7029,14 @@ impl Atproto {
   pub async fn app_bsky_notification_get_unread_count(
     &self,
     priority: Option<bool>,
-    seen_at: Option<&str>,
+    seen_at: Option<&chrono::DateTime<chrono::Utc>>,
   ) -> Result<AppBskyNotificationGetUnreadCountOutput> {
     let mut query_ = Vec::new();
     if let Some(priority) = &priority {
       query_.push((String::from("priority"), priority.to_string()));
     }
     if let Some(seen_at) = &seen_at {
-      query_.push((String::from("seen_at"), seen_at.to_string()));
+      query_.push((String::from("seen_at"), seen_at.to_rfc3339()));
     }
     let mut request = self
       .client
@@ -7027,7 +7093,7 @@ impl Atproto {
     limit: Option<i64>,
     priority: Option<bool>,
     cursor: Option<&str>,
-    seen_at: Option<&str>,
+    seen_at: Option<&chrono::DateTime<chrono::Utc>>,
   ) -> Result<AppBskyNotificationListNotificationsOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
@@ -7040,7 +7106,7 @@ impl Atproto {
       query_.push((String::from("cursor"), cursor.to_string()));
     }
     if let Some(seen_at) = &seen_at {
-      query_.push((String::from("seen_at"), seen_at.to_string()));
+      query_.push((String::from("seen_at"), seen_at.to_rfc3339()));
     }
     let mut request = self
       .client
@@ -13046,8 +13112,8 @@ impl Atproto {
     types: Option<&[&str]>,
     created_by: Option<&str>,
     sort_direction: Option<&str>,
-    created_after: Option<&str>,
-    created_before: Option<&str>,
+    created_after: Option<&chrono::DateTime<chrono::Utc>>,
+    created_before: Option<&chrono::DateTime<chrono::Utc>>,
     subject: Option<&str>,
     include_all_user_records: Option<bool>,
     limit: Option<i64>,
@@ -13076,10 +13142,10 @@ impl Atproto {
       query_.push((String::from("sort_direction"), sort_direction.to_string()));
     }
     if let Some(created_after) = &created_after {
-      query_.push((String::from("created_after"), created_after.to_string()));
+      query_.push((String::from("created_after"), created_after.to_rfc3339()));
     }
     if let Some(created_before) = &created_before {
-      query_.push((String::from("created_before"), created_before.to_string()));
+      query_.push((String::from("created_before"), created_before.to_rfc3339()));
     }
     if let Some(subject) = &subject {
       query_.push((String::from("subject"), subject.to_string()));
@@ -13213,10 +13279,10 @@ impl Atproto {
     include_all_user_records: Option<bool>,
     subject: Option<&str>,
     comment: Option<&str>,
-    reported_after: Option<&str>,
-    reported_before: Option<&str>,
-    reviewed_after: Option<&str>,
-    reviewed_before: Option<&str>,
+    reported_after: Option<&chrono::DateTime<chrono::Utc>>,
+    reported_before: Option<&chrono::DateTime<chrono::Utc>>,
+    reviewed_after: Option<&chrono::DateTime<chrono::Utc>>,
+    reviewed_before: Option<&chrono::DateTime<chrono::Utc>>,
     include_muted: Option<bool>,
     only_muted: Option<bool>,
     review_state: Option<&str>,
@@ -13245,16 +13311,22 @@ impl Atproto {
       query_.push((String::from("comment"), comment.to_string()));
     }
     if let Some(reported_after) = &reported_after {
-      query_.push((String::from("reported_after"), reported_after.to_string()));
+      query_.push((String::from("reported_after"), reported_after.to_rfc3339()));
     }
     if let Some(reported_before) = &reported_before {
-      query_.push((String::from("reported_before"), reported_before.to_string()));
+      query_.push((
+        String::from("reported_before"),
+        reported_before.to_rfc3339(),
+      ));
     }
     if let Some(reviewed_after) = &reviewed_after {
-      query_.push((String::from("reviewed_after"), reviewed_after.to_string()));
+      query_.push((String::from("reviewed_after"), reviewed_after.to_rfc3339()));
     }
     if let Some(reviewed_before) = &reviewed_before {
-      query_.push((String::from("reviewed_before"), reviewed_before.to_string()));
+      query_.push((
+        String::from("reviewed_before"),
+        reviewed_before.to_rfc3339(),
+      ));
     }
     if let Some(include_muted) = &include_muted {
       query_.push((String::from("include_muted"), include_muted.to_string()));
