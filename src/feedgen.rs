@@ -1,5 +1,8 @@
+//! Feed Generator
+
 use crate::*;
 
+/// Dynamic Feed Generator, which returns different feeds each time it is accessed
 #[async_trait::async_trait]
 pub trait FeedGeneratorDynamic: Sync + Send {
   fn feed(&self) -> FeedGeneratorFeed;
@@ -11,6 +14,7 @@ pub trait FeedGeneratorDynamic: Sync + Send {
   ) -> std::result::Result<AppBskyFeedGetFeedSkeletonOutput, axum::http::StatusCode>;
 }
 
+/// Feed Generator record
 #[derive(Clone)]
 pub struct FeedGeneratorFeed {
   pub owner: String,
@@ -26,6 +30,7 @@ pub struct FeedGeneratorFeed {
   pub alias: Option<String>,
 }
 
+/// Feed Generator snapshot for serialization
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FeedGeneratorFeedSnapshot {
   pub owner: String,
@@ -42,6 +47,7 @@ pub struct FeedGeneratorFeedSnapshot {
 }
 
 impl FeedGeneratorFeed {
+  /// convert Feed Generator snapshot from Feed Generator record
   pub async fn snapshot(&self, avatar_filename: Option<&str>) -> FeedGeneratorFeedSnapshot {
     let cache = { self.cache.read().await.clone() };
     let mut snapshot = FeedGeneratorFeedSnapshot {
@@ -73,6 +79,7 @@ impl FeedGeneratorFeed {
     snapshot
   }
 
+  /// convert Feed Generator record from Feed Generator snapshot
   pub fn from_snapshot(snapshot: &FeedGeneratorFeedSnapshot) -> Self {
     let mut feed = Self {
       owner: snapshot.owner.clone(),
@@ -100,6 +107,7 @@ impl FeedGeneratorFeed {
     feed
   }
 
+  /// create new Feed Generator record
   pub fn new(owner_did: &str, rkey: &str, display_name: &str) -> Self {
     Self {
       owner: owner_did.to_string(),
@@ -116,6 +124,7 @@ impl FeedGeneratorFeed {
     }
   }
 
+  /// create new Feed Generator record, which is an alias of the other Feed Generator record
   pub fn alias(owner_did: &str, rkey: &str, display_name: &str, alias: &str) -> Self {
     Self {
       owner: owner_did.to_string(),
@@ -132,6 +141,7 @@ impl FeedGeneratorFeed {
     }
   }
 
+  /// add description to Feed Generator record
   pub fn add_description(&mut self, description: &str, decoration: Vec<TextDecoration>) {
     self.description = (!description.is_empty()).then(|| description.to_string());
     self.description_facets = (!decoration.is_empty()).then(|| {
@@ -143,10 +153,12 @@ impl FeedGeneratorFeed {
     });
   }
 
+  /// add avatar to Feed Generator record from binary
   pub fn add_avatar(&mut self, avatar: &[u8], mime_type: &str) {
     self.avatar = (!avatar.is_empty()).then(|| (avatar.to_vec(), mime_type.to_string()));
   }
 
+  /// add avatar to Feed Generator record from file
   pub fn add_avatar_from_file(&mut self, path: &str) {
     self.avatar = std::fs::read(path).ok().and_then(|d| {
       mime_guess::from_path(path)
@@ -155,6 +167,7 @@ impl FeedGeneratorFeed {
     });
   }
 
+  /// add labels to Feed Generator record
   pub fn add_labels(&mut self, labels: &[String]) {
     self.labels = (!labels.is_empty()).then(|| {
       AppBskyFeedGeneratorLabelsUnion::ComAtprotoLabelDefsSelfLabels(Box::new(
@@ -168,6 +181,7 @@ impl FeedGeneratorFeed {
     });
   }
 
+  /// convert atproto Record from Feed Generator record
   pub fn to_atproto(&self, server: &str, avatar: Option<Blob>) -> AppBskyFeedGenerator {
     AppBskyFeedGenerator {
       did: format!("did:web:{server}"),
@@ -181,15 +195,18 @@ impl FeedGeneratorFeed {
     }
   }
 
+  /// get at-uri from Feed Generator record
   pub fn to_aturi(&self) -> String {
     format!("at://{}/app.bsky.feed.generator/{}", self.owner, self.rkey)
   }
 
+  /// push post into Feed Generator to return feeds when it is accessed
   pub async fn push_post(&mut self, aturi: &str) {
     self.cache.write().await.push_front(aturi.to_string());
   }
 }
 
+/// access logs of the Feed Generators
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FeedGeneratorAccessLog {
   pub did: String,
@@ -204,6 +221,7 @@ pub struct FeedGeneratorAccessLog {
 }
 
 impl FeedGeneratorAccessLog {
+  /// create a log
   pub fn new(
     feed: &str,
     cursor: &Option<String>,
@@ -223,6 +241,7 @@ impl FeedGeneratorAccessLog {
     })
   }
 
+  /// store result SUCCESS
   pub fn success(&mut self, len: usize, next: &Option<String>) {
     self.status_code = axum::http::StatusCode::OK.as_u16();
     self.len = Some(len);
@@ -230,6 +249,7 @@ impl FeedGeneratorAccessLog {
     self.returned_at = chrono::Utc::now();
   }
 
+  /// store result ERROR
   pub fn error(&mut self, code: &axum::http::StatusCode) {
     self.status_code = code.as_u16();
     self.len = None;
@@ -238,6 +258,7 @@ impl FeedGeneratorAccessLog {
   }
 }
 
+/// Feed Generator server
 #[derive(Clone)]
 pub struct FeedGenerator {
   pub hostname: String,
@@ -250,6 +271,7 @@ pub struct FeedGenerator {
 }
 
 impl FeedGenerator {
+  /// create a new Feed Generator server
   pub fn new(hostname: &str) -> Self {
     Self {
       hostname: hostname.to_string(),
@@ -261,6 +283,7 @@ impl FeedGenerator {
     }
   }
 
+  /// insert a Feed Generator record
   pub async fn insert_feed(
     &mut self,
     feed: FeedGeneratorFeed,
@@ -294,6 +317,7 @@ impl FeedGenerator {
     Ok(())
   }
 
+  /// insert a Dynamic Feed Generator
   pub async fn insert_dynamic(
     &mut self,
     dynamic: Box<dyn FeedGeneratorDynamic>,
@@ -308,14 +332,17 @@ impl FeedGenerator {
     Ok(())
   }
 
+  /// set Feed Generator server privacy policy
   pub fn set_privacy_policy(&mut self, privacy_policy: &str) {
     self.privacy_policy = (!privacy_policy.is_empty()).then(|| privacy_policy.to_string());
   }
 
+  /// set Feed Generator terms of service
   pub fn set_terms_of_service(&mut self, terms_of_service: &str) {
     self.terms_of_service = (!terms_of_service.is_empty()).then(|| terms_of_service.to_string());
   }
 
+  /// start Feed Generator server
   pub async fn start(&self) -> crate::Result<()> {
     let app = axum::Router::new()
       .route("/xrpc/:nsid", axum::routing::get(xrpc_server))
@@ -326,14 +353,17 @@ impl FeedGenerator {
     Ok(())
   }
 
+  /// record access log
   pub async fn insert_log(&self, log: FeedGeneratorAccessLog) {
     self.access_log.write().await.push(log);
   }
 
+  /// read access logs
   pub async fn read_log(&self) -> Vec<FeedGeneratorAccessLog> {
     self.access_log.read().await.clone()
   }
 
+  /// read access logs and erase all access logs
   pub async fn read_log_and_clean(&self) -> Vec<FeedGeneratorAccessLog> {
     let mut lock = self.access_log.write().await;
     let ret = lock.clone();
@@ -342,6 +372,7 @@ impl FeedGenerator {
   }
 }
 
+/// axum handler of .well-known did-doc
 async fn did_document(
   axum::extract::State(server): axum::extract::State<FeedGenerator>,
 ) -> axum::response::Response {
@@ -356,7 +387,7 @@ async fn did_document(
   axum::response::IntoResponse::into_response(axum::Json(document))
 }
 
-#[axum::debug_handler]
+/// axum handler of xrpc server
 async fn xrpc_server(
   headers: axum::http::HeaderMap,
   axum::extract::Path(nsid): axum::extract::Path<String>,

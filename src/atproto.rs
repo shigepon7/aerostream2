@@ -1,14 +1,24 @@
+//! auto generated from https://github.com/bluesky-social/atproto/tree/main/lexicons
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
+  /// http request error
   Reqwest(reqwest::Error),
+  /// websocket error
   WebSocket(reqwest_websocket::Error),
+  /// json parse error
   Parse((serde_json::Error, String)),
+  /// I/O error
   Io(std::io::Error),
+  /// block decode error
   CarDecode(String),
+  /// block encode error
   CarEncode(String),
+  /// rate limit
   Rate((i64, i64, i64, String)),
+  /// other error
   Other(String),
 }
 
@@ -138,13 +148,18 @@ pub struct Blob {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsProfileViewBasic {
+  /// [format: did]
   pub did: String,
+  /// [format: handle]
   pub handle: String,
+  /// [max_graphemes: 64] [max_length: 640]
   pub display_name: Option<String>,
+  /// [format: uri]
   pub avatar: Option<String>,
   pub associated: Option<AppBskyActorDefsProfileAssociated>,
   pub viewer: Option<AppBskyActorDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
+  /// [format: datetime]
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -152,13 +167,20 @@ pub struct AppBskyActorDefsProfileViewBasic {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsProfileView {
+  /// [format: did]
   pub did: String,
+  /// [format: handle]
   pub handle: String,
+  /// [max_graphemes: 64] [max_length: 640]
   pub display_name: Option<String>,
+  /// [max_graphemes: 256] [max_length: 2560]
   pub description: Option<String>,
+  /// [format: uri]
   pub avatar: Option<String>,
   pub associated: Option<AppBskyActorDefsProfileAssociated>,
+  /// [format: datetime]
   pub indexed_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
   pub viewer: Option<AppBskyActorDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
@@ -168,21 +190,30 @@ pub struct AppBskyActorDefsProfileView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsProfileViewDetailed {
+  /// [format: did]
   pub did: String,
+  /// [format: handle]
   pub handle: String,
+  /// [max_graphemes: 64] [max_length: 640]
   pub display_name: Option<String>,
+  /// [max_graphemes: 256] [max_length: 2560]
   pub description: Option<String>,
+  /// [format: uri]
   pub avatar: Option<String>,
+  /// [format: uri]
   pub banner: Option<String>,
   pub followers_count: Option<i64>,
   pub follows_count: Option<i64>,
   pub posts_count: Option<i64>,
   pub associated: Option<AppBskyActorDefsProfileAssociated>,
   pub joined_via_starter_pack: Option<AppBskyGraphDefsStarterPackViewBasic>,
+  /// [format: datetime]
   pub indexed_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
   pub viewer: Option<AppBskyActorDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
+  pub pinned_post: Option<ComAtprotoRepoStrongRef>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -200,6 +231,7 @@ pub struct AppBskyActorDefsProfileAssociated {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsProfileAssociatedChat {
+  /// [known_values: ["all", "none", "following"]]
   pub allow_incoming: String,
 }
 
@@ -211,9 +243,12 @@ pub struct AppBskyActorDefsViewerState {
   pub muted: Option<bool>,
   pub muted_by_list: Option<AppBskyGraphDefsListViewBasic>,
   pub blocked_by: Option<bool>,
+  /// [format: at-uri]
   pub blocking: Option<String>,
   pub blocking_by_list: Option<AppBskyGraphDefsListViewBasic>,
+  /// [format: at-uri]
   pub following: Option<String>,
+  /// [format: at-uri]
   pub followed_by: Option<String>,
   pub known_followers: Option<AppBskyActorDefsKnownFollowers>,
 }
@@ -224,6 +259,7 @@ pub struct AppBskyActorDefsViewerState {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsKnownFollowers {
   pub count: i64,
+  /// [min_length: 0] [max_length: 5]
   pub followers: Vec<AppBskyActorDefsProfileViewBasic>,
 }
 
@@ -263,6 +299,7 @@ pub struct AppBskyActorDefsPreferences(pub Vec<AppBskyActorDefsPreferencesUnion>
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsAdultContentPref {
+  /// [default: false]
   pub enabled: bool,
 }
 
@@ -270,9 +307,10 @@ pub struct AppBskyActorDefsAdultContentPref {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsContentLabelPref {
-  /// Which labeler does this preference apply to? If undefined, applies globally.,
+  /// [format: did] Which labeler does this preference apply to? If undefined, applies globally.
   pub labeler_did: Option<String>,
   pub label: String,
+  /// [known_values: ["ignore", "show", "warn", "hide"]]
   pub visibility: String,
 }
 
@@ -281,6 +319,7 @@ pub struct AppBskyActorDefsContentLabelPref {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsSavedFeed {
   pub id: String,
+  /// [known_values: ["feed", "list", "timeline"]]
   pub type_: String,
   pub value: String,
   pub pinned: bool,
@@ -306,7 +345,7 @@ pub struct AppBskyActorDefsSavedFeedsPref {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsPersonalDetailsPref {
-  /// The birth date of account owner.,
+  /// [format: datetime] The birth date of account owner.
   pub birth_date: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -314,17 +353,17 @@ pub struct AppBskyActorDefsPersonalDetailsPref {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsFeedViewPref {
-  /// The URI of the feed, or an identifier which describes the feed.,
+  /// The URI of the feed, or an identifier which describes the feed.
   pub feed: String,
-  /// Hide replies in the feed.,
+  /// Hide replies in the feed.
   pub hide_replies: Option<bool>,
-  /// Hide replies in the feed if they are not by followed users.,
+  /// [default: true] Hide replies in the feed if they are not by followed users.
   pub hide_replies_by_unfollowed: Option<bool>,
-  /// Hide replies in the feed if they do not have this number of likes.,
+  /// Hide replies in the feed if they do not have this number of likes.
   pub hide_replies_by_like_count: Option<i64>,
-  /// Hide reposts in the feed.,
+  /// Hide reposts in the feed.
   pub hide_reposts: Option<bool>,
-  /// Hide quote posts in the feed.,
+  /// Hide quote posts in the feed.
   pub hide_quote_posts: Option<bool>,
 }
 
@@ -332,9 +371,9 @@ pub struct AppBskyActorDefsFeedViewPref {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsThreadViewPref {
-  /// Sorting mode for threads.,
+  /// [known_values: ["oldest", "newest", "most-likes", "random"]] Sorting mode for threads.
   pub sort: Option<String>,
-  /// Show followed users at the top of all replies.,
+  /// Show followed users at the top of all replies.
   pub prioritize_followed_users: Option<bool>,
 }
 
@@ -342,7 +381,7 @@ pub struct AppBskyActorDefsThreadViewPref {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsInterestsPref {
-  /// A list of tags which describe the account owner's interests gathered during onboarding.,
+  /// [max_length: 100] A list of tags which describe the account owner's interests gathered during onboarding.
   pub tags: Vec<String>,
 }
 
@@ -355,13 +394,13 @@ pub struct AppBskyActorDefsMutedWordTarget(pub String);
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsMutedWord {
   pub id: Option<String>,
-  /// The muted word itself.,
+  /// [max_graphemes: 1000] [max_length: 10000] The muted word itself.
   pub value: String,
-  /// The intended targets of the muted word.,
+  /// The intended targets of the muted word.
   pub targets: Vec<AppBskyActorDefsMutedWordTarget>,
-  /// Groups of users to apply the muted word to. If undefined, applies to all users.,
+  /// [known_values: ["all", "exclude-following"]] [default: all] Groups of users to apply the muted word to. If undefined, applies to all users.
   pub actor_target: Option<String>,
-  /// The date and time at which the muted word will expire and no longer be applied.,
+  /// [format: datetime] The date and time at which the muted word will expire and no longer be applied.
   pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -369,7 +408,7 @@ pub struct AppBskyActorDefsMutedWord {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsMutedWordsPref {
-  /// A list of words the account owner has muted.,
+  /// A list of words the account owner has muted.
   pub items: Vec<AppBskyActorDefsMutedWord>,
 }
 
@@ -377,7 +416,7 @@ pub struct AppBskyActorDefsMutedWordsPref {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsHiddenPostsPref {
-  /// A list of URIs of posts the account owner has hidden.,
+  /// A list of URIs of posts the account owner has hidden.
   pub items: Vec<String>,
 }
 
@@ -392,6 +431,7 @@ pub struct AppBskyActorDefsLabelersPref {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsLabelerPrefItem {
+  /// [format: did]
   pub did: String,
 }
 
@@ -401,9 +441,9 @@ pub struct AppBskyActorDefsLabelerPrefItem {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsBskyAppStatePref {
   pub active_progress_guide: Option<AppBskyActorDefsBskyAppProgressGuide>,
-  /// An array of tokens which identify nudges (modals, popups, tours, highlight dots) that should be shown to the user.,
+  /// [max_length: 1000] An array of tokens which identify nudges (modals, popups, tours, highlight dots) that should be shown to the user.
   pub queued_nudges: Option<Vec<String>>,
-  /// Storage for NUXs the user has encountered.,
+  /// [max_length: 100] Storage for NUXs the user has encountered.
   pub nuxs: Option<Vec<AppBskyActorDefsNux>>,
 }
 
@@ -412,6 +452,7 @@ pub struct AppBskyActorDefsBskyAppStatePref {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsBskyAppProgressGuide {
+  /// [max_length: 100]
   pub guide: String,
 }
 
@@ -420,11 +461,13 @@ pub struct AppBskyActorDefsBskyAppProgressGuide {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsNux {
+  /// [max_length: 100]
   pub id: String,
+  /// [default: false]
   pub completed: bool,
-  /// Arbitrary data for the NUX. The structure is defined by the NUX itself. Limited to 300 characters.,
+  /// [max_graphemes: 300] [max_length: 3000] Arbitrary data for the NUX. The structure is defined by the NUX itself. Limited to 300 characters.
   pub data: Option<String>,
-  /// The date and time at which the NUX will expire and should be considered completed.,
+  /// [format: datetime] The date and time at which the NUX will expire and should be considered completed.
   pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -464,16 +507,19 @@ pub enum AppBskyActorProfileLabelsUnion {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorProfile {
+  /// [max_graphemes: 64] [max_length: 640],
   pub display_name: Option<String>,
-  /// Free-form profile description text.,
+  /// [max_graphemes: 256] [max_length: 2560] Free-form profile description text.,
   pub description: Option<String>,
-  /// Small image to be displayed next to posts from account. AKA, 'profile picture',
+  /// [accept: ["image/png", "image/jpeg"]] [max_size: 1000000] Small image to be displayed next to posts from account. AKA, 'profile picture',
   pub avatar: Option<Blob>,
-  /// Larger horizontal image to display behind profile view.,
+  /// [accept: ["image/png", "image/jpeg"]] [max_size: 1000000] Larger horizontal image to display behind profile view.,
   pub banner: Option<Blob>,
   /// Self-label values, specific to the Bluesky application, on the overall account.,
   pub labels: Option<AppBskyActorProfileLabelsUnion>,
   pub joined_via_starter_pack: Option<ComAtprotoRepoStrongRef>,
+  pub pinned_post: Option<ComAtprotoRepoStrongRef>,
+  /// [format: datetime],
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -504,7 +550,9 @@ pub struct AppBskyActorSearchActorsTypeaheadOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedDefsAspectRatio {
+  /// [minimum: 1]
   pub width: i64,
+  /// [minimum: 1]
   pub height: i64,
 }
 
@@ -520,9 +568,11 @@ pub struct AppBskyEmbedExternal {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedExternalExternal {
+  /// [format: uri]
   pub uri: String,
   pub title: String,
   pub description: String,
+  /// [accept: ["image/*"]] [max_size: 1000000]
   pub thumb: Option<Blob>,
 }
 
@@ -537,9 +587,11 @@ pub struct AppBskyEmbedExternalView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedExternalViewExternal {
+  /// [format: uri]
   pub uri: String,
   pub title: String,
   pub description: String,
+  /// [format: uri]
   pub thumb: Option<String>,
 }
 
@@ -547,6 +599,7 @@ pub struct AppBskyEmbedExternalViewExternal {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedImages {
+  /// [max_length: 4]
   pub images: Vec<AppBskyEmbedImagesImage>,
 }
 
@@ -554,8 +607,9 @@ pub struct AppBskyEmbedImages {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedImagesImage {
+  /// [accept: ["image/*"]] [max_size: 1000000]
   pub image: Blob,
-  /// Alt text description of the image, for accessibility.,
+  /// Alt text description of the image, for accessibility.
   pub alt: String,
   pub aspect_ratio: Option<AppBskyEmbedDefsAspectRatio>,
 }
@@ -564,6 +618,7 @@ pub struct AppBskyEmbedImagesImage {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedImagesView {
+  /// [max_length: 4]
   pub images: Vec<AppBskyEmbedImagesViewImage>,
 }
 
@@ -571,11 +626,11 @@ pub struct AppBskyEmbedImagesView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedImagesViewImage {
-  /// Fully-qualified URL where a thumbnail of the image can be fetched. For example, CDN location provided by the App View.,
+  /// [format: uri] Fully-qualified URL where a thumbnail of the image can be fetched. For example, CDN location provided by the App View.
   pub thumb: String,
-  /// Fully-qualified URL where a large version of the image can be fetched. May or may not be the exact original blob. For example, CDN location provided by the App View.,
+  /// [format: uri] Fully-qualified URL where a large version of the image can be fetched. May or may not be the exact original blob. For example, CDN location provided by the App View.
   pub fullsize: String,
-  /// Alt text description of the image, for accessibility.,
+  /// Alt text description of the image, for accessibility.
   pub alt: String,
   pub aspect_ratio: Option<AppBskyEmbedDefsAspectRatio>,
 }
@@ -634,10 +689,12 @@ pub enum AppBskyEmbedRecordViewRecordEmbedsUnion {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedRecordViewRecord {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub author: AppBskyActorDefsProfileViewBasic,
-  /// The record data itself.,
+  /// The record data itself.
   pub value: serde_json::Value,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub reply_count: Option<i64>,
@@ -645,6 +702,7 @@ pub struct AppBskyEmbedRecordViewRecord {
   pub like_count: Option<i64>,
   pub quote_count: Option<i64>,
   pub embeds: Option<Vec<AppBskyEmbedRecordViewRecordEmbedsUnion>>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -652,7 +710,9 @@ pub struct AppBskyEmbedRecordViewRecord {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedRecordViewNotFound {
+  /// [format: at-uri]
   pub uri: String,
+  /// [const: true]
   pub not_found: bool,
 }
 
@@ -660,7 +720,9 @@ pub struct AppBskyEmbedRecordViewNotFound {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedRecordViewBlocked {
+  /// [format: at-uri]
   pub uri: String,
+  /// [const: true]
   pub blocked: bool,
   pub author: AppBskyFeedDefsBlockedAuthor,
 }
@@ -669,7 +731,9 @@ pub struct AppBskyEmbedRecordViewBlocked {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedRecordViewDetached {
+  /// [format: at-uri]
   pub uri: String,
+  /// [const: true]
   pub detached: bool,
 }
 
@@ -715,9 +779,11 @@ pub struct AppBskyEmbedRecordWithMediaView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedVideo {
+  /// [accept: ["video/mp4"]] [max_size: 50000000]
   pub video: Blob,
+  /// [max_length: 20]
   pub captions: Option<Vec<AppBskyEmbedVideoCaption>>,
-  /// Alt text description of the video, for accessibility.,
+  /// [max_graphemes: 1000] [max_length: 10000] Alt text description of the video, for accessibility.
   pub alt: Option<String>,
   pub aspect_ratio: Option<AppBskyEmbedDefsAspectRatio>,
 }
@@ -726,7 +792,9 @@ pub struct AppBskyEmbedVideo {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedVideoCaption {
+  /// [format: language]
   pub lang: String,
+  /// [accept: ["text/vtt"]] [max_size: 20000]
   pub file: Blob,
 }
 
@@ -734,9 +802,13 @@ pub struct AppBskyEmbedVideoCaption {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedVideoView {
+  /// [format: cid]
   pub cid: String,
+  /// [format: uri]
   pub playlist: String,
+  /// [format: uri]
   pub thumbnail: Option<String>,
+  /// [max_graphemes: 1000] [max_length: 10000]
   pub alt: Option<String>,
   pub aspect_ratio: Option<AppBskyEmbedDefsAspectRatio>,
 }
@@ -760,7 +832,9 @@ pub enum AppBskyFeedDefsPostViewEmbedUnion {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsPostView {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub author: AppBskyActorDefsProfileViewBasic,
   pub record: serde_json::Value,
@@ -769,6 +843,7 @@ pub struct AppBskyFeedDefsPostView {
   pub repost_count: Option<i64>,
   pub like_count: Option<i64>,
   pub quote_count: Option<i64>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub viewer: Option<AppBskyFeedDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
@@ -780,11 +855,14 @@ pub struct AppBskyFeedDefsPostView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsViewerState {
+  /// [format: at-uri]
   pub repost: Option<String>,
+  /// [format: at-uri]
   pub like: Option<String>,
   pub thread_muted: Option<bool>,
   pub reply_disabled: Option<bool>,
   pub embedding_disabled: Option<bool>,
+  pub pinned: Option<bool>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -792,6 +870,8 @@ pub struct AppBskyFeedDefsViewerState {
 pub enum AppBskyFeedDefsFeedViewPostReasonUnion {
   #[serde(rename = "app.bsky.feed.defs#reasonRepost")]
   AppBskyFeedDefsReasonRepost(Box<AppBskyFeedDefsReasonRepost>),
+  #[serde(rename = "app.bsky.feed.defs#reasonPin")]
+  AppBskyFeedDefsReasonPin(Box<AppBskyFeedDefsReasonPin>),
 }
 
 #[serde_with::skip_serializing_none]
@@ -801,7 +881,7 @@ pub struct AppBskyFeedDefsFeedViewPost {
   pub post: AppBskyFeedDefsPostView,
   pub reply: Option<AppBskyFeedDefsReplyRef>,
   pub reason: Option<AppBskyFeedDefsFeedViewPostReasonUnion>,
-  /// Context provided by feed generator that may be passed back alongside interactions.,
+  /// [max_length: 2000] Context provided by feed generator that may be passed back alongside interactions.
   pub feed_context: Option<String>,
 }
 
@@ -833,7 +913,7 @@ pub enum AppBskyFeedDefsReplyRefParentUnion {
 pub struct AppBskyFeedDefsReplyRef {
   pub root: AppBskyFeedDefsReplyRefRootUnion,
   pub parent: AppBskyFeedDefsReplyRefParentUnion,
-  /// When parent is a reply to another post, this is the author of that post.,
+  /// When parent is a reply to another post, this is the author of that post.
   pub grandparent_author: Option<AppBskyActorDefsProfileViewBasic>,
 }
 
@@ -842,8 +922,12 @@ pub struct AppBskyFeedDefsReplyRef {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsReasonRepost {
   pub by: AppBskyActorDefsProfileViewBasic,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
 }
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AppBskyFeedDefsReasonPin(pub serde_json::Value);
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
@@ -880,7 +964,9 @@ pub struct AppBskyFeedDefsThreadViewPost {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsNotFoundPost {
+  /// [format: at-uri]
   pub uri: String,
+  /// [const: true]
   pub not_found: bool,
 }
 
@@ -888,7 +974,9 @@ pub struct AppBskyFeedDefsNotFoundPost {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsBlockedPost {
+  /// [format: at-uri]
   pub uri: String,
+  /// [const: true]
   pub blocked: bool,
   pub author: AppBskyFeedDefsBlockedAuthor,
 }
@@ -897,6 +985,7 @@ pub struct AppBskyFeedDefsBlockedPost {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsBlockedAuthor {
+  /// [format: did]
   pub did: String,
   pub viewer: Option<AppBskyActorDefsViewerState>,
 }
@@ -905,18 +994,25 @@ pub struct AppBskyFeedDefsBlockedAuthor {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsGeneratorView {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
+  /// [format: did]
   pub did: String,
   pub creator: AppBskyActorDefsProfileView,
   pub display_name: String,
+  /// [max_graphemes: 300] [max_length: 3000]
   pub description: Option<String>,
   pub description_facets: Option<Vec<AppBskyRichtextFacet>>,
+  /// [format: uri]
   pub avatar: Option<String>,
+  /// [minimum: 0]
   pub like_count: Option<i64>,
   pub accepts_interactions: Option<bool>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub viewer: Option<AppBskyFeedDefsGeneratorViewerState>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -924,6 +1020,7 @@ pub struct AppBskyFeedDefsGeneratorView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsGeneratorViewerState {
+  /// [format: at-uri]
   pub like: Option<String>,
 }
 
@@ -932,15 +1029,18 @@ pub struct AppBskyFeedDefsGeneratorViewerState {
 pub enum AppBskyFeedDefsSkeletonFeedPostReasonUnion {
   #[serde(rename = "app.bsky.feed.defs#skeletonReasonRepost")]
   AppBskyFeedDefsSkeletonReasonRepost(Box<AppBskyFeedDefsSkeletonReasonRepost>),
+  #[serde(rename = "app.bsky.feed.defs#skeletonReasonPin")]
+  AppBskyFeedDefsSkeletonReasonPin(Box<AppBskyFeedDefsSkeletonReasonPin>),
 }
 
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsSkeletonFeedPost {
+  /// [format: at-uri]
   pub post: String,
   pub reason: Option<AppBskyFeedDefsSkeletonFeedPostReasonUnion>,
-  /// Context that will be passed through to client and may be passed to feed generator back alongside interactions.,
+  /// [max_length: 2000] Context that will be passed through to client and may be passed to feed generator back alongside interactions.
   pub feed_context: Option<String>,
 }
 
@@ -948,14 +1048,20 @@ pub struct AppBskyFeedDefsSkeletonFeedPost {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsSkeletonReasonRepost {
+  /// [format: at-uri]
   pub repost: String,
 }
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AppBskyFeedDefsSkeletonReasonPin(pub serde_json::Value);
 
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsThreadgateView {
+  /// [format: at-uri]
   pub uri: Option<String>,
+  /// [format: cid]
   pub cid: Option<String>,
   pub record: Option<serde_json::Value>,
   pub lists: Option<Vec<AppBskyGraphDefsListViewBasic>>,
@@ -965,9 +1071,11 @@ pub struct AppBskyFeedDefsThreadgateView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsInteraction {
+  /// [format: at-uri]
   pub item: Option<String>,
+  /// [known_values: ["app.bsky.feed.defs#requestLess", "app.bsky.feed.defs#requestMore", "app.bsky.feed.defs#clickthroughItem", "app.bsky.feed.defs#clickthroughAuthor", "app.bsky.feed.defs#clickthroughReposter", "app.bsky.feed.defs#clickthroughEmbed", "app.bsky.feed.defs#interactionSeen", "app.bsky.feed.defs#interactionLike", "app.bsky.feed.defs#interactionRepost", "app.bsky.feed.defs#interactionReply", "app.bsky.feed.defs#interactionQuote", "app.bsky.feed.defs#interactionShare"]]
   pub event: Option<String>,
-  /// Context on a feed item that was originally supplied by the feed generator on getFeedSkeleton.,
+  /// [max_length: 2000] Context on a feed item that was originally supplied by the feed generator on getFeedSkeleton.
   pub feed_context: Option<String>,
 }
 
@@ -975,6 +1083,7 @@ pub struct AppBskyFeedDefsInteraction {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDescribeFeedGeneratorOutput {
+  /// [format: did]
   pub did: String,
   pub feeds: Vec<AppBskyFeedDescribeFeedGeneratorFeed>,
   pub links: Option<AppBskyFeedDescribeFeedGeneratorLinks>,
@@ -984,6 +1093,7 @@ pub struct AppBskyFeedDescribeFeedGeneratorOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDescribeFeedGeneratorFeed {
+  /// [format: at-uri]
   pub uri: String,
 }
 
@@ -1009,15 +1119,20 @@ pub enum AppBskyFeedGeneratorLabelsUnion {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedGenerator {
+  /// [format: did],
   pub did: String,
+  /// [max_graphemes: 24] [max_length: 240],
   pub display_name: String,
+  /// [max_graphemes: 300] [max_length: 3000],
   pub description: Option<String>,
   pub description_facets: Option<Vec<AppBskyRichtextFacet>>,
+  /// [accept: ["image/png", "image/jpeg"]] [max_size: 1000000],
   pub avatar: Option<Blob>,
   /// Declaration that a feed accepts feedback interactions from a client through app.bsky.feed.sendInteractions,
   pub accepts_interactions: Option<bool>,
   /// Self-label values,
   pub labels: Option<AppBskyFeedGeneratorLabelsUnion>,
+  /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1058,9 +1173,9 @@ pub struct AppBskyFeedGetFeedOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedGetFeedGeneratorOutput {
   pub view: AppBskyFeedDefsGeneratorView,
-  /// Indicates whether the feed generator service has been online recently, or else seems to be inactive.,
+  /// Indicates whether the feed generator service has been online recently, or else seems to be inactive.
   pub is_online: bool,
-  /// Indicates whether the feed generator service is compatible with the record declaration.,
+  /// Indicates whether the feed generator service is compatible with the record declaration.
   pub is_valid: bool,
 }
 
@@ -1083,7 +1198,9 @@ pub struct AppBskyFeedGetFeedSkeletonOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedGetLikesOutput {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: Option<String>,
   pub cursor: Option<String>,
   pub likes: Vec<AppBskyFeedGetLikesLike>,
@@ -1093,7 +1210,9 @@ pub struct AppBskyFeedGetLikesOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedGetLikesLike {
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
+  /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub actor: AppBskyActorDefsProfileView,
 }
@@ -1136,7 +1255,9 @@ pub struct AppBskyFeedGetPostsOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedGetQuotesOutput {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: Option<String>,
   pub cursor: Option<String>,
   pub posts: Vec<AppBskyFeedDefsPostView>,
@@ -1146,7 +1267,9 @@ pub struct AppBskyFeedGetQuotesOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedGetRepostedByOutput {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: Option<String>,
   pub cursor: Option<String>,
   pub reposted_by: Vec<AppBskyActorDefsProfileView>,
@@ -1174,6 +1297,7 @@ pub struct AppBskyFeedGetTimelineOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedLike {
   pub subject: ComAtprotoRepoStrongRef,
+  /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1206,7 +1330,7 @@ pub enum AppBskyFeedPostLabelsUnion {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedPost {
-  /// The primary post content. May be an empty string, if there are embeds.,
+  /// [max_graphemes: 300] [max_length: 3000] The primary post content. May be an empty string, if there are embeds.,
   pub text: String,
   /// DEPRECATED: replaced by app.bsky.richtext.facet.,
   pub entities: Option<Vec<AppBskyFeedPostEntity>>,
@@ -1214,13 +1338,13 @@ pub struct AppBskyFeedPost {
   pub facets: Option<Vec<AppBskyRichtextFacet>>,
   pub reply: Option<AppBskyFeedPostReplyRef>,
   pub embed: Option<AppBskyFeedPostEmbedUnion>,
-  /// Indicates human language of post primary text content.,
+  /// [max_length: 3] Indicates human language of post primary text content.,
   pub langs: Option<Vec<String>>,
   /// Self-label values for this post. Effectively content warnings.,
   pub labels: Option<AppBskyFeedPostLabelsUnion>,
-  /// Additional hashtags, in addition to any included in post text and facets.,
+  /// [max_length: 8] Additional hashtags, in addition to any included in post text and facets.,
   pub tags: Option<Vec<String>>,
-  /// Client-declared timestamp when this post was originally created.,
+  /// [format: datetime] Client-declared timestamp when this post was originally created.,
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1238,7 +1362,7 @@ pub struct AppBskyFeedPostReplyRef {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedPostEntity {
   pub index: AppBskyFeedPostTextSlice,
-  /// Expected values are 'mention' and 'link'.,
+  /// Expected values are 'mention' and 'link'.
   pub type_: String,
   pub value: String,
 }
@@ -1248,7 +1372,9 @@ pub struct AppBskyFeedPostEntity {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedPostTextSlice {
+  /// [minimum: 0]
   pub start: i64,
+  /// [minimum: 0]
   pub end: i64,
 }
 
@@ -1264,11 +1390,13 @@ pub enum AppBskyFeedPostgateEmbeddingRulesUnion {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedPostgate {
+  /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
-  /// Reference (AT-URI) to the post record.,
+  /// [format: at-uri] Reference (AT-URI) to the post record.,
   pub post: String,
-  /// List of AT-URIs embedding this post that the author has detached from.,
+  /// [max_length: 50] List of AT-URIs embedding this post that the author has detached from.,
   pub detached_embedding_uris: Option<Vec<String>>,
+  /// [max_length: 5],
   pub embedding_rules: Option<Vec<AppBskyFeedPostgateEmbeddingRulesUnion>>,
 }
 
@@ -1282,6 +1410,7 @@ pub struct AppBskyFeedPostgateDisableRule(pub serde_json::Value);
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedRepost {
   pub subject: ComAtprotoRepoStrongRef,
+  /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1290,7 +1419,7 @@ pub struct AppBskyFeedRepost {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedSearchPostsOutput {
   pub cursor: Option<String>,
-  /// Count of search hits. Optional, may be rounded/truncated, and may not be possible to paginate through all hits.,
+  /// Count of search hits. Optional, may be rounded/truncated, and may not be possible to paginate through all hits.
   pub hits_total: Option<i64>,
   pub posts: Vec<AppBskyFeedDefsPostView>,
 }
@@ -1316,16 +1445,18 @@ pub enum AppBskyFeedThreadgateAllowUnion {
   AppBskyFeedThreadgateListRule(Box<AppBskyFeedThreadgateListRule>),
 }
 
-/// Record defining interaction gating rules for a thread (aka, reply controls). The record key (rkey) of the threadgate record must match the record key of the thread's root post, and that record must be in the same repository..
+/// Record defining interaction gating rules for a thread (aka, reply controls). The record key (rkey) of the threadgate record must match the record key of the thread's root post, and that record must be in the same repository.
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedThreadgate {
-  /// Reference (AT-URI) to the post record.,
+  /// [format: at-uri] Reference (AT-URI) to the post record.,
   pub post: String,
+  /// [max_length: 5],
   pub allow: Option<Vec<AppBskyFeedThreadgateAllowUnion>>,
+  /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
-  /// List of hidden reply URIs.,
+  /// [max_length: 50] List of hidden reply URIs.,
   pub hidden_replies: Option<Vec<String>>,
 }
 
@@ -1342,6 +1473,7 @@ pub struct AppBskyFeedThreadgateFollowingRule(pub serde_json::Value);
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedThreadgateListRule {
+  /// [format: at-uri]
   pub list: String,
 }
 
@@ -1350,8 +1482,9 @@ pub struct AppBskyFeedThreadgateListRule {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphBlock {
-  /// DID of the account to be blocked.,
+  /// [format: did] DID of the account to be blocked.,
   pub subject: String,
+  /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1359,14 +1492,20 @@ pub struct AppBskyGraphBlock {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphDefsListViewBasic {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
+  /// [max_length: 64] [min_length: 1]
   pub name: String,
   pub purpose: AppBskyGraphDefsListPurpose,
+  /// [format: uri]
   pub avatar: Option<String>,
+  /// [minimum: 0]
   pub list_item_count: Option<i64>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub viewer: Option<AppBskyGraphDefsListViewerState>,
+  /// [format: datetime]
   pub indexed_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -1374,17 +1513,24 @@ pub struct AppBskyGraphDefsListViewBasic {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphDefsListView {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub creator: AppBskyActorDefsProfileView,
+  /// [max_length: 64] [min_length: 1]
   pub name: String,
   pub purpose: AppBskyGraphDefsListPurpose,
+  /// [max_graphemes: 300] [max_length: 3000]
   pub description: Option<String>,
   pub description_facets: Option<Vec<AppBskyRichtextFacet>>,
+  /// [format: uri]
   pub avatar: Option<String>,
+  /// [minimum: 0]
   pub list_item_count: Option<i64>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub viewer: Option<AppBskyGraphDefsListViewerState>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1392,6 +1538,7 @@ pub struct AppBskyGraphDefsListView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphDefsListItemView {
+  /// [format: at-uri]
   pub uri: String,
   pub subject: AppBskyActorDefsProfileView,
 }
@@ -1400,16 +1547,23 @@ pub struct AppBskyGraphDefsListItemView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphDefsStarterPackView {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub record: serde_json::Value,
   pub creator: AppBskyActorDefsProfileViewBasic,
   pub list: Option<AppBskyGraphDefsListViewBasic>,
+  /// [max_length: 12]
   pub list_items_sample: Option<Vec<AppBskyGraphDefsListItemView>>,
+  /// [max_length: 3]
   pub feeds: Option<Vec<AppBskyFeedDefsGeneratorView>>,
+  /// [minimum: 0]
   pub joined_week_count: Option<i64>,
+  /// [minimum: 0]
   pub joined_all_time_count: Option<i64>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1417,14 +1571,20 @@ pub struct AppBskyGraphDefsStarterPackView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphDefsStarterPackViewBasic {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub record: serde_json::Value,
   pub creator: AppBskyActorDefsProfileViewBasic,
+  /// [minimum: 0]
   pub list_item_count: Option<i64>,
+  /// [minimum: 0]
   pub joined_week_count: Option<i64>,
+  /// [minimum: 0]
   pub joined_all_time_count: Option<i64>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1436,6 +1596,7 @@ pub struct AppBskyGraphDefsListPurpose(pub String);
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphDefsListViewerState {
   pub muted: Option<bool>,
+  /// [format: at-uri]
   pub blocked: Option<String>,
 }
 
@@ -1444,7 +1605,9 @@ pub struct AppBskyGraphDefsListViewerState {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphDefsNotFoundActor {
+  /// [format: at-identifier]
   pub actor: String,
+  /// [const: true]
   pub not_found: bool,
 }
 
@@ -1453,10 +1616,11 @@ pub struct AppBskyGraphDefsNotFoundActor {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphDefsRelationship {
+  /// [format: did]
   pub did: String,
-  /// if the actor follows this DID, this is the AT-URI of the follow record,
+  /// [format: at-uri] if the actor follows this DID, this is the AT-URI of the follow record
   pub following: Option<String>,
-  /// if the actor is followed by this DID, contains the AT-URI of the follow record,
+  /// [format: at-uri] if the actor is followed by this DID, contains the AT-URI of the follow record
   pub followed_by: Option<String>,
 }
 
@@ -1465,7 +1629,9 @@ pub struct AppBskyGraphDefsRelationship {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphFollow {
+  /// [format: did],
   pub subject: String,
+  /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1566,6 +1732,7 @@ pub enum AppBskyGraphGetRelationshipsOutputRelationshipsUnion {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphGetRelationshipsOutput {
+  /// [format: did]
   pub actor: Option<String>,
   pub relationships: Vec<AppBskyGraphGetRelationshipsOutputRelationshipsUnion>,
 }
@@ -1589,7 +1756,7 @@ pub struct AppBskyGraphGetStarterPacksOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphGetSuggestedFollowsByActorOutput {
   pub suggestions: Vec<AppBskyActorDefsProfileView>,
-  /// If true, response has fallen-back to generic results, and is not scoped using relativeToDid,
+  /// [default: false] If true, response has fallen-back to generic results, and is not scoped using relativeToDid
   pub is_fallback: Option<bool>,
 }
 
@@ -1607,12 +1774,15 @@ pub enum AppBskyGraphListLabelsUnion {
 pub struct AppBskyGraphList {
   /// Defines the purpose of the list (aka, moderation-oriented or curration-oriented),
   pub purpose: AppBskyGraphDefsListPurpose,
-  /// Display name for list; can not be empty.,
+  /// [max_length: 64] [min_length: 1] Display name for list; can not be empty.,
   pub name: String,
+  /// [max_graphemes: 300] [max_length: 3000],
   pub description: Option<String>,
   pub description_facets: Option<Vec<AppBskyRichtextFacet>>,
+  /// [accept: ["image/png", "image/jpeg"]] [max_size: 1000000],
   pub avatar: Option<Blob>,
   pub labels: Option<AppBskyGraphListLabelsUnion>,
+  /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1621,8 +1791,9 @@ pub struct AppBskyGraphList {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphListblock {
-  /// Reference (AT-URI) to the mod list record.,
+  /// [format: at-uri] Reference (AT-URI) to the mod list record.,
   pub subject: String,
+  /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1631,10 +1802,11 @@ pub struct AppBskyGraphListblock {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphListitem {
-  /// The account which is included on the list.,
+  /// [format: did] The account which is included on the list.,
   pub subject: String,
-  /// Reference (AT-URI) to the list record (app.bsky.graph.list).,
+  /// [format: at-uri] Reference (AT-URI) to the list record (app.bsky.graph.list).,
   pub list: String,
+  /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1642,6 +1814,7 @@ pub struct AppBskyGraphListitem {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphMuteActorInput {
+  /// [format: at-identifier]
   pub actor: String,
 }
 
@@ -1649,6 +1822,7 @@ pub struct AppBskyGraphMuteActorInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphMuteActorListInput {
+  /// [format: at-uri]
   pub list: String,
 }
 
@@ -1656,6 +1830,7 @@ pub struct AppBskyGraphMuteActorListInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphMuteThreadInput {
+  /// [format: at-uri]
   pub root: String,
 }
 
@@ -1664,13 +1839,16 @@ pub struct AppBskyGraphMuteThreadInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphStarterpack {
-  /// Display name for starter pack; can not be empty.,
+  /// [max_graphemes: 50] [max_length: 500] [min_length: 1] Display name for starter pack; can not be empty.,
   pub name: String,
+  /// [max_graphemes: 300] [max_length: 3000],
   pub description: Option<String>,
   pub description_facets: Option<Vec<AppBskyRichtextFacet>>,
-  /// Reference (AT-URI) to the list record.,
+  /// [format: at-uri] Reference (AT-URI) to the list record.,
   pub list: String,
+  /// [max_length: 3],
   pub feeds: Option<Vec<AppBskyGraphStarterpackFeedItem>>,
+  /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1678,6 +1856,7 @@ pub struct AppBskyGraphStarterpack {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphStarterpackFeedItem {
+  /// [format: at-uri]
   pub uri: String,
 }
 
@@ -1685,6 +1864,7 @@ pub struct AppBskyGraphStarterpackFeedItem {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphUnmuteActorInput {
+  /// [format: at-identifier]
   pub actor: String,
 }
 
@@ -1692,6 +1872,7 @@ pub struct AppBskyGraphUnmuteActorInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphUnmuteActorListInput {
+  /// [format: at-uri]
   pub list: String,
 }
 
@@ -1699,6 +1880,7 @@ pub struct AppBskyGraphUnmuteActorListInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphUnmuteThreadInput {
+  /// [format: at-uri]
   pub root: String,
 }
 
@@ -1706,11 +1888,15 @@ pub struct AppBskyGraphUnmuteThreadInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyLabelerDefsLabelerView {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub creator: AppBskyActorDefsProfileView,
+  /// [minimum: 0]
   pub like_count: Option<i64>,
   pub viewer: Option<AppBskyLabelerDefsLabelerViewerState>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
 }
@@ -1719,12 +1905,16 @@ pub struct AppBskyLabelerDefsLabelerView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyLabelerDefsLabelerViewDetailed {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub creator: AppBskyActorDefsProfileView,
   pub policies: AppBskyLabelerDefsLabelerPolicies,
+  /// [minimum: 0]
   pub like_count: Option<i64>,
   pub viewer: Option<AppBskyLabelerDefsLabelerViewerState>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
 }
@@ -1733,6 +1923,7 @@ pub struct AppBskyLabelerDefsLabelerViewDetailed {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyLabelerDefsLabelerViewerState {
+  /// [format: at-uri]
   pub like: Option<String>,
 }
 
@@ -1740,9 +1931,9 @@ pub struct AppBskyLabelerDefsLabelerViewerState {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyLabelerDefsLabelerPolicies {
-  /// The label values which this labeler publishes. May include global or custom labels.,
+  /// The label values which this labeler publishes. May include global or custom labels.
   pub label_values: Vec<ComAtprotoLabelDefsLabelValue>,
-  /// Label values created by this labeler and scoped exclusively to it. Labels defined here will override global label definitions for this labeler.,
+  /// Label values created by this labeler and scoped exclusively to it. Labels defined here will override global label definitions for this labeler.
   pub label_value_definitions: Option<Vec<ComAtprotoLabelDefsLabelValueDefinition>>,
 }
 
@@ -1776,6 +1967,7 @@ pub enum AppBskyLabelerServiceLabelsUnion {
 pub struct AppBskyLabelerService {
   pub policies: AppBskyLabelerDefsLabelerPolicies,
   pub labels: Option<AppBskyLabelerServiceLabelsUnion>,
+  /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1793,6 +1985,7 @@ pub struct AppBskyNotificationListNotificationsOutput {
   pub cursor: Option<String>,
   pub notifications: Vec<AppBskyNotificationListNotificationsNotification>,
   pub priority: Option<bool>,
+  /// [format: datetime]
   pub seen_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -1800,14 +1993,18 @@ pub struct AppBskyNotificationListNotificationsOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyNotificationListNotificationsNotification {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub author: AppBskyActorDefsProfileView,
-  /// Expected values are 'like', 'repost', 'follow', 'mention', 'reply', 'quote', and 'starterpack-joined'.,
+  /// [known_values: ["like", "repost", "follow", "mention", "reply", "quote", "starterpack-joined"]] Expected values are 'like', 'repost', 'follow', 'mention', 'reply', 'quote', and 'starterpack-joined'.
   pub reason: String,
+  /// [format: at-uri]
   pub reason_subject: Option<String>,
   pub record: serde_json::Value,
   pub is_read: bool,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
 }
@@ -1823,8 +2020,10 @@ pub struct AppBskyNotificationPutPreferencesInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyNotificationRegisterPushInput {
+  /// [format: did]
   pub service_did: String,
   pub token: String,
+  /// [known_values: ["ios", "android", "web"]]
   pub platform: String,
   pub app_id: String,
 }
@@ -1833,6 +2032,7 @@ pub struct AppBskyNotificationRegisterPushInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyNotificationUpdateSeenInput {
+  /// [format: datetime]
   pub seen_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -1861,6 +2061,7 @@ pub struct AppBskyRichtextFacet {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyRichtextFacetMention {
+  /// [format: did]
   pub did: String,
 }
 
@@ -1869,6 +2070,7 @@ pub struct AppBskyRichtextFacetMention {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyRichtextFacetLink {
+  /// [format: uri]
   pub uri: String,
 }
 
@@ -1877,6 +2079,7 @@ pub struct AppBskyRichtextFacetLink {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyRichtextFacetTag {
+  /// [max_graphemes: 64] [max_length: 640]
   pub tag: String,
 }
 
@@ -1885,7 +2088,9 @@ pub struct AppBskyRichtextFacetTag {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyRichtextFacetByteSlice {
+  /// [minimum: 0]
   pub byte_start: i64,
+  /// [minimum: 0]
   pub byte_end: i64,
 }
 
@@ -1893,6 +2098,7 @@ pub struct AppBskyRichtextFacetByteSlice {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyUnspeccedDefsSkeletonSearchPost {
+  /// [format: at-uri]
   pub uri: String,
 }
 
@@ -1900,6 +2106,7 @@ pub struct AppBskyUnspeccedDefsSkeletonSearchPost {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyUnspeccedDefsSkeletonSearchActor {
+  /// [format: did]
   pub did: String,
 }
 
@@ -1917,7 +2124,7 @@ pub struct AppBskyUnspeccedGetPopularFeedGeneratorsOutput {
 pub struct AppBskyUnspeccedGetSuggestionsSkeletonOutput {
   pub cursor: Option<String>,
   pub actors: Vec<AppBskyUnspeccedDefsSkeletonSearchActor>,
-  /// DID of the account these suggestions are relative to. If this is returned undefined, suggestions are based on the viewer.,
+  /// [format: did] DID of the account these suggestions are relative to. If this is returned undefined, suggestions are based on the viewer.
   pub relative_to_did: Option<String>,
 }
 
@@ -1933,7 +2140,9 @@ pub struct AppBskyUnspeccedGetTaggedSuggestionsOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyUnspeccedGetTaggedSuggestionsSuggestion {
   pub tag: String,
+  /// [known_values: ["actor", "feed"]]
   pub subject_type: String,
+  /// [format: uri]
   pub subject: String,
 }
 
@@ -1942,7 +2151,7 @@ pub struct AppBskyUnspeccedGetTaggedSuggestionsSuggestion {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyUnspeccedSearchActorsSkeletonOutput {
   pub cursor: Option<String>,
-  /// Count of search hits. Optional, may be rounded/truncated, and may not be possible to paginate through all hits.,
+  /// Count of search hits. Optional, may be rounded/truncated, and may not be possible to paginate through all hits.
   pub hits_total: Option<i64>,
   pub actors: Vec<AppBskyUnspeccedDefsSkeletonSearchActor>,
 }
@@ -1952,7 +2161,7 @@ pub struct AppBskyUnspeccedSearchActorsSkeletonOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyUnspeccedSearchPostsSkeletonOutput {
   pub cursor: Option<String>,
-  /// Count of search hits. Optional, may be rounded/truncated, and may not be possible to paginate through all hits.,
+  /// Count of search hits. Optional, may be rounded/truncated, and may not be possible to paginate through all hits.
   pub hits_total: Option<i64>,
   pub posts: Vec<AppBskyUnspeccedDefsSkeletonSearchPost>,
 }
@@ -1962,10 +2171,11 @@ pub struct AppBskyUnspeccedSearchPostsSkeletonOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyVideoDefsJobStatus {
   pub job_id: String,
+  /// [format: did]
   pub did: String,
-  /// The state of the video processing job. All values not listed as a known value indicate that the job is in process.,
+  /// [known_values: ["JOB_STATE_COMPLETED", "JOB_STATE_FAILED"]] The state of the video processing job. All values not listed as a known value indicate that the job is in process.
   pub state: String,
-  /// Progress within the current processing state.,
+  /// [minimum: 0] [maximum: 100] Progress within the current processing state.
   pub progress: Option<i64>,
   pub blob: Option<Blob>,
   pub error: Option<String>,
@@ -2002,6 +2212,7 @@ pub struct AppBskyVideoUploadVideoOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyActorDeclaration {
+  /// [known_values: ["all", "none", "following"]],
   pub allow_incoming: String,
 }
 
@@ -2009,14 +2220,18 @@ pub struct ChatBskyActorDeclaration {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyActorDefsProfileViewBasic {
+  /// [format: did]
   pub did: String,
+  /// [format: handle]
   pub handle: String,
+  /// [max_graphemes: 64] [max_length: 640]
   pub display_name: Option<String>,
+  /// [format: uri]
   pub avatar: Option<String>,
   pub associated: Option<AppBskyActorDefsProfileAssociated>,
   pub viewer: Option<AppBskyActorDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
-  /// Set to true when the actor cannot actively participate in converations,
+  /// Set to true when the actor cannot actively participate in converations
   pub chat_disabled: Option<bool>,
 }
 
@@ -2027,6 +2242,7 @@ pub struct ChatBskyActorDeleteAccountOutput(pub serde_json::Value);
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoDefsMessageRef {
+  /// [format: did]
   pub did: String,
   pub convo_id: String,
   pub message_id: String,
@@ -2043,8 +2259,9 @@ pub enum ChatBskyConvoDefsMessageInputEmbedUnion {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoDefsMessageInput {
+  /// [max_graphemes: 1000] [max_length: 10000]
   pub text: String,
-  /// Annotations of text (mentions, URLs, hashtags, etc),
+  /// Annotations of text (mentions, URLs, hashtags, etc)
   pub facets: Option<Vec<AppBskyRichtextFacet>>,
   pub embed: Option<ChatBskyConvoDefsMessageInputEmbedUnion>,
 }
@@ -2062,11 +2279,13 @@ pub enum ChatBskyConvoDefsMessageViewEmbedUnion {
 pub struct ChatBskyConvoDefsMessageView {
   pub id: String,
   pub rev: String,
+  /// [max_graphemes: 1000] [max_length: 10000]
   pub text: String,
-  /// Annotations of text (mentions, URLs, hashtags, etc),
+  /// Annotations of text (mentions, URLs, hashtags, etc)
   pub facets: Option<Vec<AppBskyRichtextFacet>>,
   pub embed: Option<ChatBskyConvoDefsMessageViewEmbedUnion>,
   pub sender: ChatBskyConvoDefsMessageViewSender,
+  /// [format: datetime]
   pub sent_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -2077,6 +2296,7 @@ pub struct ChatBskyConvoDefsDeletedMessageView {
   pub id: String,
   pub rev: String,
   pub sender: ChatBskyConvoDefsMessageViewSender,
+  /// [format: datetime]
   pub sent_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -2084,6 +2304,7 @@ pub struct ChatBskyConvoDefsDeletedMessageView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoDefsMessageViewSender {
+  /// [format: did]
   pub did: String,
 }
 
@@ -2269,6 +2490,7 @@ pub struct ChatBskyConvoSendMessageInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoSendMessageBatchInput {
+  /// [max_length: 100]
   pub items: Vec<ChatBskyConvoSendMessageBatchBatchItem>,
 }
 
@@ -2355,6 +2577,7 @@ pub struct ChatBskyModerationGetMessageContextOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyModerationUpdateActorAccessInput {
+  /// [format: did]
   pub actor: String,
   pub allow_access: bool,
   pub ref_: Option<String>,
@@ -2372,16 +2595,21 @@ pub struct ComAtprotoAdminDefsStatusAttr {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoAdminDefsAccountView {
+  /// [format: did]
   pub did: String,
+  /// [format: handle]
   pub handle: String,
   pub email: Option<String>,
   pub related_records: Option<Vec<serde_json::Value>>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub invited_by: Option<ComAtprotoServerDefsInviteCode>,
   pub invites: Option<Vec<ComAtprotoServerDefsInviteCode>>,
   pub invites_disabled: Option<bool>,
+  /// [format: datetime]
   pub email_confirmed_at: Option<chrono::DateTime<chrono::Utc>>,
   pub invite_note: Option<String>,
+  /// [format: datetime]
   pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -2389,6 +2617,7 @@ pub struct ComAtprotoAdminDefsAccountView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoAdminDefsRepoRef {
+  /// [format: did]
   pub did: String,
 }
 
@@ -2396,8 +2625,11 @@ pub struct ComAtprotoAdminDefsRepoRef {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoAdminDefsRepoBlobRef {
+  /// [format: did]
   pub did: String,
+  /// [format: cid]
   pub cid: String,
+  /// [format: at-uri]
   pub record_uri: Option<String>,
 }
 
@@ -2405,6 +2637,7 @@ pub struct ComAtprotoAdminDefsRepoBlobRef {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoAdminDeleteAccountInput {
+  /// [format: did]
   pub did: String,
 }
 
@@ -2412,8 +2645,9 @@ pub struct ComAtprotoAdminDeleteAccountInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoAdminDisableAccountInvitesInput {
+  /// [format: did]
   pub account: String,
-  /// Optional reason for disabled invites.,
+  /// Optional reason for disabled invites.
   pub note: Option<String>,
 }
 
@@ -2429,8 +2663,9 @@ pub struct ComAtprotoAdminDisableInviteCodesInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoAdminEnableAccountInvitesInput {
+  /// [format: did]
   pub account: String,
-  /// Optional reason for enabled invites.,
+  /// Optional reason for enabled invites.
   pub note: Option<String>,
 }
 
@@ -2481,11 +2716,13 @@ pub struct ComAtprotoAdminSearchAccountsOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoAdminSendEmailInput {
+  /// [format: did]
   pub recipient_did: String,
   pub content: String,
   pub subject: Option<String>,
+  /// [format: did]
   pub sender_did: String,
-  /// Additional comment by the sender that won't be used in the email itself but helpful to provide more context for moderators/reviewers,
+  /// Additional comment by the sender that won't be used in the email itself but helpful to provide more context for moderators/reviewers
   pub comment: Option<String>,
 }
 
@@ -2500,7 +2737,7 @@ pub struct ComAtprotoAdminSendEmailOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoAdminUpdateAccountEmailInput {
-  /// The handle or DID of the repo.,
+  /// [format: at-identifier] The handle or DID of the repo.
   pub account: String,
   pub email: String,
 }
@@ -2509,7 +2746,9 @@ pub struct ComAtprotoAdminUpdateAccountEmailInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoAdminUpdateAccountHandleInput {
+  /// [format: did]
   pub did: String,
+  /// [format: handle]
   pub handle: String,
 }
 
@@ -2517,6 +2756,7 @@ pub struct ComAtprotoAdminUpdateAccountHandleInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoAdminUpdateAccountPasswordInput {
+  /// [format: did]
   pub did: String,
   pub password: String,
 }
@@ -2564,7 +2804,7 @@ pub struct ComAtprotoAdminUpdateSubjectStatusOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoIdentityGetRecommendedDidCredentialsOutput {
-  /// Recommended rotation keys for PLC dids. Should be undefined (or ignored) for did:webs.,
+  /// Recommended rotation keys for PLC dids. Should be undefined (or ignored) for did:webs.
   pub rotation_keys: Option<Vec<String>>,
   pub also_known_as: Option<Vec<String>>,
   pub verification_methods: Option<serde_json::Value>,
@@ -2575,6 +2815,7 @@ pub struct ComAtprotoIdentityGetRecommendedDidCredentialsOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoIdentityResolveHandleOutput {
+  /// [format: did]
   pub did: String,
 }
 
@@ -2582,7 +2823,7 @@ pub struct ComAtprotoIdentityResolveHandleOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoIdentitySignPlcOperationInput {
-  /// A token received through com.atproto.identity.requestPlcOperationSignature,
+  /// A token received through com.atproto.identity.requestPlcOperationSignature
   pub token: Option<String>,
   pub rotation_keys: Option<Vec<String>>,
   pub also_known_as: Option<Vec<String>>,
@@ -2594,7 +2835,7 @@ pub struct ComAtprotoIdentitySignPlcOperationInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoIdentitySignPlcOperationOutput {
-  /// A signed DID PLC operation.,
+  /// A signed DID PLC operation.
   pub operation: serde_json::Value,
 }
 
@@ -2609,7 +2850,7 @@ pub struct ComAtprotoIdentitySubmitPlcOperationInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoIdentityUpdateHandleInput {
-  /// The new handle.,
+  /// [format: handle] The new handle.
   pub handle: String,
 }
 
@@ -2618,21 +2859,21 @@ pub struct ComAtprotoIdentityUpdateHandleInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoLabelDefsLabel {
-  /// The AT Protocol version of the label object.,
+  /// The AT Protocol version of the label object.
   pub ver: Option<i64>,
-  /// DID of the actor who created this label.,
+  /// [format: did] DID of the actor who created this label.
   pub src: String,
-  /// AT URI of the record, repository (account), or other resource that this label applies to.,
+  /// [format: uri] AT URI of the record, repository (account), or other resource that this label applies to.
   pub uri: String,
-  /// Optionally, CID specifying the specific version of 'uri' resource this label applies to.,
+  /// [format: cid] Optionally, CID specifying the specific version of 'uri' resource this label applies to.
   pub cid: Option<String>,
-  /// The short string name of the value or type of this label.,
+  /// [max_length: 128] The short string name of the value or type of this label.
   pub val: String,
-  /// If true, this is a negation label, overwriting a previous label.,
+  /// If true, this is a negation label, overwriting a previous label.
   pub neg: Option<bool>,
-  /// Timestamp when this label was created.,
+  /// [format: datetime] Timestamp when this label was created.
   pub cts: chrono::DateTime<chrono::Utc>,
-  /// Timestamp at which this label expires (no longer applies).,
+  /// [format: datetime] Timestamp at which this label expires (no longer applies).
   pub exp: Option<chrono::DateTime<chrono::Utc>>,
   pub sig: Option<Vec<u8>>,
 }
@@ -2642,6 +2883,7 @@ pub struct ComAtprotoLabelDefsLabel {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoLabelDefsSelfLabels {
+  /// [max_length: 10]
   pub values: Vec<ComAtprotoLabelDefsSelfLabel>,
 }
 
@@ -2650,7 +2892,7 @@ pub struct ComAtprotoLabelDefsSelfLabels {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoLabelDefsSelfLabel {
-  /// The short string name of the value or type of this label.,
+  /// [max_length: 128] The short string name of the value or type of this label.
   pub val: String,
 }
 
@@ -2659,15 +2901,15 @@ pub struct ComAtprotoLabelDefsSelfLabel {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoLabelDefsLabelValueDefinition {
-  /// The value of the label being defined. Must only include lowercase ascii and the '-' character ([a-z-]+).,
+  /// [max_graphemes: 100] [max_length: 100] The value of the label being defined. Must only include lowercase ascii and the '-' character ([a-z-]+).
   pub identifier: String,
-  /// How should a client visually convey this label? 'inform' means neutral and informational; 'alert' means negative and warning; 'none' means show nothing.,
+  /// [known_values: ["inform", "alert", "none"]] How should a client visually convey this label? 'inform' means neutral and informational; 'alert' means negative and warning; 'none' means show nothing.
   pub severity: String,
-  /// What should this label hide in the UI, if applied? 'content' hides all of the target; 'media' hides the images/video/audio; 'none' hides nothing.,
+  /// [known_values: ["content", "media", "none"]] What should this label hide in the UI, if applied? 'content' hides all of the target; 'media' hides the images/video/audio; 'none' hides nothing.
   pub blurs: String,
-  /// The default setting for this label.,
+  /// [known_values: ["ignore", "warn", "hide"]] [default: warn] The default setting for this label.
   pub default_setting: Option<String>,
-  /// Does the user need to have adult content enabled in order to configure this label?,
+  /// Does the user need to have adult content enabled in order to configure this label?
   pub adult_only: Option<bool>,
   pub locales: Vec<ComAtprotoLabelDefsLabelValueDefinitionStrings>,
 }
@@ -2677,11 +2919,11 @@ pub struct ComAtprotoLabelDefsLabelValueDefinition {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoLabelDefsLabelValueDefinitionStrings {
-  /// The code of the language these strings are written in.,
+  /// [format: language] The code of the language these strings are written in.
   pub lang: String,
-  /// A short human-readable name for the label.,
+  /// [max_graphemes: 64] [max_length: 640] A short human-readable name for the label.
   pub name: String,
-  /// A longer description of what the label means and why it might be applied.,
+  /// [max_graphemes: 10000] [max_length: 100000] A longer description of what the label means and why it might be applied.
   pub description: String,
 }
 
@@ -2708,6 +2950,7 @@ pub struct ComAtprotoLabelSubscribeLabelsLabels {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoLabelSubscribeLabelsInfo {
+  /// [known_values: ["OutdatedCursor"]]
   pub name: String,
   pub message: Option<String>,
 }
@@ -2725,9 +2968,9 @@ pub enum ComAtprotoModerationCreateReportInputSubjectUnion {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoModerationCreateReportInput {
-  /// Indicates the broad category of violation the report is for.,
+  /// Indicates the broad category of violation the report is for.
   pub reason_type: ComAtprotoModerationDefsReasonType,
-  /// Additional context about the content and violation.,
+  /// [max_graphemes: 2000] [max_length: 20000] Additional context about the content and violation.
   pub reason: Option<String>,
   pub subject: ComAtprotoModerationCreateReportInputSubjectUnion,
 }
@@ -2747,9 +2990,12 @@ pub enum ComAtprotoModerationCreateReportOutputSubjectUnion {
 pub struct ComAtprotoModerationCreateReportOutput {
   pub id: i64,
   pub reason_type: ComAtprotoModerationDefsReasonType,
+  /// [max_graphemes: 2000] [max_length: 20000]
   pub reason: Option<String>,
   pub subject: ComAtprotoModerationCreateReportOutputSubjectUnion,
+  /// [format: did]
   pub reported_by: String,
+  /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -2771,12 +3017,12 @@ pub enum ComAtprotoRepoApplyWritesInputWritesUnion {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoApplyWritesInput {
-  /// The handle or DID of the repo (aka, current account).,
+  /// [format: at-identifier] The handle or DID of the repo (aka, current account).
   pub repo: String,
-  /// Can be set to 'false' to skip Lexicon schema validation of record data across all operations, 'true' to require it, or leave unset to validate only for known Lexicons.,
+  /// Can be set to 'false' to skip Lexicon schema validation of record data across all operations, 'true' to require it, or leave unset to validate only for known Lexicons.
   pub validate: Option<bool>,
   pub writes: Vec<ComAtprotoRepoApplyWritesInputWritesUnion>,
-  /// If provided, the entire operation will fail if the current repo commit CID does not match this value. Used to prevent conflicting repo mutations.,
+  /// [format: cid] If provided, the entire operation will fail if the current repo commit CID does not match this value. Used to prevent conflicting repo mutations.
   pub swap_commit: Option<String>,
 }
 
@@ -2804,7 +3050,9 @@ pub struct ComAtprotoRepoApplyWritesOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoApplyWritesCreate {
+  /// [format: nsid]
   pub collection: String,
+  /// [max_length: 15]
   pub rkey: Option<String>,
   pub value: serde_json::Value,
 }
@@ -2814,6 +3062,7 @@ pub struct ComAtprotoRepoApplyWritesCreate {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoApplyWritesUpdate {
+  /// [format: nsid]
   pub collection: String,
   pub rkey: String,
   pub value: serde_json::Value,
@@ -2824,6 +3073,7 @@ pub struct ComAtprotoRepoApplyWritesUpdate {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoApplyWritesDelete {
+  /// [format: nsid]
   pub collection: String,
   pub rkey: String,
 }
@@ -2832,8 +3082,11 @@ pub struct ComAtprotoRepoApplyWritesDelete {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoApplyWritesCreateResult {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
+  /// [known_values: ["valid", "unknown"]]
   pub validation_status: Option<String>,
 }
 
@@ -2841,8 +3094,11 @@ pub struct ComAtprotoRepoApplyWritesCreateResult {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoApplyWritesUpdateResult {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
+  /// [known_values: ["valid", "unknown"]]
   pub validation_status: Option<String>,
 }
 
@@ -2853,17 +3109,17 @@ pub struct ComAtprotoRepoApplyWritesDeleteResult(pub serde_json::Value);
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoCreateRecordInput {
-  /// The handle or DID of the repo (aka, current account).,
+  /// [format: at-identifier] The handle or DID of the repo (aka, current account).
   pub repo: String,
-  /// The NSID of the record collection.,
+  /// [format: nsid] The NSID of the record collection.
   pub collection: String,
-  /// The Record Key.,
+  /// [max_length: 15] The Record Key.
   pub rkey: Option<String>,
-  /// Can be set to 'false' to skip Lexicon schema validation of record data, 'true' to require it, or leave unset to validate only for known Lexicons.,
+  /// Can be set to 'false' to skip Lexicon schema validation of record data, 'true' to require it, or leave unset to validate only for known Lexicons.
   pub validate: Option<bool>,
-  /// The record itself. Must contain a $type field.,
+  /// The record itself. Must contain a $type field.
   pub record: serde_json::Value,
-  /// Compare and swap with the previous commit by CID.,
+  /// [format: cid] Compare and swap with the previous commit by CID.
   pub swap_commit: Option<String>,
 }
 
@@ -2871,9 +3127,12 @@ pub struct ComAtprotoRepoCreateRecordInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoCreateRecordOutput {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub commit: Option<ComAtprotoRepoDefsCommitMeta>,
+  /// [known_values: ["valid", "unknown"]]
   pub validation_status: Option<String>,
 }
 
@@ -2881,6 +3140,7 @@ pub struct ComAtprotoRepoCreateRecordOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoDefsCommitMeta {
+  /// [format: cid]
   pub cid: String,
   pub rev: String,
 }
@@ -2889,15 +3149,15 @@ pub struct ComAtprotoRepoDefsCommitMeta {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoDeleteRecordInput {
-  /// The handle or DID of the repo (aka, current account).,
+  /// [format: at-identifier] The handle or DID of the repo (aka, current account).
   pub repo: String,
-  /// The NSID of the record collection.,
+  /// [format: nsid] The NSID of the record collection.
   pub collection: String,
-  /// The Record Key.,
+  /// The Record Key.
   pub rkey: String,
-  /// Compare and swap with the previous record by CID.,
+  /// [format: cid] Compare and swap with the previous record by CID.
   pub swap_record: Option<String>,
-  /// Compare and swap with the previous commit by CID.,
+  /// [format: cid] Compare and swap with the previous commit by CID.
   pub swap_commit: Option<String>,
 }
 
@@ -2912,13 +3172,15 @@ pub struct ComAtprotoRepoDeleteRecordOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoDescribeRepoOutput {
+  /// [format: handle]
   pub handle: String,
+  /// [format: did]
   pub did: String,
-  /// The complete DID document for this account.,
+  /// The complete DID document for this account.
   pub did_doc: serde_json::Value,
-  /// List of all the collections (NSIDs) for which this repo contains at least one record.,
+  /// List of all the collections (NSIDs) for which this repo contains at least one record.
   pub collections: Vec<String>,
-  /// Indicates if handle is currently valid (resolves bi-directionally),
+  /// Indicates if handle is currently valid (resolves bi-directionally)
   pub handle_is_correct: bool,
 }
 
@@ -2926,7 +3188,9 @@ pub struct ComAtprotoRepoDescribeRepoOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoGetRecordOutput {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: Option<String>,
   pub value: serde_json::Value,
 }
@@ -2943,7 +3207,9 @@ pub struct ComAtprotoRepoListMissingBlobsOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoListMissingBlobsRecordBlob {
+  /// [format: cid]
   pub cid: String,
+  /// [format: at-uri]
   pub record_uri: String,
 }
 
@@ -2959,7 +3225,9 @@ pub struct ComAtprotoRepoListRecordsOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoListRecordsRecord {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub value: serde_json::Value,
 }
@@ -2968,19 +3236,19 @@ pub struct ComAtprotoRepoListRecordsRecord {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoPutRecordInput {
-  /// The handle or DID of the repo (aka, current account).,
+  /// [format: at-identifier] The handle or DID of the repo (aka, current account).
   pub repo: String,
-  /// The NSID of the record collection.,
+  /// [format: nsid] The NSID of the record collection.
   pub collection: String,
-  /// The Record Key.,
+  /// [max_length: 15] The Record Key.
   pub rkey: String,
-  /// Can be set to 'false' to skip Lexicon schema validation of record data, 'true' to require it, or leave unset to validate only for known Lexicons.,
+  /// Can be set to 'false' to skip Lexicon schema validation of record data, 'true' to require it, or leave unset to validate only for known Lexicons.
   pub validate: Option<bool>,
-  /// The record to write.,
+  /// The record to write.
   pub record: serde_json::Value,
-  /// Compare and swap with the previous record by CID. WARNING: nullable and optional field; may cause problems with golang implementation,
+  /// [format: cid] Compare and swap with the previous record by CID. WARNING: nullable and optional field; may cause problems with golang implementation
   pub swap_record: Option<String>,
-  /// Compare and swap with the previous commit by CID.,
+  /// [format: cid] Compare and swap with the previous commit by CID.
   pub swap_commit: Option<String>,
 }
 
@@ -2988,9 +3256,12 @@ pub struct ComAtprotoRepoPutRecordInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoPutRecordOutput {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub commit: Option<ComAtprotoRepoDefsCommitMeta>,
+  /// [known_values: ["valid", "unknown"]]
   pub validation_status: Option<String>,
 }
 
@@ -2998,7 +3269,9 @@ pub struct ComAtprotoRepoPutRecordOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoStrongRef {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
 }
 
@@ -3015,6 +3288,7 @@ pub struct ComAtprotoRepoUploadBlobOutput {
 pub struct ComAtprotoServerCheckAccountStatusOutput {
   pub activated: bool,
   pub valid_did: bool,
+  /// [format: cid]
   pub repo_commit: String,
   pub repo_rev: String,
   pub repo_blocks: i64,
@@ -3037,18 +3311,18 @@ pub struct ComAtprotoServerConfirmEmailInput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerCreateAccountInput {
   pub email: Option<String>,
-  /// Requested handle for the account.,
+  /// [format: handle] Requested handle for the account.
   pub handle: String,
-  /// Pre-existing atproto DID, being imported to a new account.,
+  /// [format: did] Pre-existing atproto DID, being imported to a new account.
   pub did: Option<String>,
   pub invite_code: Option<String>,
   pub verification_code: Option<String>,
   pub verification_phone: Option<String>,
-  /// Initial account password. May need to meet instance-specific password strength requirements.,
+  /// Initial account password. May need to meet instance-specific password strength requirements.
   pub password: Option<String>,
-  /// DID PLC rotation key (aka, recovery key) to be included in PLC creation operation.,
+  /// DID PLC rotation key (aka, recovery key) to be included in PLC creation operation.
   pub recovery_key: Option<String>,
-  /// A signed DID PLC operation to be submitted as part of importing an existing account to this instance. NOTE: this optional field may be updated when full account migration is implemented.,
+  /// A signed DID PLC operation to be submitted as part of importing an existing account to this instance. NOTE: this optional field may be updated when full account migration is implemented.
   pub plc_op: Option<serde_json::Value>,
 }
 
@@ -3059,10 +3333,11 @@ pub struct ComAtprotoServerCreateAccountInput {
 pub struct ComAtprotoServerCreateAccountOutput {
   pub access_jwt: String,
   pub refresh_jwt: String,
+  /// [format: handle]
   pub handle: String,
-  /// The DID of the new account.,
+  /// [format: did] The DID of the new account.
   pub did: String,
-  /// Complete DID document.,
+  /// Complete DID document.
   pub did_doc: Option<serde_json::Value>,
 }
 
@@ -3070,9 +3345,9 @@ pub struct ComAtprotoServerCreateAccountOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerCreateAppPasswordInput {
-  /// A short name for the App Password, to help distinguish them.,
+  /// A short name for the App Password, to help distinguish them.
   pub name: String,
-  /// If an app password has 'privileged' access to possibly sensitive account state. Meant for use with trusted clients.,
+  /// If an app password has 'privileged' access to possibly sensitive account state. Meant for use with trusted clients.
   pub privileged: Option<bool>,
 }
 
@@ -3082,6 +3357,7 @@ pub struct ComAtprotoServerCreateAppPasswordInput {
 pub struct ComAtprotoServerCreateAppPasswordAppPassword {
   pub name: String,
   pub password: String,
+  /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub privileged: Option<bool>,
 }
@@ -3091,6 +3367,7 @@ pub struct ComAtprotoServerCreateAppPasswordAppPassword {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerCreateInviteCodeInput {
   pub use_count: i64,
+  /// [format: did]
   pub for_account: Option<String>,
 }
 
@@ -3105,6 +3382,7 @@ pub struct ComAtprotoServerCreateInviteCodeOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerCreateInviteCodesInput {
+  /// [default: 1]
   pub code_count: i64,
   pub use_count: i64,
   pub for_accounts: Option<Vec<String>>,
@@ -3129,7 +3407,7 @@ pub struct ComAtprotoServerCreateInviteCodesAccountCodes {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerCreateSessionInput {
-  /// Handle or other identifier supported by the server for the authenticating user.,
+  /// Handle or other identifier supported by the server for the authenticating user.
   pub identifier: String,
   pub password: String,
   pub auth_factor_token: Option<String>,
@@ -3141,14 +3419,16 @@ pub struct ComAtprotoServerCreateSessionInput {
 pub struct ComAtprotoServerCreateSessionOutput {
   pub access_jwt: String,
   pub refresh_jwt: String,
+  /// [format: handle]
   pub handle: String,
+  /// [format: did]
   pub did: String,
   pub did_doc: Option<serde_json::Value>,
   pub email: Option<String>,
   pub email_confirmed: Option<bool>,
   pub email_auth_factor: Option<bool>,
   pub active: Option<bool>,
-  /// If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.,
+  /// [known_values: ["takendown", "suspended", "deactivated"]] If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.
   pub status: Option<String>,
 }
 
@@ -3156,7 +3436,7 @@ pub struct ComAtprotoServerCreateSessionOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerDeactivateAccountInput {
-  /// A recommendation to server as to how long they should hold onto the deactivated account before deleting.,
+  /// [format: datetime] A recommendation to server as to how long they should hold onto the deactivated account before deleting.
   pub delete_after: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -3169,6 +3449,7 @@ pub struct ComAtprotoServerDefsInviteCode {
   pub disabled: bool,
   pub for_account: String,
   pub created_by: String,
+  /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub uses: Vec<ComAtprotoServerDefsInviteCodeUse>,
 }
@@ -3177,7 +3458,9 @@ pub struct ComAtprotoServerDefsInviteCode {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerDefsInviteCodeUse {
+  /// [format: did]
   pub used_by: String,
+  /// [format: datetime]
   pub used_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -3185,6 +3468,7 @@ pub struct ComAtprotoServerDefsInviteCodeUse {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerDeleteAccountInput {
+  /// [format: did]
   pub did: String,
   pub password: String,
   pub token: String,
@@ -3194,16 +3478,17 @@ pub struct ComAtprotoServerDeleteAccountInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerDescribeServerOutput {
-  /// If true, an invite code must be supplied to create an account on this instance.,
+  /// If true, an invite code must be supplied to create an account on this instance.
   pub invite_code_required: Option<bool>,
-  /// If true, a phone verification token must be supplied to create an account on this instance.,
+  /// If true, a phone verification token must be supplied to create an account on this instance.
   pub phone_verification_required: Option<bool>,
-  /// List of domain suffixes that can be used in account handles.,
+  /// List of domain suffixes that can be used in account handles.
   pub available_user_domains: Vec<String>,
-  /// URLs of service policy documents.,
+  /// URLs of service policy documents.
   pub links: Option<ComAtprotoServerDescribeServerLinks>,
-  /// Contact information,
+  /// Contact information
   pub contact: Option<ComAtprotoServerDescribeServerContact>,
+  /// [format: did]
   pub did: String,
 }
 
@@ -3211,7 +3496,9 @@ pub struct ComAtprotoServerDescribeServerOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerDescribeServerLinks {
+  /// [format: uri]
   pub privacy_policy: Option<String>,
+  /// [format: uri]
   pub terms_of_service: Option<String>,
 }
 
@@ -3240,14 +3527,16 @@ pub struct ComAtprotoServerGetServiceAuthOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerGetSessionOutput {
+  /// [format: handle]
   pub handle: String,
+  /// [format: did]
   pub did: String,
   pub email: Option<String>,
   pub email_confirmed: Option<bool>,
   pub email_auth_factor: Option<bool>,
   pub did_doc: Option<serde_json::Value>,
   pub active: Option<bool>,
-  /// If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.,
+  /// [known_values: ["takendown", "suspended", "deactivated"]] If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.
   pub status: Option<String>,
 }
 
@@ -3263,6 +3552,7 @@ pub struct ComAtprotoServerListAppPasswordsOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerListAppPasswordsAppPassword {
   pub name: String,
+  /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub privileged: Option<bool>,
 }
@@ -3273,11 +3563,13 @@ pub struct ComAtprotoServerListAppPasswordsAppPassword {
 pub struct ComAtprotoServerRefreshSessionOutput {
   pub access_jwt: String,
   pub refresh_jwt: String,
+  /// [format: handle]
   pub handle: String,
+  /// [format: did]
   pub did: String,
   pub did_doc: Option<serde_json::Value>,
   pub active: Option<bool>,
-  /// Hosting status of the account. If not specified, then assume 'active'.,
+  /// [known_values: ["takendown", "suspended", "deactivated"]] Hosting status of the account. If not specified, then assume 'active'.
   pub status: Option<String>,
 }
 
@@ -3299,7 +3591,7 @@ pub struct ComAtprotoServerRequestPasswordResetInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerReserveSigningKeyInput {
-  /// The DID to reserve a key for.,
+  /// [format: did] The DID to reserve a key for.
   pub did: Option<String>,
 }
 
@@ -3307,7 +3599,7 @@ pub struct ComAtprotoServerReserveSigningKeyInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerReserveSigningKeyOutput {
-  /// The public key for the reserved signing key, in did:key serialization.,
+  /// The public key for the reserved signing key, in did:key serialization.
   pub signing_key: String,
 }
 
@@ -3332,7 +3624,7 @@ pub struct ComAtprotoServerRevokeAppPasswordInput {
 pub struct ComAtprotoServerUpdateEmailInput {
   pub email: String,
   pub email_auth_factor: Option<bool>,
-  /// Requires a token from com.atproto.sever.requestEmailUpdate if the account's email has been confirmed.,
+  /// Requires a token from com.atproto.sever.requestEmailUpdate if the account's email has been confirmed.
   pub token: Option<String>,
 }
 
@@ -3340,6 +3632,7 @@ pub struct ComAtprotoServerUpdateEmailInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncGetHeadOutput {
+  /// [format: cid]
   pub root: String,
 }
 
@@ -3347,6 +3640,7 @@ pub struct ComAtprotoSyncGetHeadOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncGetLatestCommitOutput {
+  /// [format: cid]
   pub cid: String,
   pub rev: String,
 }
@@ -3355,11 +3649,12 @@ pub struct ComAtprotoSyncGetLatestCommitOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncGetRepoStatusOutput {
+  /// [format: did]
   pub did: String,
   pub active: bool,
-  /// If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.,
+  /// [known_values: ["takendown", "suspended", "deactivated"]] If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.
   pub status: Option<String>,
-  /// Optional field, the current rev of the repo, if active=true,
+  /// Optional field, the current rev of the repo, if active=true
   pub rev: Option<String>,
 }
 
@@ -3383,12 +3678,13 @@ pub struct ComAtprotoSyncListReposOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncListReposRepo {
+  /// [format: did]
   pub did: String,
-  /// Current repo commit CID,
+  /// [format: cid] Current repo commit CID
   pub head: String,
   pub rev: String,
   pub active: Option<bool>,
-  /// If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.,
+  /// [known_values: ["takendown", "suspended", "deactivated"]] If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.
   pub status: Option<String>,
 }
 
@@ -3396,7 +3692,7 @@ pub struct ComAtprotoSyncListReposRepo {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncNotifyOfUpdateInput {
-  /// Hostname of the current service (usually a PDS) that is notifying of update.,
+  /// Hostname of the current service (usually a PDS) that is notifying of update.
   pub hostname: String,
 }
 
@@ -3404,7 +3700,7 @@ pub struct ComAtprotoSyncNotifyOfUpdateInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncRequestCrawlInput {
-  /// Hostname of the current service (eg, PDS) that is requesting to be crawled.,
+  /// Hostname of the current service (eg, PDS) that is requesting to be crawled.
   pub hostname: String,
 }
 
@@ -3413,26 +3709,28 @@ pub struct ComAtprotoSyncRequestCrawlInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncSubscribeReposCommit {
-  /// The stream sequence number of this message.,
+  /// The stream sequence number of this message.
   pub seq: i64,
-  /// DEPRECATED -- unused,
+  /// DEPRECATED -- unused
   pub rebase: bool,
-  /// Indicates that this commit contained too many ops, or data size was too large. Consumers will need to make a separate request to get missing data.,
+  /// Indicates that this commit contained too many ops, or data size was too large. Consumers will need to make a separate request to get missing data.
   pub too_big: bool,
-  /// The repo this event comes from.,
+  /// [format: did] The repo this event comes from.
   pub repo: String,
-  /// Repo commit object CID.,
+  /// Repo commit object CID.
   pub commit: ciborium::Value,
-  /// DEPRECATED -- unused. WARNING -- nullable and optional; stick with optional to ensure golang interoperability.,
+  /// DEPRECATED -- unused. WARNING -- nullable and optional; stick with optional to ensure golang interoperability.
   pub prev: Option<ciborium::Value>,
-  /// The rev of the emitted commit. Note that this information is also in the commit object included in blocks, unless this is a tooBig event.,
+  /// The rev of the emitted commit. Note that this information is also in the commit object included in blocks, unless this is a tooBig event.
   pub rev: String,
-  /// The rev of the last emitted commit from this repo (if any).,
+  /// The rev of the last emitted commit from this repo (if any).
   pub since: Option<String>,
+  /// [max_length: 1000000]
   pub blocks: Vec<u8>,
+  /// [max_length: 200]
   pub ops: Vec<ComAtprotoSyncSubscribeReposRepoOp>,
   pub blobs: Vec<ciborium::Value>,
-  /// Timestamp of when this message was originally broadcast.,
+  /// [format: datetime] Timestamp of when this message was originally broadcast.
   pub time: chrono::DateTime<chrono::Utc>,
 }
 
@@ -3442,9 +3740,11 @@ pub struct ComAtprotoSyncSubscribeReposCommit {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncSubscribeReposIdentity {
   pub seq: i64,
+  /// [format: did]
   pub did: String,
+  /// [format: datetime]
   pub time: chrono::DateTime<chrono::Utc>,
-  /// The current handle for the account, or 'handle.invalid' if validation fails. This field is optional, might have been validated or passed-through from an upstream source. Semantics and behaviors for PDS vs Relay may evolve in the future; see atproto specs for more details.,
+  /// [format: handle] The current handle for the account, or 'handle.invalid' if validation fails. This field is optional, might have been validated or passed-through from an upstream source. Semantics and behaviors for PDS vs Relay may evolve in the future; see atproto specs for more details.
   pub handle: Option<String>,
 }
 
@@ -3454,11 +3754,13 @@ pub struct ComAtprotoSyncSubscribeReposIdentity {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncSubscribeReposAccount {
   pub seq: i64,
+  /// [format: did]
   pub did: String,
+  /// [format: datetime]
   pub time: chrono::DateTime<chrono::Utc>,
-  /// Indicates that the account has a repository which can be fetched from the host that emitted this event.,
+  /// Indicates that the account has a repository which can be fetched from the host that emitted this event.
   pub active: bool,
-  /// If active=false, this optional field indicates a reason for why the account is not active.,
+  /// [known_values: ["takendown", "suspended", "deleted", "deactivated"]] If active=false, this optional field indicates a reason for why the account is not active.
   pub status: Option<String>,
 }
 
@@ -3468,8 +3770,11 @@ pub struct ComAtprotoSyncSubscribeReposAccount {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncSubscribeReposHandle {
   pub seq: i64,
+  /// [format: did]
   pub did: String,
+  /// [format: handle]
   pub handle: String,
+  /// [format: datetime]
   pub time: chrono::DateTime<chrono::Utc>,
 }
 
@@ -3479,8 +3784,10 @@ pub struct ComAtprotoSyncSubscribeReposHandle {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncSubscribeReposMigrate {
   pub seq: i64,
+  /// [format: did]
   pub did: String,
   pub migrate_to: Option<String>,
+  /// [format: datetime]
   pub time: chrono::DateTime<chrono::Utc>,
 }
 
@@ -3490,7 +3797,9 @@ pub struct ComAtprotoSyncSubscribeReposMigrate {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncSubscribeReposTombstone {
   pub seq: i64,
+  /// [format: did]
   pub did: String,
+  /// [format: datetime]
   pub time: chrono::DateTime<chrono::Utc>,
 }
 
@@ -3498,6 +3807,7 @@ pub struct ComAtprotoSyncSubscribeReposTombstone {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncSubscribeReposInfo {
+  /// [known_values: ["OutdatedCursor"]]
   pub name: String,
   pub message: Option<String>,
 }
@@ -3507,9 +3817,10 @@ pub struct ComAtprotoSyncSubscribeReposInfo {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncSubscribeReposRepoOp {
+  /// [known_values: ["create", "update", "delete"]]
   pub action: String,
   pub path: String,
-  /// For creates and updates, the new record CID. For deletions, null.,
+  /// For creates and updates, the new record CID. For deletions, null.
   pub cid: Option<ciborium::Value>,
 }
 
@@ -3540,15 +3851,15 @@ pub struct ComAtprotoTempRequestPhoneVerificationInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneCommunicationCreateTemplateInput {
-  /// Name of the template.,
+  /// Name of the template.
   pub name: String,
-  /// Content of the template, markdown supported, can contain variable placeholders.,
+  /// Content of the template, markdown supported, can contain variable placeholders.
   pub content_markdown: String,
-  /// Subject of the message, used in emails.,
+  /// Subject of the message, used in emails.
   pub subject: String,
-  /// Message language.,
+  /// [format: language] Message language.
   pub lang: Option<String>,
-  /// DID of the user who is creating the template.,
+  /// [format: did] DID of the user who is creating the template.
   pub created_by: Option<String>,
 }
 
@@ -3557,18 +3868,20 @@ pub struct ToolsOzoneCommunicationCreateTemplateInput {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneCommunicationDefsTemplateView {
   pub id: String,
-  /// Name of the template.,
+  /// Name of the template.
   pub name: String,
-  /// Content of the template, can contain markdown and variable placeholders.,
+  /// Content of the template, can contain markdown and variable placeholders.
   pub subject: Option<String>,
-  /// Subject of the message, used in emails.,
+  /// Subject of the message, used in emails.
   pub content_markdown: String,
   pub disabled: bool,
-  /// Message language.,
+  /// [format: language] Message language.
   pub lang: Option<String>,
-  /// DID of the user who last updated the template.,
+  /// [format: did] DID of the user who last updated the template.
   pub last_updated_by: String,
+  /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
+  /// [format: datetime]
   pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -3590,17 +3903,17 @@ pub struct ToolsOzoneCommunicationListTemplatesOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneCommunicationUpdateTemplateInput {
-  /// ID of the template to be updated.,
+  /// ID of the template to be updated.
   pub id: String,
-  /// Name of the template.,
+  /// Name of the template.
   pub name: Option<String>,
-  /// Message language.,
+  /// [format: language] Message language.
   pub lang: Option<String>,
-  /// Content of the template, markdown supported, can contain variable placeholders.,
+  /// Content of the template, markdown supported, can contain variable placeholders.
   pub content_markdown: Option<String>,
-  /// Subject of the message, used in emails.,
+  /// Subject of the message, used in emails.
   pub subject: Option<String>,
-  /// DID of the user who is updating the template.,
+  /// [format: did] DID of the user who is updating the template.
   pub updated_by: Option<String>,
   pub disabled: Option<bool>,
 }
@@ -3663,7 +3976,9 @@ pub struct ToolsOzoneModerationDefsModEventView {
   pub event: ToolsOzoneModerationDefsModEventViewEventUnion,
   pub subject: ToolsOzoneModerationDefsModEventViewSubjectUnion,
   pub subject_blob_cids: Vec<String>,
+  /// [format: did]
   pub created_by: String,
+  /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub creator_handle: Option<String>,
   pub subject_handle: Option<String>,
@@ -3729,7 +4044,9 @@ pub struct ToolsOzoneModerationDefsModEventViewDetail {
   pub event: ToolsOzoneModerationDefsModEventViewDetailEventUnion,
   pub subject: ToolsOzoneModerationDefsModEventViewDetailSubjectUnion,
   pub subject_blobs: Vec<ToolsOzoneModerationDefsBlobView>,
+  /// [format: did]
   pub created_by: String,
+  /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -3750,23 +4067,29 @@ pub struct ToolsOzoneModerationDefsSubjectStatusView {
   pub subject: ToolsOzoneModerationDefsSubjectStatusViewSubjectUnion,
   pub subject_blob_cids: Option<Vec<String>>,
   pub subject_repo_handle: Option<String>,
-  /// Timestamp referencing when the last update was made to the moderation status of the subject,
+  /// [format: datetime] Timestamp referencing when the last update was made to the moderation status of the subject
   pub updated_at: chrono::DateTime<chrono::Utc>,
-  /// Timestamp referencing the first moderation status impacting event was emitted on the subject,
+  /// [format: datetime] Timestamp referencing the first moderation status impacting event was emitted on the subject
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub review_state: ToolsOzoneModerationDefsSubjectReviewState,
-  /// Sticky comment on the subject.,
+  /// Sticky comment on the subject.
   pub comment: Option<String>,
+  /// [format: datetime]
   pub mute_until: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
   pub mute_reporting_until: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: did]
   pub last_reviewed_by: Option<String>,
+  /// [format: datetime]
   pub last_reviewed_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
   pub last_reported_at: Option<chrono::DateTime<chrono::Utc>>,
-  /// Timestamp referencing when the author of the subject appealed a moderation action,
+  /// [format: datetime] Timestamp referencing when the author of the subject appealed a moderation action
   pub last_appealed_at: Option<chrono::DateTime<chrono::Utc>>,
   pub takendown: Option<bool>,
-  /// True indicates that the a previously taken moderator action was appealed against, by the author of the content. False indicates last appeal was resolved by moderators.,
+  /// True indicates that the a previously taken moderator action was appealed against, by the author of the content. False indicates last appeal was resolved by moderators.
   pub appealed: Option<bool>,
+  /// [format: datetime]
   pub suspend_until: Option<chrono::DateTime<chrono::Utc>>,
   pub tags: Option<Vec<String>>,
 }
@@ -3780,9 +4103,9 @@ pub struct ToolsOzoneModerationDefsSubjectReviewState(pub String);
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventTakedown {
   pub comment: Option<String>,
-  /// Indicates how long the takedown should be in effect before automatically expiring.,
+  /// Indicates how long the takedown should be in effect before automatically expiring.
   pub duration_in_hours: Option<i64>,
-  /// If true, all other reports on content authored by this account will be resolved (acknowledged).,
+  /// If true, all other reports on content authored by this account will be resolved (acknowledged).
   pub acknowledge_account_subjects: Option<bool>,
 }
 
@@ -3791,7 +4114,7 @@ pub struct ToolsOzoneModerationDefsModEventTakedown {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventReverseTakedown {
-  /// Describe reasoning behind the reversal.,
+  /// Describe reasoning behind the reversal.
   pub comment: Option<String>,
 }
 
@@ -3800,7 +4123,7 @@ pub struct ToolsOzoneModerationDefsModEventReverseTakedown {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventResolveAppeal {
-  /// Describe resolution.,
+  /// Describe resolution.
   pub comment: Option<String>,
 }
 
@@ -3810,7 +4133,7 @@ pub struct ToolsOzoneModerationDefsModEventResolveAppeal {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventComment {
   pub comment: String,
-  /// Make the comment persistent on the subject,
+  /// Make the comment persistent on the subject
   pub sticky: Option<bool>,
 }
 
@@ -3820,7 +4143,7 @@ pub struct ToolsOzoneModerationDefsModEventComment {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventReport {
   pub comment: Option<String>,
-  /// Set to true if the reporter was muted from reporting at the time of the event. These reports won't impact the reviewState of the subject.,
+  /// Set to true if the reporter was muted from reporting at the time of the event. These reports won't impact the reviewState of the subject.
   pub is_reporter_muted: Option<bool>,
   pub report_type: ComAtprotoModerationDefsReasonType,
 }
@@ -3855,7 +4178,7 @@ pub struct ToolsOzoneModerationDefsModEventEscalate {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventMute {
   pub comment: Option<String>,
-  /// Indicates how long the subject should remain muted.,
+  /// Indicates how long the subject should remain muted.
   pub duration_in_hours: i64,
 }
 
@@ -3864,7 +4187,7 @@ pub struct ToolsOzoneModerationDefsModEventMute {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventUnmute {
-  /// Describe reasoning behind the reversal.,
+  /// Describe reasoning behind the reversal.
   pub comment: Option<String>,
 }
 
@@ -3874,7 +4197,7 @@ pub struct ToolsOzoneModerationDefsModEventUnmute {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventMuteReporter {
   pub comment: Option<String>,
-  /// Indicates how long the account should remain muted.,
+  /// Indicates how long the account should remain muted.
   pub duration_in_hours: i64,
 }
 
@@ -3883,7 +4206,7 @@ pub struct ToolsOzoneModerationDefsModEventMuteReporter {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventUnmuteReporter {
-  /// Describe reasoning behind the reversal.,
+  /// Describe reasoning behind the reversal.
   pub comment: Option<String>,
 }
 
@@ -3892,11 +4215,11 @@ pub struct ToolsOzoneModerationDefsModEventUnmuteReporter {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventEmail {
-  /// The subject line of the email sent to the user.,
+  /// The subject line of the email sent to the user.
   pub subject_line: String,
-  /// The content of the email sent to the user.,
+  /// The content of the email sent to the user.
   pub content: Option<String>,
-  /// Additional comment about the outgoing comm.,
+  /// Additional comment about the outgoing comm.
   pub comment: Option<String>,
 }
 
@@ -3913,11 +4236,11 @@ pub struct ToolsOzoneModerationDefsModEventDivert {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventTag {
-  /// Tags to be added to the subject. If already exists, won't be duplicated.,
+  /// Tags to be added to the subject. If already exists, won't be duplicated.
   pub add: Vec<String>,
-  /// Tags to be removed to the subject. Ignores a tag If it doesn't exist, won't be duplicated.,
+  /// Tags to be removed to the subject. Ignores a tag If it doesn't exist, won't be duplicated.
   pub remove: Vec<String>,
-  /// Additional comment about added/removed tags.,
+  /// Additional comment about added/removed tags.
   pub comment: Option<String>,
 }
 
@@ -3925,15 +4248,19 @@ pub struct ToolsOzoneModerationDefsModEventTag {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsRepoView {
+  /// [format: did]
   pub did: String,
+  /// [format: handle]
   pub handle: String,
   pub email: Option<String>,
   pub related_records: Vec<serde_json::Value>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub moderation: ToolsOzoneModerationDefsModeration,
   pub invited_by: Option<ComAtprotoServerDefsInviteCode>,
   pub invites_disabled: Option<bool>,
   pub invite_note: Option<String>,
+  /// [format: datetime]
   pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -3941,10 +4268,13 @@ pub struct ToolsOzoneModerationDefsRepoView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsRepoViewDetail {
+  /// [format: did]
   pub did: String,
+  /// [format: handle]
   pub handle: String,
   pub email: Option<String>,
   pub related_records: Vec<serde_json::Value>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub moderation: ToolsOzoneModerationDefsModerationDetail,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
@@ -3952,7 +4282,9 @@ pub struct ToolsOzoneModerationDefsRepoViewDetail {
   pub invites: Option<Vec<ComAtprotoServerDefsInviteCode>>,
   pub invites_disabled: Option<bool>,
   pub invite_note: Option<String>,
+  /// [format: datetime]
   pub email_confirmed_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
   pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
@@ -3960,6 +4292,7 @@ pub struct ToolsOzoneModerationDefsRepoViewDetail {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsRepoViewNotFound {
+  /// [format: did]
   pub did: String,
 }
 
@@ -3967,10 +4300,13 @@ pub struct ToolsOzoneModerationDefsRepoViewNotFound {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsRecordView {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub value: serde_json::Value,
   pub blob_cids: Vec<String>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub moderation: ToolsOzoneModerationDefsModeration,
   pub repo: ToolsOzoneModerationDefsRepoView,
@@ -3980,11 +4316,14 @@ pub struct ToolsOzoneModerationDefsRecordView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsRecordViewDetail {
+  /// [format: at-uri]
   pub uri: String,
+  /// [format: cid]
   pub cid: String,
   pub value: serde_json::Value,
   pub blobs: Vec<ToolsOzoneModerationDefsBlobView>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
+  /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub moderation: ToolsOzoneModerationDefsModerationDetail,
   pub repo: ToolsOzoneModerationDefsRepoView,
@@ -3994,6 +4333,7 @@ pub struct ToolsOzoneModerationDefsRecordViewDetail {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsRecordViewNotFound {
+  /// [format: at-uri]
   pub uri: String,
 }
 
@@ -4024,9 +4364,11 @@ pub enum ToolsOzoneModerationDefsBlobViewDetailsUnion {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsBlobView {
+  /// [format: cid]
   pub cid: String,
   pub mime_type: String,
   pub size: i64,
+  /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub details: Option<ToolsOzoneModerationDefsBlobViewDetailsUnion>,
   pub moderation: Option<ToolsOzoneModerationDefsModeration>,
@@ -4102,6 +4444,7 @@ pub struct ToolsOzoneModerationEmitEventInput {
   pub event: ToolsOzoneModerationEmitEventInputEventUnion,
   pub subject: ToolsOzoneModerationEmitEventInputSubjectUnion,
   pub subject_blob_cids: Option<Vec<String>>,
+  /// [format: did]
   pub created_by: String,
 }
 
@@ -4144,6 +4487,7 @@ pub struct ToolsOzoneServerGetConfigOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneServerGetConfigServiceConfig {
+  /// [format: uri]
   pub url: Option<String>,
 }
 
@@ -4151,6 +4495,7 @@ pub struct ToolsOzoneServerGetConfigServiceConfig {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneServerGetConfigViewerConfig {
+  /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage"]]
   pub role: Option<String>,
 }
 
@@ -4158,7 +4503,9 @@ pub struct ToolsOzoneServerGetConfigViewerConfig {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneTeamAddMemberInput {
+  /// [format: did]
   pub did: String,
+  /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage"]]
   pub role: String,
 }
 
@@ -4166,12 +4513,16 @@ pub struct ToolsOzoneTeamAddMemberInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneTeamDefsMember {
+  /// [format: did]
   pub did: String,
   pub disabled: Option<bool>,
   pub profile: Option<AppBskyActorDefsProfileViewDetailed>,
+  /// [format: datetime]
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
   pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
   pub last_updated_by: Option<String>,
+  /// [known_values: ["#roleAdmin", "#roleModerator", "#roleTriage"]]
   pub role: String,
 }
 
@@ -4179,6 +4530,7 @@ pub struct ToolsOzoneTeamDefsMember {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneTeamDeleteMemberInput {
+  /// [format: did]
   pub did: String,
 }
 
@@ -4194,11 +4546,14 @@ pub struct ToolsOzoneTeamListMembersOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneTeamUpdateMemberInput {
+  /// [format: did]
   pub did: String,
   pub disabled: Option<bool>,
+  /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage"]]
   pub role: Option<String>,
 }
 
+/// arproto client
 #[derive(Debug, Clone)]
 pub struct Atproto {
   pub client: reqwest::Client,
@@ -4215,6 +4570,7 @@ impl Default for Atproto {
 }
 
 impl Atproto {
+  /// create new arproto client
   pub fn new(host: Option<&str>, firehose: Option<&str>) -> Self {
     Self {
       client: reqwest::Client::new(),
@@ -4229,6 +4585,7 @@ impl Atproto {
     }
   }
 
+  /// logging in to use authenticated apis
   pub async fn login(&mut self, id: &str, pw: &str) -> Result<ComAtprotoServerCreateSessionOutput> {
     let output = self
       .com_atproto_server_create_session(ComAtprotoServerCreateSessionInput {
@@ -4287,7 +4644,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `actor` - Handle or DID of account to fetch profile of.
+  /// * `actor` - [format: at-identifier] Handle or DID of account to fetch profile of.
   pub async fn app_bsky_actor_get_profile(
     &self,
     actor: &str,
@@ -4340,7 +4697,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `actors`
+  /// * `actors` - [max_length: 25]
   pub async fn app_bsky_actor_get_profiles(
     &self,
     actors: &[&str],
@@ -4398,7 +4755,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_actor_get_suggestions(
     &self,
@@ -4510,7 +4867,7 @@ impl Atproto {
   ///
   /// * `term` - DEPRECATED: use 'q' instead.
   /// * `q` - Search query string. Syntax, phrase, boolean, and faceting is unspecified, but Lucene query syntax is recommended.
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 25]
   /// * `cursor`
   pub async fn app_bsky_actor_search_actors(
     &self,
@@ -4580,7 +4937,7 @@ impl Atproto {
   ///
   /// * `term` - DEPRECATED: use 'q' instead.
   /// * `q` - Search query prefix; not a full query string.
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 10]
   pub async fn app_bsky_actor_search_actors_typeahead(
     &self,
     term: Option<&str>,
@@ -4686,8 +5043,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `actor`
-  /// * `limit`
+  /// * `actor` - [format: at-identifier]
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_feed_get_actor_feeds(
     &self,
@@ -4749,8 +5106,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `actor`
-  /// * `limit`
+  /// * `actor` - [format: at-identifier]
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   ///
   /// # Errors
@@ -4817,10 +5174,11 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `actor`
-  /// * `limit`
+  /// * `actor` - [format: at-identifier]
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
-  /// * `filter` - Combinations of post/repost types to include in response.
+  /// * `filter` - [known_values: ["posts_with_replies", "posts_no_replies", "posts_with_media", "posts_and_author_threads"]] [default: posts_with_replies] Combinations of post/repost types to include in response.
+  /// * `include_pins` - [default: false]
   ///
   /// # Errors
   ///
@@ -4832,6 +5190,7 @@ impl Atproto {
     limit: Option<i64>,
     cursor: Option<&str>,
     filter: Option<&str>,
+    include_pins: Option<bool>,
   ) -> Result<AppBskyFeedGetAuthorFeedOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
@@ -4843,6 +5202,9 @@ impl Atproto {
     }
     if let Some(filter) = &filter {
       query_.push((String::from("filter"), filter.to_string()));
+    }
+    if let Some(include_pins) = &include_pins {
+      query_.push((String::from("include_pins"), include_pins.to_string()));
     }
     let mut request = self
       .client
@@ -4890,8 +5252,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `feed`
-  /// * `limit`
+  /// * `feed` - [format: at-uri]
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   ///
   /// # Errors
@@ -4954,7 +5316,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `feed` - AT-URI of the feed generator record.
+  /// * `feed` - [format: at-uri] AT-URI of the feed generator record.
   pub async fn app_bsky_feed_get_feed_generator(
     &self,
     feed: &str,
@@ -5065,8 +5427,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `feed` - Reference to feed generator record describing the specific feed being requested.
-  /// * `limit`
+  /// * `feed` - [format: at-uri] Reference to feed generator record describing the specific feed being requested.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   ///
   /// # Errors
@@ -5132,9 +5494,9 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `uri` - AT-URI of the subject (eg, a post record).
-  /// * `cid` - CID of the subject record (aka, specific version of record), to filter likes.
-  /// * `limit`
+  /// * `uri` - [format: at-uri] AT-URI of the subject (eg, a post record).
+  /// * `cid` - [format: cid] CID of the subject record (aka, specific version of record), to filter likes.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_feed_get_likes(
     &self,
@@ -5200,8 +5562,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `list` - Reference (AT-URI) to the list record.
-  /// * `limit`
+  /// * `list` - [format: at-uri] Reference (AT-URI) to the list record.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   ///
   /// # Errors
@@ -5267,9 +5629,9 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `uri` - Reference (AT-URI) to post record.
-  /// * `depth` - How many levels of reply depth should be included in response.
-  /// * `parent_height` - How many levels of parent (and grandparent, etc) post to include.
+  /// * `uri` - [format: at-uri] Reference (AT-URI) to post record.
+  /// * `depth` - [minimum: 0] [maximum: 1000] [default: 6] How many levels of reply depth should be included in response.
+  /// * `parent_height` - [minimum: 0] [maximum: 1000] [default: 80] How many levels of parent (and grandparent, etc) post to include.
   ///
   /// # Errors
   ///
@@ -5334,7 +5696,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `uris` - List of post AT-URIs to return hydrated views for.
+  /// * `uris` - [max_length: 25] List of post AT-URIs to return hydrated views for.
   pub async fn app_bsky_feed_get_posts(&self, uris: &[&str]) -> Result<AppBskyFeedGetPostsOutput> {
     let mut query_ = Vec::new();
     query_.append(
@@ -5389,9 +5751,9 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `uri` - Reference (AT-URI) of post record
-  /// * `cid` - If supplied, filters to quotes of specific version (by CID) of the post record.
-  /// * `limit`
+  /// * `uri` - [format: at-uri] Reference (AT-URI) of post record
+  /// * `cid` - [format: cid] If supplied, filters to quotes of specific version (by CID) of the post record.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_feed_get_quotes(
     &self,
@@ -5457,9 +5819,9 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `uri` - Reference (AT-URI) of post record
-  /// * `cid` - If supplied, filters to reposts of specific version (by CID) of the post record.
-  /// * `limit`
+  /// * `uri` - [format: at-uri] Reference (AT-URI) of post record
+  /// * `cid` - [format: cid] If supplied, filters to reposts of specific version (by CID) of the post record.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_feed_get_reposted_by(
     &self,
@@ -5525,7 +5887,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_feed_get_suggested_feeds(
     &self,
@@ -5586,7 +5948,7 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `algorithm` - Variant 'algorithm' for timeline. Implementation-specific. NOTE: most feed flexibility has been moved to feed generator mechanism.
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_feed_get_timeline(
     &self,
@@ -5651,16 +6013,16 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `q` - Search query string; syntax, phrase, boolean, and faceting is unspecified, but Lucene query syntax is recommended.
-  /// * `sort` - Specifies the ranking order of results.
+  /// * `sort` - [known_values: ["top", "latest"]] [default: latest] Specifies the ranking order of results.
   /// * `since` - Filter results for posts after the indicated datetime (inclusive). Expected to use 'sortAt' timestamp, which may not match 'createdAt'. Can be a datetime, or just an ISO date (YYYY-MM-DD).
   /// * `until` - Filter results for posts before the indicated datetime (not inclusive). Expected to use 'sortAt' timestamp, which may not match 'createdAt'. Can be a datetime, or just an ISO date (YYY-MM-DD).
-  /// * `mentions` - Filter to posts which mention the given account. Handles are resolved to DID before query-time. Only matches rich-text facet mentions.
-  /// * `author` - Filter to posts by the given account. Handles are resolved to DID before query-time.
-  /// * `lang` - Filter to posts in the given language. Expected to be based on post language field, though server may override language detection.
+  /// * `mentions` - [format: at-identifier] Filter to posts which mention the given account. Handles are resolved to DID before query-time. Only matches rich-text facet mentions.
+  /// * `author` - [format: at-identifier] Filter to posts by the given account. Handles are resolved to DID before query-time.
+  /// * `lang` - [format: language] Filter to posts in the given language. Expected to be based on post language field, though server may override language detection.
   /// * `domain` - Filter to posts with URLs (facet links or embeds) linking to the given domain (hostname). Server may apply hostname normalization.
-  /// * `url` - Filter to posts with links (facet links or embeds) pointing to this URL. Server may apply URL normalization or fuzzy matching.
+  /// * `url` - [format: uri] Filter to posts with links (facet links or embeds) pointing to this URL. Server may apply URL normalization or fuzzy matching.
   /// * `tag` - Filter to posts with the given tag (hashtag), based on rich-text facet or tag field. Do not include the hash (#) prefix. Multiple tags can be specified, with 'AND' matching.
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 25]
   /// * `cursor` - Optional pagination mechanism; may not necessarily allow scrolling through entire result set.
   ///
   /// # Errors
@@ -5818,8 +6180,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `actor`
-  /// * `limit`
+  /// * `actor` - [format: at-identifier]
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_graph_get_actor_starter_packs(
     &self,
@@ -5881,7 +6243,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_graph_get_blocks(
     &self,
@@ -5941,8 +6303,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `actor`
-  /// * `limit`
+  /// * `actor` - [format: at-identifier]
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_graph_get_followers(
     &self,
@@ -6004,8 +6366,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `actor`
-  /// * `limit`
+  /// * `actor` - [format: at-identifier]
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_graph_get_follows(
     &self,
@@ -6067,8 +6429,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `actor`
-  /// * `limit`
+  /// * `actor` - [format: at-identifier]
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_graph_get_known_followers(
     &self,
@@ -6130,8 +6492,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `list` - Reference (AT-URI) of the list record to hydrate.
-  /// * `limit`
+  /// * `list` - [format: at-uri] Reference (AT-URI) of the list record to hydrate.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_graph_get_list(
     &self,
@@ -6193,7 +6555,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_graph_get_list_blocks(
     &self,
@@ -6253,7 +6615,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_graph_get_list_mutes(
     &self,
@@ -6313,8 +6675,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `actor` - The account (actor) to enumerate lists from.
-  /// * `limit`
+  /// * `actor` - [format: at-identifier] The account (actor) to enumerate lists from.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_graph_get_lists(
     &self,
@@ -6376,7 +6738,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn app_bsky_graph_get_mutes(
     &self,
@@ -6436,8 +6798,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `actor` - Primary account requesting relationships for.
-  /// * `others` - List of 'other' accounts to be related back to the primary.
+  /// * `actor` - [format: at-identifier] Primary account requesting relationships for.
+  /// * `others` - [max_length: 30] List of 'other' accounts to be related back to the primary.
   ///
   /// # Errors
   ///
@@ -6503,7 +6865,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `starter_pack` - Reference (AT-URI) of the starter pack record.
+  /// * `starter_pack` - [format: at-uri] Reference (AT-URI) of the starter pack record.
   pub async fn app_bsky_graph_get_starter_pack(
     &self,
     starter_pack: &str,
@@ -6556,7 +6918,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `uris`
+  /// * `uris` - [max_length: 25]
   pub async fn app_bsky_graph_get_starter_packs(
     &self,
     uris: &[&str],
@@ -6614,7 +6976,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `actor`
+  /// * `actor` - [format: at-identifier]
   pub async fn app_bsky_graph_get_suggested_follows_by_actor(
     &self,
     actor: &str,
@@ -6962,7 +7324,7 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `dids`
-  /// * `detailed`
+  /// * `detailed` - [default: false]
   pub async fn app_bsky_labeler_get_services(
     &self,
     dids: &[&str],
@@ -7025,7 +7387,7 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `priority`
-  /// * `seen_at`
+  /// * `seen_at` - [format: datetime]
   pub async fn app_bsky_notification_get_unread_count(
     &self,
     priority: Option<bool>,
@@ -7084,10 +7446,10 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `priority`
   /// * `cursor`
-  /// * `seen_at`
+  /// * `seen_at` - [format: datetime]
   pub async fn app_bsky_notification_list_notifications(
     &self,
     limit: Option<i64>,
@@ -7304,7 +7666,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   /// * `query`
   pub async fn app_bsky_unspecced_get_popular_feed_generators(
@@ -7369,10 +7731,10 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `viewer` - DID of the account making the request (not included for public/unauthenticated queries). Used to boost followed accounts in ranking.
-  /// * `limit`
+  /// * `viewer` - [format: did] DID of the account making the request (not included for public/unauthenticated queries). Used to boost followed accounts in ranking.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
-  /// * `relative_to_did` - DID of the account to get suggestions relative to. If not provided, suggestions will be based on the viewer.
+  /// * `relative_to_did` - [format: did] DID of the account to get suggestions relative to. If not provided, suggestions will be based on the viewer.
   pub async fn app_bsky_unspecced_get_suggestions_skeleton(
     &self,
     viewer: Option<&str>,
@@ -7483,9 +7845,9 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `q` - Search query string; syntax, phrase, boolean, and faceting is unspecified, but Lucene query syntax is recommended. For typeahead search, only simple term match is supported, not full syntax.
-  /// * `viewer` - DID of the account making the request (not included for public/unauthenticated queries). Used to boost followed accounts in ranking.
+  /// * `viewer` - [format: did] DID of the account making the request (not included for public/unauthenticated queries). Used to boost followed accounts in ranking.
   /// * `typeahead` - If true, acts as fast/simple 'typeahead' query.
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 25]
   /// * `cursor` - Optional pagination mechanism; may not necessarily allow scrolling through entire result set.
   ///
   /// # Errors
@@ -7560,17 +7922,17 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `q` - Search query string; syntax, phrase, boolean, and faceting is unspecified, but Lucene query syntax is recommended.
-  /// * `sort` - Specifies the ranking order of results.
+  /// * `sort` - [known_values: ["top", "latest"]] [default: latest] Specifies the ranking order of results.
   /// * `since` - Filter results for posts after the indicated datetime (inclusive). Expected to use 'sortAt' timestamp, which may not match 'createdAt'. Can be a datetime, or just an ISO date (YYYY-MM-DD).
   /// * `until` - Filter results for posts before the indicated datetime (not inclusive). Expected to use 'sortAt' timestamp, which may not match 'createdAt'. Can be a datetime, or just an ISO date (YYY-MM-DD).
-  /// * `mentions` - Filter to posts which mention the given account. Handles are resolved to DID before query-time. Only matches rich-text facet mentions.
-  /// * `author` - Filter to posts by the given account. Handles are resolved to DID before query-time.
-  /// * `lang` - Filter to posts in the given language. Expected to be based on post language field, though server may override language detection.
+  /// * `mentions` - [format: at-identifier] Filter to posts which mention the given account. Handles are resolved to DID before query-time. Only matches rich-text facet mentions.
+  /// * `author` - [format: at-identifier] Filter to posts by the given account. Handles are resolved to DID before query-time.
+  /// * `lang` - [format: language] Filter to posts in the given language. Expected to be based on post language field, though server may override language detection.
   /// * `domain` - Filter to posts with URLs (facet links or embeds) linking to the given domain (hostname). Server may apply hostname normalization.
-  /// * `url` - Filter to posts with links (facet links or embeds) pointing to this URL. Server may apply URL normalization or fuzzy matching.
+  /// * `url` - [format: uri] Filter to posts with links (facet links or embeds) pointing to this URL. Server may apply URL normalization or fuzzy matching.
   /// * `tag` - Filter to posts with the given tag (hashtag), based on rich-text facet or tag field. Do not include the hash (#) prefix. Multiple tags can be specified, with 'AND' matching.
-  /// * `viewer` - DID of the account making the request (not included for public/unauthenticated queries). Used for 'from:me' queries.
-  /// * `limit`
+  /// * `viewer` - [format: did] DID of the account making the request (not included for public/unauthenticated queries). Used for 'from:me' queries.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 25]
   /// * `cursor` - Optional pagination mechanism; may not necessarily allow scrolling through entire result set.
   ///
   /// # Errors
@@ -8013,7 +8375,7 @@ impl Atproto {
 
   /// # Arguments
   ///
-  /// * `members`
+  /// * `members` - [min_length: 1] [max_length: 10]
   pub async fn chat_bsky_convo_get_convo_for_members(
     &self,
     members: &[&str],
@@ -8123,7 +8485,7 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `convo_id`
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn chat_bsky_convo_get_messages(
     &self,
@@ -8232,7 +8594,7 @@ impl Atproto {
 
   /// # Arguments
   ///
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn chat_bsky_convo_list_convos(
     &self,
@@ -8535,7 +8897,7 @@ impl Atproto {
 
   /// # Arguments
   ///
-  /// * `actor`
+  /// * `actor` - [format: did]
   pub async fn chat_bsky_moderation_get_actor_metadata(
     &self,
     actor: &str,
@@ -8588,8 +8950,8 @@ impl Atproto {
   ///
   /// * `convo_id` - Conversation that the message is from. NOTE: this field will eventually be required.
   /// * `message_id`
-  /// * `before`
-  /// * `after`
+  /// * `before` - [default: 5]
+  /// * `after` - [default: 5]
   pub async fn chat_bsky_moderation_get_message_context(
     &self,
     convo_id: Option<&str>,
@@ -8902,7 +9264,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `did`
+  /// * `did` - [format: did]
   pub async fn com_atproto_admin_get_account_info(
     &self,
     did: &str,
@@ -9013,8 +9375,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `sort`
-  /// * `limit`
+  /// * `sort` - [known_values: ["recent", "usage"]] [default: recent]
+  /// * `limit` - [minimum: 1] [maximum: 500] [default: 100]
   /// * `cursor`
   pub async fn com_atproto_admin_get_invite_codes(
     &self,
@@ -9078,9 +9440,9 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `did`
-  /// * `uri`
-  /// * `blob`
+  /// * `did` - [format: did]
+  /// * `uri` - [format: at-uri]
+  /// * `blob` - [format: cid]
   pub async fn com_atproto_admin_get_subject_status(
     &self,
     did: Option<&str>,
@@ -9145,7 +9507,7 @@ impl Atproto {
   ///
   /// * `email`
   /// * `cursor`
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   pub async fn com_atproto_admin_search_accounts(
     &self,
     email: Option<&str>,
@@ -9543,7 +9905,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `handle` - The handle to resolve.
+  /// * `handle` - [format: handle] The handle to resolve.
   pub async fn com_atproto_identity_resolve_handle(
     &self,
     handle: &str,
@@ -9749,7 +10111,7 @@ impl Atproto {
   ///
   /// * `uri_patterns` - List of AT URI patterns to match (boolean 'OR'). Each may be a prefix (ending with '*'; will match inclusive of the string leading to '*'), or a full URI.
   /// * `sources` - Optional list of label sources (DIDs) to filter on.
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 250] [default: 50]
   /// * `cursor`
   pub async fn com_atproto_label_query_labels(
     &self,
@@ -10082,7 +10444,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `repo` - The handle or DID of the repo.
+  /// * `repo` - [format: at-identifier] The handle or DID of the repo.
   pub async fn com_atproto_repo_describe_repo(
     &self,
     repo: &str,
@@ -10135,10 +10497,10 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `repo` - The handle or DID of the repo.
-  /// * `collection` - The NSID of the record collection.
+  /// * `repo` - [format: at-identifier] The handle or DID of the repo.
+  /// * `collection` - [format: nsid] The NSID of the record collection.
   /// * `rkey` - The Record Key.
-  /// * `cid` - The CID of the version of the record. If not specified, then return the most recent version.
+  /// * `cid` - [format: cid] The CID of the version of the record. If not specified, then return the most recent version.
   pub async fn com_atproto_repo_get_record(
     &self,
     repo: &str,
@@ -10247,7 +10609,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 1000] [default: 500]
   /// * `cursor`
   pub async fn com_atproto_repo_list_missing_blobs(
     &self,
@@ -10307,9 +10669,9 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `repo` - The handle or DID of the repo.
-  /// * `collection` - The NSID of the record type.
-  /// * `limit` - The number of records to return.
+  /// * `repo` - [format: at-identifier] The handle or DID of the repo.
+  /// * `collection` - [format: nsid] The NSID of the record type.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50] The number of records to return.
   /// * `cursor`
   /// * `rkey_start` - DEPRECATED: The lowest sort-ordered rkey to start from (exclusive)
   /// * `rkey_end` - DEPRECATED: The highest sort-ordered rkey to stop at (exclusive)
@@ -11098,8 +11460,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `include_used`
-  /// * `create_available` - Controls whether any new 'earned' but not 'created' invites should be created.
+  /// * `include_used` - [default: true]
+  /// * `create_available` - [default: true] Controls whether any new 'earned' but not 'created' invites should be created.
   ///
   /// # Errors
   ///
@@ -11165,9 +11527,9 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `aud` - The DID of the service that the token will be used to authenticate with
+  /// * `aud` - [format: did] The DID of the service that the token will be used to authenticate with
   /// * `exp` - The time in Unix Epoch seconds that the JWT expires. Defaults to 60 seconds in the future. The service may enforce certain time bounds on tokens depending on the requested scope.
-  /// * `lxm` - Lexicon (XRPC) method to bind the requested token to
+  /// * `lxm` - [format: nsid] Lexicon (XRPC) method to bind the requested token to
   ///
   /// # Errors
   ///
@@ -11752,8 +12114,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `did` - The DID of the account.
-  /// * `cid` - The CID of the blob to fetch
+  /// * `did` - [format: did] The DID of the account.
+  /// * `cid` - [format: cid] The CID of the blob to fetch
   ///
   /// # Errors
   ///
@@ -11811,7 +12173,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `did` - The DID of the repo.
+  /// * `did` - [format: did] The DID of the repo.
   /// * `cids`
   ///
   /// # Errors
@@ -11875,7 +12237,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `did` - The DID of the repo.
+  /// * `did` - [format: did] The DID of the repo.
   pub async fn com_atproto_sync_get_checkout(&self, did: &str) -> Result<Vec<u8>> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
@@ -11924,7 +12286,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `did` - The DID of the repo.
+  /// * `did` - [format: did] The DID of the repo.
   ///
   /// # Errors
   ///
@@ -11978,7 +12340,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `did` - The DID of the repo.
+  /// * `did` - [format: did] The DID of the repo.
   ///
   /// # Errors
   ///
@@ -12038,10 +12400,10 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `did` - The DID of the repo.
-  /// * `collection`
+  /// * `did` - [format: did] The DID of the repo.
+  /// * `collection` - [format: nsid]
   /// * `rkey` - Record Key
-  /// * `commit` - DEPRECATED: referenced a repo commit by CID, and retrieved record as of that commit
+  /// * `commit` - [format: cid] DEPRECATED: referenced a repo commit by CID, and retrieved record as of that commit
   ///
   /// # Errors
   ///
@@ -12109,7 +12471,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `did` - The DID of the repo.
+  /// * `did` - [format: did] The DID of the repo.
   /// * `since` - The revision ('rev') of the repo to create a diff from.
   ///
   /// # Errors
@@ -12169,7 +12531,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `did` - The DID of the repo.
+  /// * `did` - [format: did] The DID of the repo.
   ///
   /// # Errors
   ///
@@ -12226,9 +12588,9 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `did` - The DID of the repo.
+  /// * `did` - [format: did] The DID of the repo.
   /// * `since` - Optional revision of the repo to list blobs since.
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 1000] [default: 500]
   /// * `cursor`
   ///
   /// # Errors
@@ -12301,7 +12663,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 1000] [default: 500]
   /// * `cursor`
   pub async fn com_atproto_sync_list_repos(
     &self,
@@ -12552,7 +12914,7 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `since`
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 250] [default: 50]
   pub async fn com_atproto_temp_fetch_labels(
     &self,
     since: Option<i64>,
@@ -12972,8 +13334,8 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `uri`
-  /// * `cid`
+  /// * `uri` - [format: at-uri]
+  /// * `cid` - [format: cid]
   ///
   /// # Errors
   ///
@@ -13034,7 +13396,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `did`
+  /// * `did` - [format: did]
   ///
   /// # Errors
   ///
@@ -13092,13 +13454,13 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `types` - The types of events (fully qualified string in the format of tools.ozone.moderation.defs#modEvent<name>) to filter by. If not specified, all events are returned.
-  /// * `created_by`
-  /// * `sort_direction` - Sort direction for the events. Defaults to descending order of created at timestamp.
-  /// * `created_after` - Retrieve events created after a given timestamp
-  /// * `created_before` - Retrieve events created before a given timestamp
-  /// * `subject`
-  /// * `include_all_user_records` - If true, events on all record types (posts, lists, profile etc.) owned by the did are returned
-  /// * `limit`
+  /// * `created_by` - [format: did]
+  /// * `sort_direction` - [default: desc] [enum: ["asc", "desc"]] Sort direction for the events. Defaults to descending order of created at timestamp.
+  /// * `created_after` - [format: datetime] Retrieve events created after a given timestamp
+  /// * `created_before` - [format: datetime] Retrieve events created before a given timestamp
+  /// * `subject` - [format: uri]
+  /// * `include_all_user_records` - [default: false] If true, events on all record types (posts, lists, profile etc.) owned by the did are returned
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `has_comment` - If true, only events with comments are returned
   /// * `comment` - If specified, only events with comments containing the keyword are returned
   /// * `added_labels` - If specified, only events where all of these labels were added are returned
@@ -13255,22 +13617,22 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `include_all_user_records` - All subjects belonging to the account specified in the 'subject' param will be returned.
-  /// * `subject` - The subject to get the status for.
+  /// * `subject` - [format: uri] The subject to get the status for.
   /// * `comment` - Search subjects by keyword from comments
-  /// * `reported_after` - Search subjects reported after a given timestamp
-  /// * `reported_before` - Search subjects reported before a given timestamp
-  /// * `reviewed_after` - Search subjects reviewed after a given timestamp
-  /// * `reviewed_before` - Search subjects reviewed before a given timestamp
+  /// * `reported_after` - [format: datetime] Search subjects reported after a given timestamp
+  /// * `reported_before` - [format: datetime] Search subjects reported before a given timestamp
+  /// * `reviewed_after` - [format: datetime] Search subjects reviewed after a given timestamp
+  /// * `reviewed_before` - [format: datetime] Search subjects reviewed before a given timestamp
   /// * `include_muted` - By default, we don't include muted subjects in the results. Set this to true to include them.
   /// * `only_muted` - When set to true, only muted subjects and reporters will be returned.
   /// * `review_state` - Specify when fetching subjects in a certain state
   /// * `ignore_subjects`
-  /// * `last_reviewed_by` - Get all subject statuses that were reviewed by a specific moderator
-  /// * `sort_field`
-  /// * `sort_direction`
+  /// * `last_reviewed_by` - [format: did] Get all subject statuses that were reviewed by a specific moderator
+  /// * `sort_field` - [default: lastReportedAt] [enum: ["lastReviewedAt", "lastReportedAt"]]
+  /// * `sort_direction` - [default: desc] [enum: ["asc", "desc"]]
   /// * `takendown` - Get subjects that were taken down
   /// * `appealed` - Get subjects in unresolved appealed status
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `tags`
   /// * `exclude_tags`
   /// * `cursor`
@@ -13433,7 +13795,7 @@ impl Atproto {
   ///
   /// * `term` - DEPRECATED: use 'q' instead
   /// * `q`
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn tools_ozone_moderation_search_repos(
     &self,
@@ -13652,7 +14014,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `limit`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn tools_ozone_team_list_members(
     &self,

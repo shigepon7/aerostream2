@@ -10,7 +10,7 @@ homepage = "https://github.com/shigepon7/aerostream2/"
 keywords = ["bluesky", "atproto"]
 
 [dependencies]
-axum = { version = "0.7.5", features = ["macros"] }
+axum = { version = "0.7.7", features = ["macros"] }
 chrono = { version = "0.4.38", features = ["serde"] }
 ciborium = "0.2.2"
 dotenvy = "0.15.7"
@@ -25,8 +25,8 @@ tracing = "0.1.40"
 tokio = { version = "1.40.0", features = ["full"] }
 mime_guess = "2.0.5"
 indexmap = "2.5.0"
-lindera = { version = "0.32.2", features = ["ipadic"] }
+lindera = { version = "0.33.0", features = ["ipadic"] }
 async-std = "1.13.0"
-async-trait = "0.1.82"
+async-trait = "0.1.83"
 base64 = "0.22.1"
 data-encoding = "2.6.0"

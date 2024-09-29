@@ -1,5 +1,6 @@
 use crate::*;
 
+/// a thread which receives records from public PDS through websockets
 pub async fn firehose_thread(
   hostname: String,
   tx: tokio::sync::mpsc::Sender<(ComAtprotoSyncSubscribeReposCommit, Record)>,
@@ -62,6 +63,7 @@ pub async fn firehose_thread(
   }
 }
 
+/// a thread which receives records from all firehose threads
 pub async fn receiver_thread(
   mut servers: tokio::sync::mpsc::Receiver<(ComAtprotoSyncSubscribeReposCommit, Record)>,
   receivers: std::sync::Arc<
@@ -88,6 +90,7 @@ pub async fn receiver_thread(
   }
 }
 
+/// a thread which passes only app.bsky.feed.post records
 pub async fn post_thread(
   mut receiver: tokio::sync::mpsc::Receiver<(ComAtprotoSyncSubscribeReposCommit, Record)>,
   post_receivers: std::sync::Arc<
@@ -118,6 +121,7 @@ pub async fn post_thread(
   }
 }
 
+/// a thread which passes only app.bsky.feed.post langs: ja records
 pub async fn japanese_thread(
   mut receiver: tokio::sync::mpsc::Receiver<(ComAtprotoSyncSubscribeReposCommit, AppBskyFeedPost)>,
   ja_receivers: std::sync::Arc<
@@ -151,6 +155,7 @@ pub async fn japanese_thread(
   }
 }
 
+/// a thread which passes langs:ja app.bsky.feed.post records with morphological analysis results
 pub async fn token_thread(
   mut receiver: tokio::sync::mpsc::Receiver<(ComAtprotoSyncSubscribeReposCommit, AppBskyFeedPost)>,
   ja_receivers: std::sync::Arc<
@@ -208,6 +213,7 @@ pub async fn token_thread(
   }
 }
 
+/// Firehose
 pub struct Firehose {
   pub handles: indexmap::IndexMap<String, tokio::task::JoinHandle<()>>,
   pub tx: tokio::sync::mpsc::Sender<(ComAtprotoSyncSubscribeReposCommit, Record)>,
@@ -244,6 +250,7 @@ pub struct Firehose {
 }
 
 impl Firehose {
+  /// create a Firehose client
   pub fn new(size: usize) -> Self {
     let token_receivers = std::sync::Arc::new(tokio::sync::RwLock::new(Vec::new()));
     let (token_tx, token_rx) = tokio::sync::mpsc::channel(size);
@@ -275,6 +282,7 @@ impl Firehose {
     }
   }
 
+  /// add a server into the list of servers to be connected
   pub fn add_server(&mut self, hostname: &str) {
     self.handles.insert(
       hostname.to_string(),
@@ -282,6 +290,7 @@ impl Firehose {
     );
   }
 
+  /// add a receiver into the list of recerivers to send data through tokio::sync::mpsc
   pub async fn add_receiver(
     &mut self,
     size: usize,
@@ -291,6 +300,7 @@ impl Firehose {
     receiver
   }
 
+  /// add a app.bsky.feed.post receiver into the list of recerivers to send data through tokio::sync::mpsc
   pub async fn add_post_receiver(
     &mut self,
     size: usize,
@@ -300,6 +310,7 @@ impl Firehose {
     receiver
   }
 
+  /// add a app.bsky.feed.post with langs: ja receiver into the list of recerivers to send data through tokio::sync::mpsc
   pub async fn add_ja_receiver(
     &mut self,
     size: usize,
@@ -309,6 +320,7 @@ impl Firehose {
     receiver
   }
 
+  /// add a app.bsky.feed.post with morphological analysis results receiver into the list of recerivers to send data through tokio::sync::mpsc
   pub async fn add_token_receiver(
     &mut self,
     size: usize,

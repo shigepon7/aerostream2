@@ -1,3 +1,5 @@
+//! aerostream2
+
 mod atproto;
 mod feedgen;
 mod firehose;
