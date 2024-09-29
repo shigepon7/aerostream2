@@ -171,16 +171,14 @@ pub async fn token_thread(
   >,
 ) {
   let mut counter: u64 = 0;
-  let dictionary = lindera::DictionaryConfig {
-    kind: Some(lindera::DictionaryKind::IPADIC),
+  let dictionary_config = lindera::dictionary::DictionaryConfig {
+    kind: Some(lindera::dictionary::DictionaryKind::IPADIC),
     path: None,
   };
-  let config = lindera::TokenizerConfig {
-    dictionary,
-    user_dictionary: None,
-    mode: lindera::Mode::Normal,
-  };
-  let tokenizer = lindera::Tokenizer::from_config(config).unwrap();
+  let dictionary =
+    lindera::dictionary::DictionaryLoader::load_dictionary_from_config(dictionary_config).unwrap();
+  let tokenizer =
+    lindera::tokenizer::Tokenizer::new(lindera::core::mode::Mode::Normal, dictionary, None);
   loop {
     let (commit, post) = match receiver.recv().await {
       Some(p) => p,
@@ -191,8 +189,7 @@ pub async fn token_thread(
       .map(|mut tokens| {
         tokens
           .iter_mut()
-          .filter_map(|t| t.get_details())
-          .map(|t| t.iter().map(|t| t.to_string()).collect::<Vec<_>>())
+          .map(|t| t.details().iter().map(|d| d.to_string()).collect())
           .collect::<Vec<_>>()
       })
       .as_ref()
