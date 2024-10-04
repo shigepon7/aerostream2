@@ -4448,6 +4448,38 @@ pub struct ToolsOzoneModerationEmitEventInput {
   pub created_by: String,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ToolsOzoneModerationGetRecordsOutputRecordsUnion {
+  #[serde(rename = "tools.ozone.moderation.defs#recordViewDetail")]
+  ToolsOzoneModerationDefsRecordViewDetail(Box<ToolsOzoneModerationDefsRecordViewDetail>),
+  #[serde(rename = "tools.ozone.moderation.defs#recordViewNotFound")]
+  ToolsOzoneModerationDefsRecordViewNotFound(Box<ToolsOzoneModerationDefsRecordViewNotFound>),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationGetRecordsOutput {
+  pub records: Vec<ToolsOzoneModerationGetRecordsOutputRecordsUnion>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ToolsOzoneModerationGetReposOutputReposUnion {
+  #[serde(rename = "tools.ozone.moderation.defs#repoViewDetail")]
+  ToolsOzoneModerationDefsRepoViewDetail(Box<ToolsOzoneModerationDefsRepoViewDetail>),
+  #[serde(rename = "tools.ozone.moderation.defs#repoViewNotFound")]
+  ToolsOzoneModerationDefsRepoViewNotFound(Box<ToolsOzoneModerationDefsRepoViewNotFound>),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationGetReposOutput {
+  pub repos: Vec<ToolsOzoneModerationGetReposOutputReposUnion>,
+}
+
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -4497,6 +4529,45 @@ pub struct ToolsOzoneServerGetConfigServiceConfig {
 pub struct ToolsOzoneServerGetConfigViewerConfig {
   /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage"]]
   pub role: Option<String>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSignatureDefsSigDetail {
+  pub property: String,
+  pub value: String,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSignatureFindCorrelationOutput {
+  pub details: Vec<ToolsOzoneSignatureDefsSigDetail>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSignatureFindRelatedAccountsOutput {
+  pub cursor: Option<String>,
+  pub accounts: Vec<ToolsOzoneSignatureFindRelatedAccountsRelatedAccount>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSignatureFindRelatedAccountsRelatedAccount {
+  pub account: ComAtprotoAdminDefsAccountView,
+  pub similarities: Option<Vec<ToolsOzoneSignatureDefsSigDetail>>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSignatureSearchAccountsOutput {
+  pub cursor: Option<String>,
+  pub accounts: Vec<ComAtprotoAdminDefsAccountView>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -10501,6 +10572,10 @@ impl Atproto {
   /// * `collection` - [format: nsid] The NSID of the record collection.
   /// * `rkey` - The Record Key.
   /// * `cid` - [format: cid] The CID of the version of the record. If not specified, then return the most recent version.
+  ///
+  /// # Errors
+  ///
+  /// * `RecordNotFound`
   pub async fn com_atproto_repo_get_record(
     &self,
     repo: &str,
@@ -13392,6 +13467,64 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
+  /// Get details about some records.
+  ///
+  /// # Arguments
+  ///
+  /// * `uris` - [max_length: 100]
+  pub async fn tools_ozone_moderation_get_records(
+    &self,
+    uris: &[&str],
+  ) -> Result<ToolsOzoneModerationGetRecordsOutput> {
+    let mut query_ = Vec::new();
+    query_.append(
+      &mut uris
+        .iter()
+        .map(|i| (String::from("uris"), i.to_string()))
+        .collect::<Vec<_>>(),
+    );
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.moderation.getRecords",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = &self.access_jwt {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// Get details about a repository.
   ///
   /// # Arguments
@@ -13411,6 +13544,64 @@ impl Atproto {
       .client
       .get(&format!(
         "https://{}/xrpc/tools.ozone.moderation.getRepo",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = &self.access_jwt {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get details about some repositories.
+  ///
+  /// # Arguments
+  ///
+  /// * `dids` - [max_length: 100]
+  pub async fn tools_ozone_moderation_get_repos(
+    &self,
+    dids: &[&str],
+  ) -> Result<ToolsOzoneModerationGetReposOutput> {
+    let mut query_ = Vec::new();
+    query_.append(
+      &mut dids
+        .iter()
+        .map(|i| (String::from("dids"), i.to_string()))
+        .collect::<Vec<_>>(),
+    );
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.moderation.getRepos",
         self.host
       ))
       .query(&query_);
@@ -13865,6 +14056,195 @@ impl Atproto {
       "https://{}/xrpc/tools.ozone.server.getConfig",
       self.host
     ));
+    if let Some(token) = &self.access_jwt {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Find all correlated threat signatures between 2 or more accounts.
+  ///
+  /// # Arguments
+  ///
+  /// * `dids`
+  pub async fn tools_ozone_signature_find_correlation(
+    &self,
+    dids: &[&str],
+  ) -> Result<ToolsOzoneSignatureFindCorrelationOutput> {
+    let mut query_ = Vec::new();
+    query_.append(
+      &mut dids
+        .iter()
+        .map(|i| (String::from("dids"), i.to_string()))
+        .collect::<Vec<_>>(),
+    );
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.signature.findCorrelation",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = &self.access_jwt {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get accounts that share some matching threat signatures with the root account.
+  ///
+  /// # Arguments
+  ///
+  /// * `did` - [format: did]
+  /// * `cursor`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
+  pub async fn tools_ozone_signature_find_related_accounts(
+    &self,
+    did: &str,
+    cursor: Option<&str>,
+    limit: Option<i64>,
+  ) -> Result<ToolsOzoneSignatureFindRelatedAccountsOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("did"), did.to_string()));
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.signature.findRelatedAccounts",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = &self.access_jwt {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Search for accounts that match one or more threat signature values.
+  ///
+  /// # Arguments
+  ///
+  /// * `values`
+  /// * `cursor`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
+  pub async fn tools_ozone_signature_search_accounts(
+    &self,
+    values: &[&str],
+    cursor: Option<&str>,
+    limit: Option<i64>,
+  ) -> Result<ToolsOzoneSignatureSearchAccountsOutput> {
+    let mut query_ = Vec::new();
+    query_.append(
+      &mut values
+        .iter()
+        .map(|i| (String::from("values"), i.to_string()))
+        .collect::<Vec<_>>(),
+    );
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.signature.searchAccounts",
+        self.host
+      ))
+      .query(&query_);
     if let Some(token) = &self.access_jwt {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
