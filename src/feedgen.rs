@@ -326,8 +326,11 @@ impl FeedGenerator {
     password: &str,
   ) -> crate::Result<()> {
     let feed = dynamic.feed();
+    let name = feed.display_name.clone();
     let uri = feed.to_aturi();
-    self.insert_feed(feed, server, handle, password).await?;
+    if let Err(e) = self.insert_feed(feed, server, handle, password).await {
+      tracing::warn!("{name} : put FeedGenerator Record error {e:?}");
+    }
     self.dynamic_feeds.write().await.insert(uri, dynamic);
     Ok(())
   }
