@@ -268,6 +268,7 @@ pub struct FeedGenerator {
   pub privacy_policy: Option<String>,
   pub terms_of_service: Option<String>,
   pub access_log: std::sync::Arc<tokio::sync::RwLock<Vec<FeedGeneratorAccessLog>>>,
+  pub sessions: std::collections::HashMap<String, Atproto>,
 }
 
 impl FeedGenerator {
@@ -280,6 +281,7 @@ impl FeedGenerator {
       privacy_policy: None,
       terms_of_service: None,
       access_log: std::sync::Arc::new(tokio::sync::RwLock::new(Vec::new())),
+      sessions: std::collections::HashMap::new(),
     }
   }
 
@@ -291,43 +293,67 @@ impl FeedGenerator {
     handle: &str,
     password: &str,
   ) {
-    let mut atproto = Atproto::default();
-    match atproto.login(handle, password).await {
-      Ok(_) => {
-        let avatar = match &feed.avatar {
-          Some((d, m)) => atproto
-            .com_atproto_repo_upload_blob(d.clone(), m)
-            .await
-            .ok()
-            .map(|o| o.blob),
-          None => None,
-        };
-        match serde_json::to_string(&feed.to_atproto(server, avatar))
-          .and_then(|v| serde_json::from_str(&v))
-          .map_err(|e| crate::Error::Parse((e, String::new())))
-        {
-          Ok(record) => {
-            let input = ComAtprotoRepoPutRecordInput {
-              repo: feed.owner.clone(),
-              collection: String::from("app.bsky.feed.generator"),
-              rkey: feed.rkey.clone(),
-              validate: None,
-              record,
-              swap_record: None,
-              swap_commit: None,
-            };
-            if let Err(e) = atproto.com_atproto_repo_put_record(input.clone()).await {
-              tracing::warn!("{} putRecord error {e:?}", feed.display_name);
-            }
-            self.feeds.write().await.insert(feed.to_aturi(), feed);
+    let atproto = match self.sessions.get_mut(handle) {
+      Some(session) => {
+        session.access_jwt = session.refresh_jwt.clone();
+        match session.com_atproto_server_refresh_session().await {
+          Ok(o) => {
+            tracing::info!("{} refresh session succeeded", feed.display_name);
+            session.access_jwt = Some(o.access_jwt.clone());
           }
           Err(e) => {
-            tracing::warn!("{} feed convert error {e:?}", feed.display_name);
+            tracing::warn!("{} refresh session error {e:?}", feed.display_name);
+            return;
+          }
+        }
+        session
+      }
+      None => {
+        let mut session = Atproto::default();
+        if let Err(e) = session.login(handle, password).await {
+          tracing::warn!("{} login error {e:?}", feed.display_name);
+          return;
+        }
+        tracing::info!("{} login succeeded", feed.display_name);
+        self.sessions.insert(handle.to_string(), session);
+        match self.sessions.get_mut(handle) {
+          Some(session) => session,
+          None => {
+            tracing::warn!("{} reload error", feed.display_name);
+            return;
           }
         }
       }
+    };
+    let avatar = match &feed.avatar {
+      Some((d, m)) => atproto
+        .com_atproto_repo_upload_blob(d.clone(), m)
+        .await
+        .ok()
+        .map(|o| o.blob),
+      None => None,
+    };
+    match serde_json::to_string(&feed.to_atproto(server, avatar))
+      .and_then(|v| serde_json::from_str(&v))
+      .map_err(|e| crate::Error::Parse((e, String::new())))
+    {
+      Ok(record) => {
+        let input = ComAtprotoRepoPutRecordInput {
+          repo: feed.owner.clone(),
+          collection: String::from("app.bsky.feed.generator"),
+          rkey: feed.rkey.clone(),
+          validate: None,
+          record,
+          swap_record: None,
+          swap_commit: None,
+        };
+        if let Err(e) = atproto.com_atproto_repo_put_record(input.clone()).await {
+          tracing::warn!("{} putRecord error {e:?}", feed.display_name);
+        }
+        self.feeds.write().await.insert(feed.to_aturi(), feed);
+      }
       Err(e) => {
-        tracing::warn!("{} login error {e:?}", feed.display_name);
+        tracing::warn!("{} feed convert error {e:?}", feed.display_name);
       }
     }
   }
