@@ -4534,6 +4534,79 @@ pub struct ToolsOzoneServerGetConfigViewerConfig {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSetAddValuesInput {
+  /// Name of the set to add values to
+  pub name: String,
+  /// [min_length: 1] [max_length: 1000] Array of string values to add to the set
+  pub values: Vec<String>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSetDefsSet {
+  /// [max_length: 128] [min_length: 3]
+  pub name: String,
+  /// [max_graphemes: 1024] [max_length: 10240]
+  pub description: Option<String>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSetDefsSetView {
+  /// [max_length: 128] [min_length: 3]
+  pub name: String,
+  /// [max_graphemes: 1024] [max_length: 10240]
+  pub description: Option<String>,
+  pub set_size: i64,
+  /// [format: datetime]
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  /// [format: datetime]
+  pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSetDeleteSetInput {
+  /// Name of the set to delete
+  pub name: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ToolsOzoneSetDeleteSetOutput(pub serde_json::Value);
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSetDeleteValuesInput {
+  /// Name of the set to delete values from
+  pub name: String,
+  /// [min_length: 1] Array of string values to delete from the set
+  pub values: Vec<String>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSetGetValuesOutput {
+  pub set: ToolsOzoneSetDefsSetView,
+  pub values: Vec<String>,
+  pub cursor: Option<String>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSetQuerySetsOutput {
+  pub sets: Vec<ToolsOzoneSetDefsSetView>,
+  pub cursor: Option<String>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneSignatureDefsSigDetail {
   pub property: String,
   pub value: String,
@@ -14056,6 +14129,355 @@ impl Atproto {
       "https://{}/xrpc/tools.ozone.server.getConfig",
       self.host
     ));
+    if let Some(token) = &self.access_jwt {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Add values to a specific set. Attempting to add values to a set that does not exist will result in an error.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn tools_ozone_set_add_values(&self, body: ToolsOzoneSetAddValuesInput) -> Result<()> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.set.addValues",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = &self.access_jwt {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    Ok(())
+  }
+
+  /// Delete an entire set. Attempting to delete a set that does not exist will result in an error.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `SetNotFound` - set with the given name does not exist
+  pub async fn tools_ozone_set_delete_set(
+    &self,
+    body: ToolsOzoneSetDeleteSetInput,
+  ) -> Result<serde_json::Value> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.set.deleteSet",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = &self.access_jwt {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Delete values from a specific set. Attempting to delete values that are not in the set will not result in an error
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `SetNotFound` - set with the given name does not exist
+  pub async fn tools_ozone_set_delete_values(
+    &self,
+    body: ToolsOzoneSetDeleteValuesInput,
+  ) -> Result<()> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.set.deleteValues",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = &self.access_jwt {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    Ok(())
+  }
+
+  /// Get a specific set and its values
+  ///
+  /// # Arguments
+  ///
+  /// * `name`
+  /// * `limit` - [minimum: 1] [maximum: 1000] [default: 100]
+  /// * `cursor`
+  ///
+  /// # Errors
+  ///
+  /// * `SetNotFound` - set with the given name does not exist
+  pub async fn tools_ozone_set_get_values(
+    &self,
+    name: &str,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+  ) -> Result<ToolsOzoneSetGetValuesOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("name"), name.to_string()));
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.set.getValues",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = &self.access_jwt {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Query available sets
+  ///
+  /// # Arguments
+  ///
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
+  /// * `cursor`
+  /// * `name_prefix`
+  /// * `sort_by` - [default: name] [enum: ["name", "createdAt", "updatedAt"]]
+  /// * `sort_direction` - [default: asc] [enum: ["asc", "desc"]] Defaults to ascending order of name field.
+  pub async fn tools_ozone_set_query_sets(
+    &self,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+    name_prefix: Option<&str>,
+    sort_by: Option<&str>,
+    sort_direction: Option<&str>,
+  ) -> Result<ToolsOzoneSetQuerySetsOutput> {
+    let mut query_ = Vec::new();
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    if let Some(name_prefix) = &name_prefix {
+      query_.push((String::from("name_prefix"), name_prefix.to_string()));
+    }
+    if let Some(sort_by) = &sort_by {
+      query_.push((String::from("sort_by"), sort_by.to_string()));
+    }
+    if let Some(sort_direction) = &sort_direction {
+      query_.push((String::from("sort_direction"), sort_direction.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.set.querySets",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = &self.access_jwt {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Create or update set metadata
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn tools_ozone_set_upsert_set(
+    &self,
+    body: ToolsOzoneSetDefsSet,
+  ) -> Result<ToolsOzoneSetDefsSetView> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.set.upsertSet",
+        self.host
+      ))
+      .json(&body);
     if let Some(token) = &self.access_jwt {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
