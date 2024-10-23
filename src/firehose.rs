@@ -175,10 +175,8 @@ pub async fn token_thread(
     kind: Some(lindera::dictionary::DictionaryKind::IPADIC),
     path: None,
   };
-  let dictionary =
-    lindera::dictionary::DictionaryLoader::load_dictionary_from_config(dictionary_config).unwrap();
-  let tokenizer =
-    lindera::tokenizer::Tokenizer::new(lindera::core::mode::Mode::Normal, dictionary, None);
+  let dictionary = lindera::dictionary::load_dictionary_from_config(dictionary_config).unwrap();
+  let tokenizer = lindera::tokenizer::Tokenizer::new(lindera::mode::Mode::Normal, dictionary, None);
   loop {
     let (commit, post) = match receiver.recv().await {
       Some(p) => p,
