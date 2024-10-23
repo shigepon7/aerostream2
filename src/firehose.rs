@@ -42,7 +42,7 @@ pub async fn firehose_thread(
       };
       counter += 1;
       if counter % 1000 == 0 {
-        tracing::info!("FIREHOSE : {hostname} : received {counter}");
+        tracing::debug!("FIREHOSE : {hostname} : received {counter}");
       }
       let object = match Object::try_from(&message) {
         Ok(o) => o,
@@ -80,7 +80,7 @@ pub async fn receiver_thread(
     };
     counter += 1;
     if counter % 10000 == 0 {
-      tracing::info!("RECEIVER : received {counter}");
+      tracing::debug!("RECEIVER : received {counter}");
     }
     for tx in receivers.read().await.iter() {
       if let Err(e) = tx.send(payload.clone()).await {
@@ -111,7 +111,7 @@ pub async fn post_thread(
     };
     counter += 1;
     if counter % 1000 == 0 {
-      tracing::info!("POST_RECEIVER : received {counter}");
+      tracing::debug!("POST_RECEIVER : received {counter}");
     }
     for tx in post_receivers.read().await.iter() {
       if let Err(e) = tx.send((commit.clone(), post.clone())).await {
@@ -144,7 +144,7 @@ pub async fn japanese_thread(
     {
       counter += 1;
       if counter % 100 == 0 {
-        tracing::info!("JA_RECEIVER : received {counter}");
+        tracing::debug!("JA_RECEIVER : received {counter}");
       }
       for tx in ja_receivers.read().await.iter() {
         if let Err(e) = tx.send((commit.clone(), post.clone())).await {
@@ -196,7 +196,7 @@ pub async fn token_thread(
     {
       counter += 1;
       if counter % 100 == 0 {
-        tracing::info!("TOKEN_RECEIVER : received {counter}");
+        tracing::debug!("TOKEN_RECEIVER : received {counter}");
       }
       for tx in ja_receivers.read().await.iter() {
         if let Err(e) = tx

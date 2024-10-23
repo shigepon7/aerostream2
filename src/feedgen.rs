@@ -298,7 +298,7 @@ impl FeedGenerator {
         session.access_jwt = session.refresh_jwt.clone();
         match session.com_atproto_server_refresh_session().await {
           Ok(o) => {
-            tracing::info!("{} refresh session succeeded", feed.display_name);
+            tracing::debug!("{} refresh session succeeded", feed.display_name);
             session.access_jwt = Some(o.access_jwt.clone());
           }
           Err(e) => {
@@ -314,7 +314,7 @@ impl FeedGenerator {
           tracing::warn!("{} login error {e:?}", feed.display_name);
           return;
         }
-        tracing::info!("{} login succeeded", feed.display_name);
+        tracing::debug!("{} login succeeded", feed.display_name);
         self.sessions.insert(handle.to_string(), session);
         match self.sessions.get_mut(handle) {
           Some(session) => session,
