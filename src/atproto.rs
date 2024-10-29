@@ -4703,8 +4703,8 @@ pub struct Atproto {
   pub client: reqwest::Client,
   pub host: String,
   pub firehose: String,
-  pub access_jwt: Option<String>,
-  pub refresh_jwt: Option<String>,
+  pub access_jwt: std::sync::Arc<tokio::sync::RwLock<Option<String>>>,
+  pub refresh_jwt: std::sync::Arc<tokio::sync::RwLock<Option<String>>>,
 }
 
 impl Default for Atproto {
@@ -4724,8 +4724,8 @@ impl Atproto {
       firehose: firehose
         .map(|h| h.to_string())
         .unwrap_or_else(|| String::from("bsky.network")),
-      access_jwt: None,
-      refresh_jwt: None,
+      access_jwt: std::sync::Arc::new(tokio::sync::RwLock::new(None)),
+      refresh_jwt: std::sync::Arc::new(tokio::sync::RwLock::new(None)),
     }
   }
 
@@ -4738,9 +4738,37 @@ impl Atproto {
         auth_factor_token: None,
       })
       .await?;
-    self.access_jwt = Some(output.access_jwt.clone());
-    self.refresh_jwt = Some(output.refresh_jwt.clone());
+    {
+      let mut lock = self.access_jwt.write().await;
+      *lock = Some(output.access_jwt.clone());
+    }
+    {
+      let mut lock = self.refresh_jwt.write().await;
+      *lock = Some(output.refresh_jwt.clone());
+    }
     Ok(output)
+  }
+
+  /// refresh access token
+  pub async fn refresh(&mut self) -> Result<()> {
+    let access_jwt = self.access_jwt.clone();
+    self.access_jwt = self.refresh_jwt.clone();
+    let output = match self.com_atproto_server_refresh_session().await {
+      Ok(o) => o,
+      Err(e) => {
+        self.access_jwt = access_jwt;
+        return Err(e);
+      }
+    };
+    {
+      let mut lock = self.access_jwt.write().await;
+      *lock = Some(output.access_jwt.clone());
+    }
+    {
+      let mut lock = self.refresh_jwt.write().await;
+      *lock = Some(output.refresh_jwt.clone());
+    }
+    Ok(())
   }
 
   /// Get private preferences attached to the current account. Expected use is synchronization between multiple devices, and import/export during account migration. Requires auth.
@@ -4749,7 +4777,7 @@ impl Atproto {
       "https://{}/xrpc/app.bsky.actor.getPreferences",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -4802,7 +4830,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -4860,7 +4888,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -4920,7 +4948,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -4971,7 +4999,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5040,7 +5068,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5105,7 +5133,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5148,7 +5176,7 @@ impl Atproto {
       "https://{}/xrpc/app.bsky.feed.describeFeedGenerator",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5211,7 +5239,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5279,7 +5307,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5357,7 +5385,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5421,7 +5449,7 @@ impl Atproto {
       .client
       .get(&format!("https://{}/xrpc/app.bsky.feed.getFeed", self.host))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5474,7 +5502,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5532,7 +5560,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5599,7 +5627,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5667,7 +5695,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5734,7 +5762,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5801,7 +5829,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5856,7 +5884,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5924,7 +5952,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -5992,7 +6020,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6052,7 +6080,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6117,7 +6145,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6234,7 +6262,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6285,7 +6313,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6348,7 +6376,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6408,7 +6436,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6471,7 +6499,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6534,7 +6562,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6597,7 +6625,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6660,7 +6688,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6720,7 +6748,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6780,7 +6808,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6843,7 +6871,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6903,7 +6931,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -6970,7 +6998,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7023,7 +7051,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7081,7 +7109,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7134,7 +7162,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7182,7 +7210,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7232,7 +7260,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7279,7 +7307,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7329,7 +7357,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7379,7 +7407,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7429,7 +7457,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7491,7 +7519,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7551,7 +7579,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7621,7 +7649,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7672,7 +7700,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7722,7 +7750,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7772,7 +7800,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7836,7 +7864,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7906,7 +7934,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -7949,7 +7977,7 @@ impl Atproto {
       "https://{}/xrpc/app.bsky.unspecced.getTaggedSuggestions",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8026,7 +8054,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8148,7 +8176,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8201,7 +8229,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8244,7 +8272,7 @@ impl Atproto {
       "https://{}/xrpc/app.bsky.video.getUploadLimits",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8296,7 +8324,7 @@ impl Atproto {
       ))
       .header("Content-Type", "video/mp4")
       .body(body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8336,7 +8364,7 @@ impl Atproto {
       "https://{}/xrpc/chat.bsky.actor.deleteAccount",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8376,7 +8404,7 @@ impl Atproto {
       "https://{}/xrpc/chat.bsky.actor.exportAccountData",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8431,7 +8459,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8482,7 +8510,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8538,7 +8566,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8591,7 +8619,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8652,7 +8680,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8701,7 +8729,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8759,7 +8787,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8808,7 +8836,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8857,7 +8885,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8906,7 +8934,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -8955,7 +8983,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9004,7 +9032,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9055,7 +9083,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9121,7 +9149,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9170,7 +9198,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9220,7 +9248,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9270,7 +9298,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9320,7 +9348,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9370,7 +9398,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9422,7 +9450,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9480,7 +9508,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9545,7 +9573,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9610,7 +9638,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9675,7 +9703,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9726,7 +9754,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9777,7 +9805,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9827,7 +9855,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9877,7 +9905,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9927,7 +9955,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -9970,7 +9998,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.identity.getRecommendedDidCredentials",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10011,7 +10039,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.identity.requestPlcOperationSignature",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10063,7 +10091,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10114,7 +10142,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10165,7 +10193,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10215,7 +10243,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10292,7 +10320,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10356,7 +10384,7 @@ impl Atproto {
         self.firehose
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     Ok(
@@ -10384,7 +10412,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10439,7 +10467,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10494,7 +10522,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10549,7 +10577,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10602,7 +10630,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10670,7 +10698,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10719,7 +10747,7 @@ impl Atproto {
       ))
       .header("Content-Type", "application/vnd.ipld.car")
       .body(body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10778,7 +10806,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10859,7 +10887,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10914,7 +10942,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -10966,7 +10994,7 @@ impl Atproto {
         self.host
       ))
       .body(body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     request = request.header("Content-Type", content_type);
@@ -11008,7 +11036,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.server.activateAccount",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11050,7 +11078,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.server.checkAccountStatus",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11108,7 +11136,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11168,7 +11196,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11223,7 +11251,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11274,7 +11302,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11325,7 +11353,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11381,7 +11409,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11432,7 +11460,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11487,7 +11515,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11527,7 +11555,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.server.deleteSession",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11569,7 +11597,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.server.describeServer",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11636,7 +11664,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11703,7 +11731,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11744,7 +11772,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.server.getSession",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11791,7 +11819,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.server.listAppPasswords",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11838,7 +11866,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.server.refreshSession",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11879,7 +11907,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.server.requestAccountDelete",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11919,7 +11947,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.server.requestEmailConfirmation",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -11961,7 +11989,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.server.requestEmailUpdate",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12012,7 +12040,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12062,7 +12090,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12118,7 +12146,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12168,7 +12196,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12224,7 +12252,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12283,7 +12311,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12347,7 +12375,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12396,7 +12424,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12449,7 +12477,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12509,7 +12537,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12581,7 +12609,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12641,7 +12669,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12697,7 +12725,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12772,7 +12800,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12832,7 +12860,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12883,7 +12911,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -12933,7 +12961,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13002,7 +13030,7 @@ impl Atproto {
         self.firehose
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     Ok(
@@ -13022,7 +13050,7 @@ impl Atproto {
       "https://{}/xrpc/com.atproto.temp.checkSignupQueue",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13082,7 +13110,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13133,7 +13161,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13187,7 +13215,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13238,7 +13266,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13280,7 +13308,7 @@ impl Atproto {
       "https://{}/xrpc/tools.ozone.communication.listTemplates",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13335,7 +13363,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13390,7 +13418,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13443,7 +13471,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13505,7 +13533,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13563,7 +13591,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13620,7 +13648,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13678,7 +13706,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -13841,7 +13869,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14018,7 +14046,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14088,7 +14116,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14129,7 +14157,7 @@ impl Atproto {
       "https://{}/xrpc/tools.ozone.server.getConfig",
       self.host
     ));
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14177,7 +14205,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14231,7 +14259,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14286,7 +14314,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14352,7 +14380,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14427,7 +14455,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14478,7 +14506,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14536,7 +14564,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14599,7 +14627,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14667,7 +14695,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14722,7 +14750,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14778,7 +14806,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14837,7 +14865,7 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;
@@ -14892,7 +14920,7 @@ impl Atproto {
         self.host
       ))
       .json(&body);
-    if let Some(token) = &self.access_jwt {
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
     let response = request.send().await?;

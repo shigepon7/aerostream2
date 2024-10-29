@@ -294,20 +294,16 @@ impl FeedGenerator {
     password: &str,
   ) {
     let atproto = match self.sessions.get_mut(handle) {
-      Some(session) => {
-        session.access_jwt = session.refresh_jwt.clone();
-        match session.com_atproto_server_refresh_session().await {
-          Ok(o) => {
-            tracing::debug!("{} refresh session succeeded", feed.display_name);
-            session.access_jwt = Some(o.access_jwt.clone());
-          }
-          Err(e) => {
-            tracing::warn!("{} refresh session error {e:?}", feed.display_name);
-            return;
-          }
+      Some(session) => match session.refresh().await {
+        Ok(_) => {
+          tracing::debug!("{} refresh session succeeded", feed.display_name);
+          session
         }
-        session
-      }
+        Err(e) => {
+          tracing::warn!("{} refresh session error {e:?}", feed.display_name);
+          return;
+        }
+      },
       None => {
         let mut session = Atproto::default();
         if let Err(e) = session.login(handle, password).await {
