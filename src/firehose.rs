@@ -22,21 +22,23 @@ pub async fn firehose_thread(
       }
     };
     loop {
-      let message = match async_std::io::timeout(std::time::Duration::from_secs(60), async {
-        Ok(match futures_util::TryStreamExt::try_next(&mut ws).await {
-          Ok(m) => m,
-          Err(e) => return Err(std::io::Error::other(e)),
-        })
-      })
+      let message = match tokio::time::timeout(
+        std::time::Duration::from_secs(60),
+        futures_util::TryStreamExt::try_next(&mut ws),
+      )
       .await
       {
-        Ok(Some(m)) => m,
-        Ok(None) => {
-          tracing::warn!("FIREHOSE : {hostname} : receive timeout");
+        Ok(Ok(Some(m))) => m,
+        Ok(Ok(None)) => {
+          tracing::warn!("FIREHOSE : {hostname} : session closed");
+          break;
+        }
+        Ok(Err(e)) => {
+          tracing::warn!("FIREHOSE : {hostname} : receive error {e}");
           break;
         }
         Err(e) => {
-          tracing::warn!("FIREHOSE : {hostname} : receive error {e}");
+          tracing::warn!("FIREHOSE : {hostname} : receive timeout {e}");
           break;
         }
       };

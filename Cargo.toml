@@ -26,7 +26,6 @@ tokio = { version = "1.41.0", features = ["full"] }
 mime_guess = "2.0.5"
 indexmap = "2.6.0"
 lindera = { version = "0.35.0", features = ["ipadic"] }
-async-std = "1.13.0"
 async-trait = "0.1.83"
 base64 = "0.22.1"
 data-encoding = "2.6.0"
