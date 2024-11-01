@@ -4751,12 +4751,18 @@ impl Atproto {
 
   /// refresh access token
   pub async fn refresh(&mut self) -> Result<()> {
-    let access_jwt = self.access_jwt.clone();
-    self.access_jwt = self.refresh_jwt.clone();
+    let access_jwt = { self.access_jwt.read().await.clone() };
+    {
+      let mut lock = self.access_jwt.write().await;
+      *lock = self.refresh_jwt.read().await.clone();
+    }
     let output = match self.com_atproto_server_refresh_session().await {
       Ok(o) => o,
       Err(e) => {
-        self.access_jwt = access_jwt;
+        {
+          let mut lock = self.access_jwt.write().await;
+          *lock = access_jwt;
+        }
         return Err(e);
       }
     };
