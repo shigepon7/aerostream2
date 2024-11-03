@@ -2113,6 +2113,13 @@ pub struct AppBskyUnspeccedDefsSkeletonSearchActor {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetConfigOutput {
+  pub check_email_confirmed: Option<bool>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppBskyUnspeccedGetPopularFeedGeneratorsOutput {
   pub cursor: Option<String>,
   pub feeds: Vec<AppBskyFeedDefsGeneratorView>,
@@ -2611,6 +2618,7 @@ pub struct ComAtprotoAdminDefsAccountView {
   pub invite_note: Option<String>,
   /// [format: datetime]
   pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
+  pub threat_signatures: Option<Vec<ComAtprotoAdminDefsThreatSignature>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2631,6 +2639,14 @@ pub struct ComAtprotoAdminDefsRepoBlobRef {
   pub cid: String,
   /// [format: at-uri]
   pub record_uri: Option<String>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoAdminDefsThreatSignature {
+  pub property: String,
+  pub value: String,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4262,6 +4278,7 @@ pub struct ToolsOzoneModerationDefsRepoView {
   pub invite_note: Option<String>,
   /// [format: datetime]
   pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
+  pub threat_signatures: Option<Vec<ComAtprotoAdminDefsThreatSignature>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4286,6 +4303,7 @@ pub struct ToolsOzoneModerationDefsRepoViewDetail {
   pub email_confirmed_at: Option<chrono::DateTime<chrono::Utc>>,
   /// [format: datetime]
   pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
+  pub threat_signatures: Option<Vec<ComAtprotoAdminDefsThreatSignature>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4751,18 +4769,12 @@ impl Atproto {
 
   /// refresh access token
   pub async fn refresh(&mut self) -> Result<()> {
-    let access_jwt = { self.access_jwt.read().await.clone() };
-    {
-      let mut lock = self.access_jwt.write().await;
-      *lock = self.refresh_jwt.read().await.clone();
-    }
+    let access_jwt = self.access_jwt.clone();
+    self.access_jwt = self.refresh_jwt.clone();
     let output = match self.com_atproto_server_refresh_session().await {
       Ok(o) => o,
       Err(e) => {
-        {
-          let mut lock = self.access_jwt.write().await;
-          *lock = access_jwt;
-        }
+        self.access_jwt = access_jwt;
         return Err(e);
       }
     };
@@ -7838,6 +7850,47 @@ impl Atproto {
       )));
     }
     Ok(())
+  }
+
+  /// Get miscellaneous runtime configuration.
+  pub async fn app_bsky_unspecced_get_config(&self) -> Result<AppBskyUnspeccedGetConfigOutput> {
+    let mut request = self.client.get(&format!(
+      "https://{}/xrpc/app.bsky.unspecced.getConfig",
+      self.host
+    ));
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// An unspecced view of globally popular feed generators.
@@ -13757,7 +13810,9 @@ impl Atproto {
   /// * `created_after` - [format: datetime] Retrieve events created after a given timestamp
   /// * `created_before` - [format: datetime] Retrieve events created before a given timestamp
   /// * `subject` - [format: uri]
-  /// * `include_all_user_records` - [default: false] If true, events on all record types (posts, lists, profile etc.) owned by the did are returned
+  /// * `collections` - [max_length: 20] If specified, only events where the subject belongs to the given collections will be returned. When subjectType is set to 'account', this will be ignored.
+  /// * `subject_type` - [known_values: ["account", "record"]] If specified, only events where the subject is of the given type (account or record) will be returned. When this is set to 'account' the 'collections' parameter will be ignored. When includeAllUserRecords or subject is set, this will be ignored.
+  /// * `include_all_user_records` - [default: false] If true, events on all record types (posts, lists, profile etc.) or records from given 'collections' param, owned by the did are returned.
   /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `has_comment` - If true, only events with comments are returned
   /// * `comment` - If specified, only events with comments containing the keyword are returned
@@ -13775,6 +13830,8 @@ impl Atproto {
     created_after: Option<&chrono::DateTime<chrono::Utc>>,
     created_before: Option<&chrono::DateTime<chrono::Utc>>,
     subject: Option<&str>,
+    collections: Option<&[&str]>,
+    subject_type: Option<&str>,
     include_all_user_records: Option<bool>,
     limit: Option<i64>,
     has_comment: Option<bool>,
@@ -13809,6 +13866,17 @@ impl Atproto {
     }
     if let Some(subject) = &subject {
       query_.push((String::from("subject"), subject.to_string()));
+    }
+    if let Some(collections) = &collections {
+      query_.append(
+        &mut collections
+          .iter()
+          .map(|i| (String::from("collections"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
+    }
+    if let Some(subject_type) = &subject_type {
+      query_.push((String::from("subject_type"), subject_type.to_string()));
     }
     if let Some(include_all_user_records) = &include_all_user_records {
       query_.push((
@@ -13914,7 +13982,7 @@ impl Atproto {
   ///
   /// # Arguments
   ///
-  /// * `include_all_user_records` - All subjects belonging to the account specified in the 'subject' param will be returned.
+  /// * `include_all_user_records` - All subjects, or subjects from given 'collections' param, belonging to the account specified in the 'subject' param will be returned.
   /// * `subject` - [format: uri] The subject to get the status for.
   /// * `comment` - Search subjects by keyword from comments
   /// * `reported_after` - [format: datetime] Search subjects reported after a given timestamp
@@ -13934,6 +14002,8 @@ impl Atproto {
   /// * `tags`
   /// * `exclude_tags`
   /// * `cursor`
+  /// * `collections` - [max_length: 20] If specified, subjects belonging to the given collections will be returned. When subjectType is set to 'account', this will be ignored.
+  /// * `subject_type` - [known_values: ["account", "record"]] If specified, subjects of the given type (account or record) will be returned. When this is set to 'account' the 'collections' parameter will be ignored. When includeAllUserRecords or subject is set, this will be ignored.
   pub async fn tools_ozone_moderation_query_statuses(
     &self,
     include_all_user_records: Option<bool>,
@@ -13956,6 +14026,8 @@ impl Atproto {
     tags: Option<&[&str]>,
     exclude_tags: Option<&[&str]>,
     cursor: Option<&str>,
+    collections: Option<&[&str]>,
+    subject_type: Option<&str>,
   ) -> Result<ToolsOzoneModerationQueryStatusesOutput> {
     let mut query_ = Vec::new();
     if let Some(include_all_user_records) = &include_all_user_records {
@@ -14044,6 +14116,17 @@ impl Atproto {
     }
     if let Some(cursor) = &cursor {
       query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    if let Some(collections) = &collections {
+      query_.append(
+        &mut collections
+          .iter()
+          .map(|i| (String::from("collections"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
+    }
+    if let Some(subject_type) = &subject_type {
+      query_.push((String::from("subject_type"), subject_type.to_string()));
     }
     let mut request = self
       .client
