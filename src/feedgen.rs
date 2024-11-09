@@ -204,6 +204,11 @@ impl FeedGeneratorFeed {
   pub async fn push_post(&mut self, aturi: &str) {
     self.cache.write().await.push_front(aturi.to_string());
   }
+
+  /// truncate internal post cache
+  pub async fn truncate_posts(&mut self, size: usize) {
+    self.cache.write().await.truncate(size);
+  }
 }
 
 /// access logs of the Feed Generators
