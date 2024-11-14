@@ -2333,6 +2333,7 @@ pub struct ChatBskyConvoDefsConvoView {
   pub members: Vec<ChatBskyActorDefsProfileViewBasic>,
   pub last_message: Option<ChatBskyConvoDefsConvoViewLastMessageUnion>,
   pub muted: bool,
+  pub opened: Option<bool>,
   pub unread_count: i64,
 }
 
@@ -3068,7 +3069,7 @@ pub struct ComAtprotoRepoApplyWritesOutput {
 pub struct ComAtprotoRepoApplyWritesCreate {
   /// [format: nsid]
   pub collection: String,
-  /// [max_length: 15]
+  /// [max_length: 512]
   pub rkey: Option<String>,
   pub value: serde_json::Value,
 }
@@ -3129,7 +3130,7 @@ pub struct ComAtprotoRepoCreateRecordInput {
   pub repo: String,
   /// [format: nsid] The NSID of the record collection.
   pub collection: String,
-  /// [max_length: 15] The Record Key.
+  /// [max_length: 512] The Record Key.
   pub rkey: Option<String>,
   /// Can be set to 'false' to skip Lexicon schema validation of record data, 'true' to require it, or leave unset to validate only for known Lexicons.
   pub validate: Option<bool>,
@@ -3256,7 +3257,7 @@ pub struct ComAtprotoRepoPutRecordInput {
   pub repo: String,
   /// [format: nsid] The NSID of the record collection.
   pub collection: String,
-  /// [max_length: 15] The Record Key.
+  /// [max_length: 512] The Record Key.
   pub rkey: String,
   /// Can be set to 'false' to skip Lexicon schema validation of record data, 'true' to require it, or leave unset to validate only for known Lexicons.
   pub validate: Option<bool>,
@@ -3971,6 +3972,12 @@ pub enum ToolsOzoneModerationDefsModEventViewEventUnion {
   ToolsOzoneModerationDefsModEventDivert(Box<ToolsOzoneModerationDefsModEventDivert>),
   #[serde(rename = "tools.ozone.moderation.defs#modEventTag")]
   ToolsOzoneModerationDefsModEventTag(Box<ToolsOzoneModerationDefsModEventTag>),
+  #[serde(rename = "tools.ozone.moderation.defs#accountEvent")]
+  ToolsOzoneModerationDefsAccountEvent(Box<ToolsOzoneModerationDefsAccountEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#identityEvent")]
+  ToolsOzoneModerationDefsIdentityEvent(Box<ToolsOzoneModerationDefsIdentityEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#recordEvent")]
+  ToolsOzoneModerationDefsRecordEvent(Box<ToolsOzoneModerationDefsRecordEvent>),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4037,6 +4044,12 @@ pub enum ToolsOzoneModerationDefsModEventViewDetailEventUnion {
   ToolsOzoneModerationDefsModEventDivert(Box<ToolsOzoneModerationDefsModEventDivert>),
   #[serde(rename = "tools.ozone.moderation.defs#modEventTag")]
   ToolsOzoneModerationDefsModEventTag(Box<ToolsOzoneModerationDefsModEventTag>),
+  #[serde(rename = "tools.ozone.moderation.defs#accountEvent")]
+  ToolsOzoneModerationDefsAccountEvent(Box<ToolsOzoneModerationDefsAccountEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#identityEvent")]
+  ToolsOzoneModerationDefsIdentityEvent(Box<ToolsOzoneModerationDefsIdentityEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#recordEvent")]
+  ToolsOzoneModerationDefsRecordEvent(Box<ToolsOzoneModerationDefsRecordEvent>),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4075,12 +4088,22 @@ pub enum ToolsOzoneModerationDefsSubjectStatusViewSubjectUnion {
   ComAtprotoRepoStrongRef(Box<ComAtprotoRepoStrongRef>),
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ToolsOzoneModerationDefsSubjectStatusViewHostingUnion {
+  #[serde(rename = "tools.ozone.moderation.defs#accountHosting")]
+  ToolsOzoneModerationDefsAccountHosting(Box<ToolsOzoneModerationDefsAccountHosting>),
+  #[serde(rename = "tools.ozone.moderation.defs#recordHosting")]
+  ToolsOzoneModerationDefsRecordHosting(Box<ToolsOzoneModerationDefsRecordHosting>),
+}
+
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsSubjectStatusView {
   pub id: i64,
   pub subject: ToolsOzoneModerationDefsSubjectStatusViewSubjectUnion,
+  pub hosting: Option<ToolsOzoneModerationDefsSubjectStatusViewHostingUnion>,
   pub subject_blob_cids: Option<Vec<String>>,
   pub subject_repo_handle: Option<String>,
   /// [format: datetime] Timestamp referencing when the last update was made to the moderation status of the subject
@@ -4213,8 +4236,8 @@ pub struct ToolsOzoneModerationDefsModEventUnmute {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventMuteReporter {
   pub comment: Option<String>,
-  /// Indicates how long the account should remain muted.
-  pub duration_in_hours: i64,
+  /// Indicates how long the account should remain muted. Falsy value here means a permanent mute.
+  pub duration_in_hours: Option<i64>,
 }
 
 /// Unmute incoming reports from an account
@@ -4258,6 +4281,49 @@ pub struct ToolsOzoneModerationDefsModEventTag {
   pub remove: Vec<String>,
   /// Additional comment about added/removed tags.
   pub comment: Option<String>,
+}
+
+/// Logs account status related events on a repo subject. Normally captured by automod from the firehose and emitted to ozone for historical tracking.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsAccountEvent {
+  pub comment: Option<String>,
+  /// Indicates that the account has a repository which can be fetched from the host that emitted this event.
+  pub active: bool,
+  /// [known_values: ["unknown", "deactivated", "deleted", "takendown", "suspended", "tombstoned"]]
+  pub status: Option<String>,
+  /// [format: datetime]
+  pub timestamp: chrono::DateTime<chrono::Utc>,
+}
+
+/// Logs identity related events on a repo subject. Normally captured by automod from the firehose and emitted to ozone for historical tracking.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsIdentityEvent {
+  pub comment: Option<String>,
+  /// [format: handle]
+  pub handle: Option<String>,
+  /// [format: uri]
+  pub pds_host: Option<String>,
+  pub tombstone: Option<bool>,
+  /// [format: datetime]
+  pub timestamp: chrono::DateTime<chrono::Utc>,
+}
+
+/// Logs lifecycle event on a record subject. Normally captured by automod from the firehose and emitted to ozone for historical tracking.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsRecordEvent {
+  pub comment: Option<String>,
+  /// [known_values: ["create", "update", "delete"]]
+  pub op: String,
+  /// [format: cid]
+  pub cid: Option<String>,
+  /// [format: datetime]
+  pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4409,6 +4475,38 @@ pub struct ToolsOzoneModerationDefsVideoDetails {
   pub length: i64,
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsAccountHosting {
+  /// [known_values: ["takendown", "suspended", "deleted", "deactivated", "unknown"]]
+  pub status: String,
+  /// [format: datetime]
+  pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
+  pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
+  pub deleted_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
+  pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
+  pub reactivated_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsRecordHosting {
+  /// [known_values: ["deleted", "unknown"]]
+  pub status: String,
+  /// [format: datetime]
+  pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
+  pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
+  pub deleted_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
 pub enum ToolsOzoneModerationEmitEventInputEventUnion {
@@ -4444,6 +4542,12 @@ pub enum ToolsOzoneModerationEmitEventInputEventUnion {
   ToolsOzoneModerationDefsModEventEmail(Box<ToolsOzoneModerationDefsModEventEmail>),
   #[serde(rename = "tools.ozone.moderation.defs#modEventTag")]
   ToolsOzoneModerationDefsModEventTag(Box<ToolsOzoneModerationDefsModEventTag>),
+  #[serde(rename = "tools.ozone.moderation.defs#accountEvent")]
+  ToolsOzoneModerationDefsAccountEvent(Box<ToolsOzoneModerationDefsAccountEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#identityEvent")]
+  ToolsOzoneModerationDefsIdentityEvent(Box<ToolsOzoneModerationDefsIdentityEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#recordEvent")]
+  ToolsOzoneModerationDefsRecordEvent(Box<ToolsOzoneModerationDefsRecordEvent>),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4620,6 +4724,74 @@ pub struct ToolsOzoneSetGetValuesOutput {
 pub struct ToolsOzoneSetQuerySetsOutput {
   pub sets: Vec<ToolsOzoneSetDefsSetView>,
   pub cursor: Option<String>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSettingDefsOption {
+  /// [format: nsid]
+  pub key: String,
+  /// [format: did]
+  pub did: String,
+  pub value: serde_json::Value,
+  /// [max_graphemes: 1024] [max_length: 10240]
+  pub description: Option<String>,
+  /// [format: datetime]
+  pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
+  pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [known_values: ["tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage", "tools.ozone.team.defs#roleAdmin"]]
+  pub manager_role: Option<String>,
+  /// [known_values: ["instance", "personal"]]
+  pub scope: String,
+  /// [format: did]
+  pub created_by: String,
+  /// [format: did]
+  pub last_updated_by: String,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSettingListOptionsOutput {
+  pub cursor: Option<String>,
+  pub options: Vec<ToolsOzoneSettingDefsOption>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSettingRemoveOptionsInput {
+  /// [min_length: 1] [max_length: 200]
+  pub keys: Vec<String>,
+  /// [known_values: ["instance", "personal"]]
+  pub scope: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ToolsOzoneSettingRemoveOptionsOutput(pub serde_json::Value);
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSettingUpsertOptionInput {
+  /// [format: nsid]
+  pub key: String,
+  /// [known_values: ["instance", "personal"]]
+  pub scope: String,
+  pub value: serde_json::Value,
+  /// [max_length: 2000]
+  pub description: Option<String>,
+  /// [known_values: ["tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage", "tools.ozone.team.defs#roleAdmin"]]
+  pub manager_role: Option<String>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSettingUpsertOptionOutput {
+  pub option: ToolsOzoneSettingDefsOption,
 }
 
 #[serde_with::skip_serializing_none]
@@ -13988,6 +14160,11 @@ impl Atproto {
   /// * `reported_after` - [format: datetime] Search subjects reported after a given timestamp
   /// * `reported_before` - [format: datetime] Search subjects reported before a given timestamp
   /// * `reviewed_after` - [format: datetime] Search subjects reviewed after a given timestamp
+  /// * `hosting_deleted_after` - [format: datetime] Search subjects where the associated record/account was deleted after a given timestamp
+  /// * `hosting_deleted_before` - [format: datetime] Search subjects where the associated record/account was deleted before a given timestamp
+  /// * `hosting_updated_after` - [format: datetime] Search subjects where the associated record/account was updated after a given timestamp
+  /// * `hosting_updated_before` - [format: datetime] Search subjects where the associated record/account was updated before a given timestamp
+  /// * `hosting_statuses` - Search subjects by the status of the associated record/account
   /// * `reviewed_before` - [format: datetime] Search subjects reviewed before a given timestamp
   /// * `include_muted` - By default, we don't include muted subjects in the results. Set this to true to include them.
   /// * `only_muted` - When set to true, only muted subjects and reporters will be returned.
@@ -14012,6 +14189,11 @@ impl Atproto {
     reported_after: Option<&chrono::DateTime<chrono::Utc>>,
     reported_before: Option<&chrono::DateTime<chrono::Utc>>,
     reviewed_after: Option<&chrono::DateTime<chrono::Utc>>,
+    hosting_deleted_after: Option<&chrono::DateTime<chrono::Utc>>,
+    hosting_deleted_before: Option<&chrono::DateTime<chrono::Utc>>,
+    hosting_updated_after: Option<&chrono::DateTime<chrono::Utc>>,
+    hosting_updated_before: Option<&chrono::DateTime<chrono::Utc>>,
+    hosting_statuses: Option<&[&str]>,
     reviewed_before: Option<&chrono::DateTime<chrono::Utc>>,
     include_muted: Option<bool>,
     only_muted: Option<bool>,
@@ -14053,6 +14235,38 @@ impl Atproto {
     }
     if let Some(reviewed_after) = &reviewed_after {
       query_.push((String::from("reviewed_after"), reviewed_after.to_rfc3339()));
+    }
+    if let Some(hosting_deleted_after) = &hosting_deleted_after {
+      query_.push((
+        String::from("hosting_deleted_after"),
+        hosting_deleted_after.to_rfc3339(),
+      ));
+    }
+    if let Some(hosting_deleted_before) = &hosting_deleted_before {
+      query_.push((
+        String::from("hosting_deleted_before"),
+        hosting_deleted_before.to_rfc3339(),
+      ));
+    }
+    if let Some(hosting_updated_after) = &hosting_updated_after {
+      query_.push((
+        String::from("hosting_updated_after"),
+        hosting_updated_after.to_rfc3339(),
+      ));
+    }
+    if let Some(hosting_updated_before) = &hosting_updated_before {
+      query_.push((
+        String::from("hosting_updated_before"),
+        hosting_updated_before.to_rfc3339(),
+      ));
+    }
+    if let Some(hosting_statuses) = &hosting_statuses {
+      query_.append(
+        &mut hosting_statuses
+          .iter()
+          .map(|i| (String::from("hosting_statuses"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
     }
     if let Some(reviewed_before) = &reviewed_before {
       query_.push((
@@ -14592,6 +14806,188 @@ impl Atproto {
       .client
       .post(&format!(
         "https://{}/xrpc/tools.ozone.set.upsertSet",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// List settings with optional filtering
+  ///
+  /// # Arguments
+  ///
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
+  /// * `cursor`
+  /// * `scope` - [known_values: ["instance", "personal"]] [default: instance]
+  /// * `prefix` - Filter keys by prefix
+  /// * `keys` - [max_length: 100] Filter for only the specified keys. Ignored if prefix is provided
+  pub async fn tools_ozone_setting_list_options(
+    &self,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+    scope: Option<&str>,
+    prefix: Option<&str>,
+    keys: Option<&[&str]>,
+  ) -> Result<ToolsOzoneSettingListOptionsOutput> {
+    let mut query_ = Vec::new();
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    if let Some(scope) = &scope {
+      query_.push((String::from("scope"), scope.to_string()));
+    }
+    if let Some(prefix) = &prefix {
+      query_.push((String::from("prefix"), prefix.to_string()));
+    }
+    if let Some(keys) = &keys {
+      query_.append(
+        &mut keys
+          .iter()
+          .map(|i| (String::from("keys"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.setting.listOptions",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Delete settings by key
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn tools_ozone_setting_remove_options(
+    &self,
+    body: ToolsOzoneSettingRemoveOptionsInput,
+  ) -> Result<serde_json::Value> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.setting.removeOptions",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Create or update setting option
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn tools_ozone_setting_upsert_option(
+    &self,
+    body: ToolsOzoneSettingUpsertOptionInput,
+  ) -> Result<ToolsOzoneSettingUpsertOptionOutput> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.setting.upsertOption",
         self.host
       ))
       .json(&body);

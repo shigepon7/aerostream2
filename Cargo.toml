@@ -25,7 +25,7 @@ tracing = "0.1.40"
 tokio = { version = "1.41.1", features = ["full"] }
 mime_guess = "2.0.5"
 indexmap = "2.6.0"
-lindera = { version = "0.37.0", features = ["ipadic"] }
+lindera = { version = "0.38.0", features = ["ipadic"] }
 async-trait = "0.1.83"
 base64 = "0.22.1"
 data-encoding = "2.6.0"
