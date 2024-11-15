@@ -187,7 +187,16 @@ pub async fn token_thread(
       .map(|mut tokens| {
         tokens
           .iter_mut()
-          .map(|t| t.details().iter().map(|d| d.to_string()).collect())
+          .map(|t| {
+            vec![
+              vec![t.text.to_string()],
+              t.details()
+                .iter()
+                .map(|t| t.to_string())
+                .collect::<Vec<_>>(),
+            ]
+            .concat()
+          })
           .collect::<Vec<_>>()
       })
       .as_ref()
