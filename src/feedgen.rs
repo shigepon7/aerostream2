@@ -196,6 +196,7 @@ impl FeedGeneratorFeed {
       accepts_interactions: self.accepts_interactions,
       labels: self.labels.clone(),
       created_at: self.created_at,
+      extra: std::collections::HashMap::new(),
     }
   }
 
