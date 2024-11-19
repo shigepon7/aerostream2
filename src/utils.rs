@@ -392,13 +392,22 @@ impl TextFacet {
   pub fn to_atproto(&self) -> AppBskyRichtextFacetFeaturesUnion {
     match self {
       Self::Mention(v) => AppBskyRichtextFacetFeaturesUnion::AppBskyRichtextFacetMention(Box::new(
-        AppBskyRichtextFacetMention { did: v.clone() },
+        AppBskyRichtextFacetMention {
+          did: v.clone(),
+          extra: std::collections::HashMap::new(),
+        },
       )),
       Self::Link(v) => AppBskyRichtextFacetFeaturesUnion::AppBskyRichtextFacetLink(Box::new(
-        AppBskyRichtextFacetLink { uri: v.clone() },
+        AppBskyRichtextFacetLink {
+          uri: v.clone(),
+          extra: std::collections::HashMap::new(),
+        },
       )),
       Self::Tag(v) => AppBskyRichtextFacetFeaturesUnion::AppBskyRichtextFacetTag(Box::new(
-        AppBskyRichtextFacetTag { tag: v.clone() },
+        AppBskyRichtextFacetTag {
+          tag: v.clone(),
+          extra: std::collections::HashMap::new(),
+        },
       )),
     }
   }
@@ -442,8 +451,10 @@ impl TextDecoration {
             index: AppBskyRichtextFacetByteSlice {
               byte_start: start as i64,
               byte_end: end as i64,
+              extra: std::collections::HashMap::new(),
             },
             features: vec![self.facet.to_atproto()],
+            extra: std::collections::HashMap::new(),
           });
           index = end;
         }

@@ -161,6 +161,8 @@ pub struct AppBskyActorDefsProfileViewBasic {
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   /// [format: datetime]
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -184,6 +186,8 @@ pub struct AppBskyActorDefsProfileView {
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
   pub viewer: Option<AppBskyActorDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -214,6 +218,8 @@ pub struct AppBskyActorDefsProfileViewDetailed {
   pub viewer: Option<AppBskyActorDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub pinned_post: Option<ComAtprotoRepoStrongRef>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -225,6 +231,8 @@ pub struct AppBskyActorDefsProfileAssociated {
   pub starter_packs: Option<i64>,
   pub labeler: Option<bool>,
   pub chat: Option<AppBskyActorDefsProfileAssociatedChat>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -233,6 +241,8 @@ pub struct AppBskyActorDefsProfileAssociated {
 pub struct AppBskyActorDefsProfileAssociatedChat {
   /// [known_values: ["all", "none", "following"]]
   pub allow_incoming: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Metadata about the requesting account's relationship with the subject account. Only has meaningful content for authed requests.
@@ -251,6 +261,8 @@ pub struct AppBskyActorDefsViewerState {
   /// [format: at-uri]
   pub followed_by: Option<String>,
   pub known_followers: Option<AppBskyActorDefsKnownFollowers>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// The subject's followers whom you also follow
@@ -261,6 +273,8 @@ pub struct AppBskyActorDefsKnownFollowers {
   pub count: i64,
   /// [min_length: 0] [max_length: 5]
   pub followers: Vec<AppBskyActorDefsProfileViewBasic>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -301,6 +315,8 @@ pub struct AppBskyActorDefsPreferences(pub Vec<AppBskyActorDefsPreferencesUnion>
 pub struct AppBskyActorDefsAdultContentPref {
   /// [default: false]
   pub enabled: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -312,6 +328,8 @@ pub struct AppBskyActorDefsContentLabelPref {
   pub label: String,
   /// [known_values: ["ignore", "show", "warn", "hide"]]
   pub visibility: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -323,6 +341,8 @@ pub struct AppBskyActorDefsSavedFeed {
   pub type_: String,
   pub value: String,
   pub pinned: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -330,6 +350,8 @@ pub struct AppBskyActorDefsSavedFeed {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsSavedFeedsPrefV2 {
   pub items: Vec<AppBskyActorDefsSavedFeed>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -339,6 +361,8 @@ pub struct AppBskyActorDefsSavedFeedsPref {
   pub pinned: Vec<String>,
   pub saved: Vec<String>,
   pub timeline_index: Option<i64>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -347,6 +371,8 @@ pub struct AppBskyActorDefsSavedFeedsPref {
 pub struct AppBskyActorDefsPersonalDetailsPref {
   /// [format: datetime] The birth date of account owner.
   pub birth_date: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -365,6 +391,8 @@ pub struct AppBskyActorDefsFeedViewPref {
   pub hide_reposts: Option<bool>,
   /// Hide quote posts in the feed.
   pub hide_quote_posts: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -375,6 +403,8 @@ pub struct AppBskyActorDefsThreadViewPref {
   pub sort: Option<String>,
   /// Show followed users at the top of all replies.
   pub prioritize_followed_users: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -383,6 +413,8 @@ pub struct AppBskyActorDefsThreadViewPref {
 pub struct AppBskyActorDefsInterestsPref {
   /// [max_length: 100] A list of tags which describe the account owner's interests gathered during onboarding.
   pub tags: Vec<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -402,6 +434,8 @@ pub struct AppBskyActorDefsMutedWord {
   pub actor_target: Option<String>,
   /// [format: datetime] The date and time at which the muted word will expire and no longer be applied.
   pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -410,6 +444,8 @@ pub struct AppBskyActorDefsMutedWord {
 pub struct AppBskyActorDefsMutedWordsPref {
   /// A list of words the account owner has muted.
   pub items: Vec<AppBskyActorDefsMutedWord>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -418,6 +454,8 @@ pub struct AppBskyActorDefsMutedWordsPref {
 pub struct AppBskyActorDefsHiddenPostsPref {
   /// A list of URIs of posts the account owner has hidden.
   pub items: Vec<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -425,6 +463,8 @@ pub struct AppBskyActorDefsHiddenPostsPref {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsLabelersPref {
   pub labelers: Vec<AppBskyActorDefsLabelerPrefItem>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -433,6 +473,8 @@ pub struct AppBskyActorDefsLabelersPref {
 pub struct AppBskyActorDefsLabelerPrefItem {
   /// [format: did]
   pub did: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// A grab bag of state that's specific to the bsky.app program. Third-party apps shouldn't use this.
@@ -445,6 +487,8 @@ pub struct AppBskyActorDefsBskyAppStatePref {
   pub queued_nudges: Option<Vec<String>>,
   /// [max_length: 100] Storage for NUXs the user has encountered.
   pub nuxs: Option<Vec<AppBskyActorDefsNux>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// If set, an active progress guide. Once completed, can be set to undefined. Should have unspecced fields tracking progress.
@@ -454,6 +498,8 @@ pub struct AppBskyActorDefsBskyAppStatePref {
 pub struct AppBskyActorDefsBskyAppProgressGuide {
   /// [max_length: 100]
   pub guide: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// A new user experiences (NUX) storage object
@@ -469,6 +515,8 @@ pub struct AppBskyActorDefsNux {
   pub data: Option<String>,
   /// [format: datetime] The date and time at which the NUX will expire and should be considered completed.
   pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -476,6 +524,8 @@ pub struct AppBskyActorDefsNux {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorGetPreferencesOutput {
   pub preferences: AppBskyActorDefsPreferences,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -483,6 +533,8 @@ pub struct AppBskyActorGetPreferencesOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorGetProfilesOutput {
   pub profiles: Vec<AppBskyActorDefsProfileViewDetailed>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -491,6 +543,8 @@ pub struct AppBskyActorGetProfilesOutput {
 pub struct AppBskyActorGetSuggestionsOutput {
   pub cursor: Option<String>,
   pub actors: Vec<AppBskyActorDefsProfileView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Self-label values, specific to the Bluesky application, on the overall account.
@@ -528,6 +582,8 @@ pub struct AppBskyActorProfile {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorPutPreferencesInput {
   pub preferences: AppBskyActorDefsPreferences,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -536,6 +592,8 @@ pub struct AppBskyActorPutPreferencesInput {
 pub struct AppBskyActorSearchActorsOutput {
   pub cursor: Option<String>,
   pub actors: Vec<AppBskyActorDefsProfileView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -543,6 +601,8 @@ pub struct AppBskyActorSearchActorsOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorSearchActorsTypeaheadOutput {
   pub actors: Vec<AppBskyActorDefsProfileViewBasic>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// width:height represents an aspect ratio. It may be approximate, and may not correspond to absolute dimensions in any given unit.
@@ -554,6 +614,8 @@ pub struct AppBskyEmbedDefsAspectRatio {
   pub width: i64,
   /// [minimum: 1]
   pub height: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// A representation of some externally linked content (eg, a URL and 'card'), embedded in a Bluesky record (eg, a post).
@@ -562,6 +624,8 @@ pub struct AppBskyEmbedDefsAspectRatio {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedExternal {
   pub external: AppBskyEmbedExternalExternal,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -574,6 +638,8 @@ pub struct AppBskyEmbedExternalExternal {
   pub description: String,
   /// [accept: ["image/*"]] [max_size: 1000000]
   pub thumb: Option<Blob>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -581,6 +647,8 @@ pub struct AppBskyEmbedExternalExternal {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedExternalView {
   pub external: AppBskyEmbedExternalViewExternal,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -593,6 +661,8 @@ pub struct AppBskyEmbedExternalViewExternal {
   pub description: String,
   /// [format: uri]
   pub thumb: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -601,6 +671,8 @@ pub struct AppBskyEmbedExternalViewExternal {
 pub struct AppBskyEmbedImages {
   /// [max_length: 4]
   pub images: Vec<AppBskyEmbedImagesImage>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -612,6 +684,8 @@ pub struct AppBskyEmbedImagesImage {
   /// Alt text description of the image, for accessibility.
   pub alt: String,
   pub aspect_ratio: Option<AppBskyEmbedDefsAspectRatio>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -620,6 +694,8 @@ pub struct AppBskyEmbedImagesImage {
 pub struct AppBskyEmbedImagesView {
   /// [max_length: 4]
   pub images: Vec<AppBskyEmbedImagesViewImage>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -633,6 +709,8 @@ pub struct AppBskyEmbedImagesViewImage {
   /// Alt text description of the image, for accessibility.
   pub alt: String,
   pub aspect_ratio: Option<AppBskyEmbedDefsAspectRatio>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -640,6 +718,8 @@ pub struct AppBskyEmbedImagesViewImage {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedRecord {
   pub record: ComAtprotoRepoStrongRef,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -668,6 +748,8 @@ pub enum AppBskyEmbedRecordViewRecordUnion {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedRecordView {
   pub record: AppBskyEmbedRecordViewRecordUnion,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -704,6 +786,8 @@ pub struct AppBskyEmbedRecordViewRecord {
   pub embeds: Option<Vec<AppBskyEmbedRecordViewRecordEmbedsUnion>>,
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -714,6 +798,8 @@ pub struct AppBskyEmbedRecordViewNotFound {
   pub uri: String,
   /// [const: true]
   pub not_found: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -725,6 +811,8 @@ pub struct AppBskyEmbedRecordViewBlocked {
   /// [const: true]
   pub blocked: bool,
   pub author: AppBskyFeedDefsBlockedAuthor,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -735,6 +823,8 @@ pub struct AppBskyEmbedRecordViewDetached {
   pub uri: String,
   /// [const: true]
   pub detached: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -754,6 +844,8 @@ pub enum AppBskyEmbedRecordWithMediaMediaUnion {
 pub struct AppBskyEmbedRecordWithMedia {
   pub record: AppBskyEmbedRecord,
   pub media: AppBskyEmbedRecordWithMediaMediaUnion,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -773,6 +865,8 @@ pub enum AppBskyEmbedRecordWithMediaViewMediaUnion {
 pub struct AppBskyEmbedRecordWithMediaView {
   pub record: AppBskyEmbedRecordView,
   pub media: AppBskyEmbedRecordWithMediaViewMediaUnion,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -786,6 +880,8 @@ pub struct AppBskyEmbedVideo {
   /// [max_graphemes: 1000] [max_length: 10000] Alt text description of the video, for accessibility.
   pub alt: Option<String>,
   pub aspect_ratio: Option<AppBskyEmbedDefsAspectRatio>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -796,6 +892,8 @@ pub struct AppBskyEmbedVideoCaption {
   pub lang: String,
   /// [accept: ["text/vtt"]] [max_size: 20000]
   pub file: Blob,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -811,6 +909,8 @@ pub struct AppBskyEmbedVideoView {
   /// [max_graphemes: 1000] [max_length: 10000]
   pub alt: Option<String>,
   pub aspect_ratio: Option<AppBskyEmbedDefsAspectRatio>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -848,6 +948,8 @@ pub struct AppBskyFeedDefsPostView {
   pub viewer: Option<AppBskyFeedDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub threadgate: Option<AppBskyFeedDefsThreadgateView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Metadata about the requesting account's relationship with the subject content. Only has meaningful content for authed requests.
@@ -863,6 +965,8 @@ pub struct AppBskyFeedDefsViewerState {
   pub reply_disabled: Option<bool>,
   pub embedding_disabled: Option<bool>,
   pub pinned: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -883,6 +987,8 @@ pub struct AppBskyFeedDefsFeedViewPost {
   pub reason: Option<AppBskyFeedDefsFeedViewPostReasonUnion>,
   /// [max_length: 2000] Context provided by feed generator that may be passed back alongside interactions.
   pub feed_context: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -915,6 +1021,8 @@ pub struct AppBskyFeedDefsReplyRef {
   pub parent: AppBskyFeedDefsReplyRefParentUnion,
   /// When parent is a reply to another post, this is the author of that post.
   pub grandparent_author: Option<AppBskyActorDefsProfileViewBasic>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -924,6 +1032,8 @@ pub struct AppBskyFeedDefsReasonRepost {
   pub by: AppBskyActorDefsProfileViewBasic,
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -958,6 +1068,8 @@ pub struct AppBskyFeedDefsThreadViewPost {
   pub post: AppBskyFeedDefsPostView,
   pub parent: Option<AppBskyFeedDefsThreadViewPostParentUnion>,
   pub replies: Option<Vec<AppBskyFeedDefsThreadViewPostRepliesUnion>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -968,6 +1080,8 @@ pub struct AppBskyFeedDefsNotFoundPost {
   pub uri: String,
   /// [const: true]
   pub not_found: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -979,6 +1093,8 @@ pub struct AppBskyFeedDefsBlockedPost {
   /// [const: true]
   pub blocked: bool,
   pub author: AppBskyFeedDefsBlockedAuthor,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -988,6 +1104,8 @@ pub struct AppBskyFeedDefsBlockedAuthor {
   /// [format: did]
   pub did: String,
   pub viewer: Option<AppBskyActorDefsViewerState>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1014,6 +1132,8 @@ pub struct AppBskyFeedDefsGeneratorView {
   pub viewer: Option<AppBskyFeedDefsGeneratorViewerState>,
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1022,6 +1142,8 @@ pub struct AppBskyFeedDefsGeneratorView {
 pub struct AppBskyFeedDefsGeneratorViewerState {
   /// [format: at-uri]
   pub like: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1042,6 +1164,8 @@ pub struct AppBskyFeedDefsSkeletonFeedPost {
   pub reason: Option<AppBskyFeedDefsSkeletonFeedPostReasonUnion>,
   /// [max_length: 2000] Context that will be passed through to client and may be passed to feed generator back alongside interactions.
   pub feed_context: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1050,6 +1174,8 @@ pub struct AppBskyFeedDefsSkeletonFeedPost {
 pub struct AppBskyFeedDefsSkeletonReasonRepost {
   /// [format: at-uri]
   pub repost: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1065,6 +1191,8 @@ pub struct AppBskyFeedDefsThreadgateView {
   pub cid: Option<String>,
   pub record: Option<serde_json::Value>,
   pub lists: Option<Vec<AppBskyGraphDefsListViewBasic>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1077,6 +1205,8 @@ pub struct AppBskyFeedDefsInteraction {
   pub event: Option<String>,
   /// [max_length: 2000] Context on a feed item that was originally supplied by the feed generator on getFeedSkeleton.
   pub feed_context: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1087,6 +1217,8 @@ pub struct AppBskyFeedDescribeFeedGeneratorOutput {
   pub did: String,
   pub feeds: Vec<AppBskyFeedDescribeFeedGeneratorFeed>,
   pub links: Option<AppBskyFeedDescribeFeedGeneratorLinks>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1095,6 +1227,8 @@ pub struct AppBskyFeedDescribeFeedGeneratorOutput {
 pub struct AppBskyFeedDescribeFeedGeneratorFeed {
   /// [format: at-uri]
   pub uri: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1103,6 +1237,8 @@ pub struct AppBskyFeedDescribeFeedGeneratorFeed {
 pub struct AppBskyFeedDescribeFeedGeneratorLinks {
   pub privacy_policy: Option<String>,
   pub terms_of_service: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Self-label values
@@ -1142,6 +1278,8 @@ pub struct AppBskyFeedGenerator {
 pub struct AppBskyFeedGetActorFeedsOutput {
   pub cursor: Option<String>,
   pub feeds: Vec<AppBskyFeedDefsGeneratorView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1150,6 +1288,8 @@ pub struct AppBskyFeedGetActorFeedsOutput {
 pub struct AppBskyFeedGetActorLikesOutput {
   pub cursor: Option<String>,
   pub feed: Vec<AppBskyFeedDefsFeedViewPost>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1158,6 +1298,8 @@ pub struct AppBskyFeedGetActorLikesOutput {
 pub struct AppBskyFeedGetAuthorFeedOutput {
   pub cursor: Option<String>,
   pub feed: Vec<AppBskyFeedDefsFeedViewPost>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1166,6 +1308,8 @@ pub struct AppBskyFeedGetAuthorFeedOutput {
 pub struct AppBskyFeedGetFeedOutput {
   pub cursor: Option<String>,
   pub feed: Vec<AppBskyFeedDefsFeedViewPost>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1177,6 +1321,8 @@ pub struct AppBskyFeedGetFeedGeneratorOutput {
   pub is_online: bool,
   /// Indicates whether the feed generator service is compatible with the record declaration.
   pub is_valid: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1184,6 +1330,8 @@ pub struct AppBskyFeedGetFeedGeneratorOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedGetFeedGeneratorsOutput {
   pub feeds: Vec<AppBskyFeedDefsGeneratorView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1192,6 +1340,8 @@ pub struct AppBskyFeedGetFeedGeneratorsOutput {
 pub struct AppBskyFeedGetFeedSkeletonOutput {
   pub cursor: Option<String>,
   pub feed: Vec<AppBskyFeedDefsSkeletonFeedPost>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1204,6 +1354,8 @@ pub struct AppBskyFeedGetLikesOutput {
   pub cid: Option<String>,
   pub cursor: Option<String>,
   pub likes: Vec<AppBskyFeedGetLikesLike>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1215,6 +1367,8 @@ pub struct AppBskyFeedGetLikesLike {
   /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub actor: AppBskyActorDefsProfileView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1223,6 +1377,8 @@ pub struct AppBskyFeedGetLikesLike {
 pub struct AppBskyFeedGetListFeedOutput {
   pub cursor: Option<String>,
   pub feed: Vec<AppBskyFeedDefsFeedViewPost>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1242,6 +1398,8 @@ pub enum AppBskyFeedGetPostThreadOutputThreadUnion {
 pub struct AppBskyFeedGetPostThreadOutput {
   pub thread: AppBskyFeedGetPostThreadOutputThreadUnion,
   pub threadgate: Option<AppBskyFeedDefsThreadgateView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1249,6 +1407,8 @@ pub struct AppBskyFeedGetPostThreadOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedGetPostsOutput {
   pub posts: Vec<AppBskyFeedDefsPostView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1261,6 +1421,8 @@ pub struct AppBskyFeedGetQuotesOutput {
   pub cid: Option<String>,
   pub cursor: Option<String>,
   pub posts: Vec<AppBskyFeedDefsPostView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1273,6 +1435,8 @@ pub struct AppBskyFeedGetRepostedByOutput {
   pub cid: Option<String>,
   pub cursor: Option<String>,
   pub reposted_by: Vec<AppBskyActorDefsProfileView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1281,6 +1445,8 @@ pub struct AppBskyFeedGetRepostedByOutput {
 pub struct AppBskyFeedGetSuggestedFeedsOutput {
   pub cursor: Option<String>,
   pub feeds: Vec<AppBskyFeedDefsGeneratorView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1289,6 +1455,8 @@ pub struct AppBskyFeedGetSuggestedFeedsOutput {
 pub struct AppBskyFeedGetTimelineOutput {
   pub cursor: Option<String>,
   pub feed: Vec<AppBskyFeedDefsFeedViewPost>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Record declaring a 'like' of a piece of subject content.
@@ -1354,6 +1522,8 @@ pub struct AppBskyFeedPost {
 pub struct AppBskyFeedPostReplyRef {
   pub root: ComAtprotoRepoStrongRef,
   pub parent: ComAtprotoRepoStrongRef,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Deprecated: use facets instead.
@@ -1365,6 +1535,8 @@ pub struct AppBskyFeedPostEntity {
   /// Expected values are 'mention' and 'link'.
   pub type_: String,
   pub value: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Deprecated. Use app.bsky.richtext instead -- A text segment. Start is inclusive, end is exclusive. Indices are for utf16-encoded strings.
@@ -1376,6 +1548,8 @@ pub struct AppBskyFeedPostTextSlice {
   pub start: i64,
   /// [minimum: 0]
   pub end: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1422,6 +1596,8 @@ pub struct AppBskyFeedSearchPostsOutput {
   /// Count of search hits. Optional, may be rounded/truncated, and may not be possible to paginate through all hits.
   pub hits_total: Option<i64>,
   pub posts: Vec<AppBskyFeedDefsPostView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1429,6 +1605,8 @@ pub struct AppBskyFeedSearchPostsOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedSendInteractionsInput {
   pub interactions: Vec<AppBskyFeedDefsInteraction>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1475,6 +1653,8 @@ pub struct AppBskyFeedThreadgateFollowingRule(pub serde_json::Value);
 pub struct AppBskyFeedThreadgateListRule {
   /// [format: at-uri]
   pub list: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Record declaring a 'block' relationship against another account. NOTE: blocks are public in Bluesky; see blog posts for details.
@@ -1507,6 +1687,8 @@ pub struct AppBskyGraphDefsListViewBasic {
   pub viewer: Option<AppBskyGraphDefsListViewerState>,
   /// [format: datetime]
   pub indexed_at: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1532,6 +1714,8 @@ pub struct AppBskyGraphDefsListView {
   pub viewer: Option<AppBskyGraphDefsListViewerState>,
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1541,6 +1725,8 @@ pub struct AppBskyGraphDefsListItemView {
   /// [format: at-uri]
   pub uri: String,
   pub subject: AppBskyActorDefsProfileView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1565,6 +1751,8 @@ pub struct AppBskyGraphDefsStarterPackView {
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1586,6 +1774,8 @@ pub struct AppBskyGraphDefsStarterPackViewBasic {
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1598,6 +1788,8 @@ pub struct AppBskyGraphDefsListViewerState {
   pub muted: Option<bool>,
   /// [format: at-uri]
   pub blocked: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// indicates that a handle or DID could not be resolved
@@ -1609,6 +1801,8 @@ pub struct AppBskyGraphDefsNotFoundActor {
   pub actor: String,
   /// [const: true]
   pub not_found: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// lists the bi-directional graph relationships between one actor (not indicated in the object), and the target actors (the DID included in the object)
@@ -1622,6 +1816,8 @@ pub struct AppBskyGraphDefsRelationship {
   pub following: Option<String>,
   /// [format: at-uri] if the actor is followed by this DID, contains the AT-URI of the follow record
   pub followed_by: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Record declaring a social 'follow' relationship of another account. Duplicate follows will be ignored by the AppView.
@@ -1641,6 +1837,8 @@ pub struct AppBskyGraphFollow {
 pub struct AppBskyGraphGetActorStarterPacksOutput {
   pub cursor: Option<String>,
   pub starter_packs: Vec<AppBskyGraphDefsStarterPackViewBasic>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1649,6 +1847,8 @@ pub struct AppBskyGraphGetActorStarterPacksOutput {
 pub struct AppBskyGraphGetBlocksOutput {
   pub cursor: Option<String>,
   pub blocks: Vec<AppBskyActorDefsProfileView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1658,6 +1858,8 @@ pub struct AppBskyGraphGetFollowersOutput {
   pub subject: AppBskyActorDefsProfileView,
   pub cursor: Option<String>,
   pub followers: Vec<AppBskyActorDefsProfileView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1667,6 +1869,8 @@ pub struct AppBskyGraphGetFollowsOutput {
   pub subject: AppBskyActorDefsProfileView,
   pub cursor: Option<String>,
   pub follows: Vec<AppBskyActorDefsProfileView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1676,6 +1880,8 @@ pub struct AppBskyGraphGetKnownFollowersOutput {
   pub subject: AppBskyActorDefsProfileView,
   pub cursor: Option<String>,
   pub followers: Vec<AppBskyActorDefsProfileView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1685,6 +1891,8 @@ pub struct AppBskyGraphGetListOutput {
   pub cursor: Option<String>,
   pub list: AppBskyGraphDefsListView,
   pub items: Vec<AppBskyGraphDefsListItemView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1693,6 +1901,8 @@ pub struct AppBskyGraphGetListOutput {
 pub struct AppBskyGraphGetListBlocksOutput {
   pub cursor: Option<String>,
   pub lists: Vec<AppBskyGraphDefsListView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1701,6 +1911,8 @@ pub struct AppBskyGraphGetListBlocksOutput {
 pub struct AppBskyGraphGetListMutesOutput {
   pub cursor: Option<String>,
   pub lists: Vec<AppBskyGraphDefsListView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1709,6 +1921,8 @@ pub struct AppBskyGraphGetListMutesOutput {
 pub struct AppBskyGraphGetListsOutput {
   pub cursor: Option<String>,
   pub lists: Vec<AppBskyGraphDefsListView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1717,6 +1931,8 @@ pub struct AppBskyGraphGetListsOutput {
 pub struct AppBskyGraphGetMutesOutput {
   pub cursor: Option<String>,
   pub mutes: Vec<AppBskyActorDefsProfileView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1735,6 +1951,8 @@ pub struct AppBskyGraphGetRelationshipsOutput {
   /// [format: did]
   pub actor: Option<String>,
   pub relationships: Vec<AppBskyGraphGetRelationshipsOutputRelationshipsUnion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1742,6 +1960,8 @@ pub struct AppBskyGraphGetRelationshipsOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphGetStarterPackOutput {
   pub starter_pack: AppBskyGraphDefsStarterPackView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1749,6 +1969,8 @@ pub struct AppBskyGraphGetStarterPackOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphGetStarterPacksOutput {
   pub starter_packs: Vec<AppBskyGraphDefsStarterPackViewBasic>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1758,6 +1980,8 @@ pub struct AppBskyGraphGetSuggestedFollowsByActorOutput {
   pub suggestions: Vec<AppBskyActorDefsProfileView>,
   /// [default: false] If true, response has fallen-back to generic results, and is not scoped using relativeToDid
   pub is_fallback: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1816,6 +2040,8 @@ pub struct AppBskyGraphListitem {
 pub struct AppBskyGraphMuteActorInput {
   /// [format: at-identifier]
   pub actor: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1824,6 +2050,8 @@ pub struct AppBskyGraphMuteActorInput {
 pub struct AppBskyGraphMuteActorListInput {
   /// [format: at-uri]
   pub list: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1832,6 +2060,18 @@ pub struct AppBskyGraphMuteActorListInput {
 pub struct AppBskyGraphMuteThreadInput {
   /// [format: at-uri]
   pub root: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyGraphSearchStarterPacksOutput {
+  pub cursor: Option<String>,
+  pub starter_packs: Vec<AppBskyGraphDefsStarterPackViewBasic>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Record defining a starter pack of actors and feeds for new users.
@@ -1858,6 +2098,8 @@ pub struct AppBskyGraphStarterpack {
 pub struct AppBskyGraphStarterpackFeedItem {
   /// [format: at-uri]
   pub uri: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1866,6 +2108,8 @@ pub struct AppBskyGraphStarterpackFeedItem {
 pub struct AppBskyGraphUnmuteActorInput {
   /// [format: at-identifier]
   pub actor: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1874,6 +2118,8 @@ pub struct AppBskyGraphUnmuteActorInput {
 pub struct AppBskyGraphUnmuteActorListInput {
   /// [format: at-uri]
   pub list: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1882,6 +2128,8 @@ pub struct AppBskyGraphUnmuteActorListInput {
 pub struct AppBskyGraphUnmuteThreadInput {
   /// [format: at-uri]
   pub root: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1899,6 +2147,8 @@ pub struct AppBskyLabelerDefsLabelerView {
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1917,6 +2167,8 @@ pub struct AppBskyLabelerDefsLabelerViewDetailed {
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1925,6 +2177,8 @@ pub struct AppBskyLabelerDefsLabelerViewDetailed {
 pub struct AppBskyLabelerDefsLabelerViewerState {
   /// [format: at-uri]
   pub like: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1935,6 +2189,8 @@ pub struct AppBskyLabelerDefsLabelerPolicies {
   pub label_values: Vec<ComAtprotoLabelDefsLabelValue>,
   /// Label values created by this labeler and scoped exclusively to it. Labels defined here will override global label definitions for this labeler.
   pub label_value_definitions: Option<Vec<ComAtprotoLabelDefsLabelValueDefinition>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1951,6 +2207,8 @@ pub enum AppBskyLabelerGetServicesOutputViewsUnion {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyLabelerGetServicesOutput {
   pub views: Vec<AppBskyLabelerGetServicesOutputViewsUnion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1976,6 +2234,8 @@ pub struct AppBskyLabelerService {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyNotificationGetUnreadCountOutput {
   pub count: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1987,6 +2247,8 @@ pub struct AppBskyNotificationListNotificationsOutput {
   pub priority: Option<bool>,
   /// [format: datetime]
   pub seen_at: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2007,6 +2269,8 @@ pub struct AppBskyNotificationListNotificationsNotification {
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2014,6 +2278,8 @@ pub struct AppBskyNotificationListNotificationsNotification {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyNotificationPutPreferencesInput {
   pub priority: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2026,6 +2292,8 @@ pub struct AppBskyNotificationRegisterPushInput {
   /// [known_values: ["ios", "android", "web"]]
   pub platform: String,
   pub app_id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2034,6 +2302,8 @@ pub struct AppBskyNotificationRegisterPushInput {
 pub struct AppBskyNotificationUpdateSeenInput {
   /// [format: datetime]
   pub seen_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2054,6 +2324,8 @@ pub enum AppBskyRichtextFacetFeaturesUnion {
 pub struct AppBskyRichtextFacet {
   pub index: AppBskyRichtextFacetByteSlice,
   pub features: Vec<AppBskyRichtextFacetFeaturesUnion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Facet feature for mention of another account. The text is usually a handle, including a '@' prefix, but the facet reference is a DID.
@@ -2063,6 +2335,8 @@ pub struct AppBskyRichtextFacet {
 pub struct AppBskyRichtextFacetMention {
   /// [format: did]
   pub did: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Facet feature for a URL. The text URL may have been simplified or truncated, but the facet reference should be a complete URL.
@@ -2072,6 +2346,8 @@ pub struct AppBskyRichtextFacetMention {
 pub struct AppBskyRichtextFacetLink {
   /// [format: uri]
   pub uri: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Facet feature for a hashtag. The text usually includes a '#' prefix, but the facet reference should not (except in the case of 'double hash tags').
@@ -2081,6 +2357,8 @@ pub struct AppBskyRichtextFacetLink {
 pub struct AppBskyRichtextFacetTag {
   /// [max_graphemes: 64] [max_length: 640]
   pub tag: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Specifies the sub-string range a facet feature applies to. Start index is inclusive, end index is exclusive. Indices are zero-indexed, counting bytes of the UTF-8 encoded text. NOTE: some languages, like Javascript, use UTF-16 or Unicode codepoints for string slice indexing; in these languages, convert to byte arrays before working with facets.
@@ -2092,6 +2370,8 @@ pub struct AppBskyRichtextFacetByteSlice {
   pub byte_start: i64,
   /// [minimum: 0]
   pub byte_end: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2100,6 +2380,8 @@ pub struct AppBskyRichtextFacetByteSlice {
 pub struct AppBskyUnspeccedDefsSkeletonSearchPost {
   /// [format: at-uri]
   pub uri: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2108,6 +2390,18 @@ pub struct AppBskyUnspeccedDefsSkeletonSearchPost {
 pub struct AppBskyUnspeccedDefsSkeletonSearchActor {
   /// [format: did]
   pub did: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedDefsSkeletonSearchStarterPack {
+  /// [format: at-uri]
+  pub uri: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2115,6 +2409,8 @@ pub struct AppBskyUnspeccedDefsSkeletonSearchActor {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyUnspeccedGetConfigOutput {
   pub check_email_confirmed: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2123,6 +2419,8 @@ pub struct AppBskyUnspeccedGetConfigOutput {
 pub struct AppBskyUnspeccedGetPopularFeedGeneratorsOutput {
   pub cursor: Option<String>,
   pub feeds: Vec<AppBskyFeedDefsGeneratorView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2133,6 +2431,8 @@ pub struct AppBskyUnspeccedGetSuggestionsSkeletonOutput {
   pub actors: Vec<AppBskyUnspeccedDefsSkeletonSearchActor>,
   /// [format: did] DID of the account these suggestions are relative to. If this is returned undefined, suggestions are based on the viewer.
   pub relative_to_did: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2140,6 +2440,8 @@ pub struct AppBskyUnspeccedGetSuggestionsSkeletonOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyUnspeccedGetTaggedSuggestionsOutput {
   pub suggestions: Vec<AppBskyUnspeccedGetTaggedSuggestionsSuggestion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2151,6 +2453,8 @@ pub struct AppBskyUnspeccedGetTaggedSuggestionsSuggestion {
   pub subject_type: String,
   /// [format: uri]
   pub subject: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2161,6 +2465,8 @@ pub struct AppBskyUnspeccedSearchActorsSkeletonOutput {
   /// Count of search hits. Optional, may be rounded/truncated, and may not be possible to paginate through all hits.
   pub hits_total: Option<i64>,
   pub actors: Vec<AppBskyUnspeccedDefsSkeletonSearchActor>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2171,6 +2477,20 @@ pub struct AppBskyUnspeccedSearchPostsSkeletonOutput {
   /// Count of search hits. Optional, may be rounded/truncated, and may not be possible to paginate through all hits.
   pub hits_total: Option<i64>,
   pub posts: Vec<AppBskyUnspeccedDefsSkeletonSearchPost>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedSearchStarterPacksSkeletonOutput {
+  pub cursor: Option<String>,
+  /// Count of search hits. Optional, may be rounded/truncated, and may not be possible to paginate through all hits.
+  pub hits_total: Option<i64>,
+  pub starter_packs: Vec<AppBskyUnspeccedDefsSkeletonSearchStarterPack>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2187,6 +2507,8 @@ pub struct AppBskyVideoDefsJobStatus {
   pub blob: Option<Blob>,
   pub error: Option<String>,
   pub message: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2194,6 +2516,8 @@ pub struct AppBskyVideoDefsJobStatus {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyVideoGetJobStatusOutput {
   pub job_status: AppBskyVideoDefsJobStatus,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2205,6 +2529,8 @@ pub struct AppBskyVideoGetUploadLimitsOutput {
   pub remaining_daily_bytes: Option<i64>,
   pub message: Option<String>,
   pub error: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2212,6 +2538,8 @@ pub struct AppBskyVideoGetUploadLimitsOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyVideoUploadVideoOutput {
   pub job_status: AppBskyVideoDefsJobStatus,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// A declaration of a Bluesky chat account.
@@ -2240,6 +2568,8 @@ pub struct ChatBskyActorDefsProfileViewBasic {
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   /// Set to true when the actor cannot actively participate in converations
   pub chat_disabled: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2253,6 +2583,8 @@ pub struct ChatBskyConvoDefsMessageRef {
   pub did: String,
   pub convo_id: String,
   pub message_id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2271,6 +2603,8 @@ pub struct ChatBskyConvoDefsMessageInput {
   /// Annotations of text (mentions, URLs, hashtags, etc)
   pub facets: Option<Vec<AppBskyRichtextFacet>>,
   pub embed: Option<ChatBskyConvoDefsMessageInputEmbedUnion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2294,6 +2628,8 @@ pub struct ChatBskyConvoDefsMessageView {
   pub sender: ChatBskyConvoDefsMessageViewSender,
   /// [format: datetime]
   pub sent_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2305,6 +2641,8 @@ pub struct ChatBskyConvoDefsDeletedMessageView {
   pub sender: ChatBskyConvoDefsMessageViewSender,
   /// [format: datetime]
   pub sent_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2313,6 +2651,8 @@ pub struct ChatBskyConvoDefsDeletedMessageView {
 pub struct ChatBskyConvoDefsMessageViewSender {
   /// [format: did]
   pub did: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2335,6 +2675,8 @@ pub struct ChatBskyConvoDefsConvoView {
   pub muted: bool,
   pub opened: Option<bool>,
   pub unread_count: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2343,6 +2685,8 @@ pub struct ChatBskyConvoDefsConvoView {
 pub struct ChatBskyConvoDefsLogBeginConvo {
   pub rev: String,
   pub convo_id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2351,6 +2695,8 @@ pub struct ChatBskyConvoDefsLogBeginConvo {
 pub struct ChatBskyConvoDefsLogLeaveConvo {
   pub rev: String,
   pub convo_id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2369,6 +2715,8 @@ pub struct ChatBskyConvoDefsLogCreateMessage {
   pub rev: String,
   pub convo_id: String,
   pub message: ChatBskyConvoDefsLogCreateMessageMessageUnion,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2387,6 +2735,8 @@ pub struct ChatBskyConvoDefsLogDeleteMessage {
   pub rev: String,
   pub convo_id: String,
   pub message: ChatBskyConvoDefsLogDeleteMessageMessageUnion,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2395,6 +2745,8 @@ pub struct ChatBskyConvoDefsLogDeleteMessage {
 pub struct ChatBskyConvoDeleteMessageForSelfInput {
   pub convo_id: String,
   pub message_id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2402,6 +2754,8 @@ pub struct ChatBskyConvoDeleteMessageForSelfInput {
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoGetConvoOutput {
   pub convo: ChatBskyConvoDefsConvoView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2409,6 +2763,8 @@ pub struct ChatBskyConvoGetConvoOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoGetConvoForMembersOutput {
   pub convo: ChatBskyConvoDefsConvoView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2430,6 +2786,8 @@ pub enum ChatBskyConvoGetLogOutputLogsUnion {
 pub struct ChatBskyConvoGetLogOutput {
   pub cursor: Option<String>,
   pub logs: Vec<ChatBskyConvoGetLogOutputLogsUnion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2447,6 +2805,8 @@ pub enum ChatBskyConvoGetMessagesOutputMessagesUnion {
 pub struct ChatBskyConvoGetMessagesOutput {
   pub cursor: Option<String>,
   pub messages: Vec<ChatBskyConvoGetMessagesOutputMessagesUnion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2454,6 +2814,8 @@ pub struct ChatBskyConvoGetMessagesOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoLeaveConvoInput {
   pub convo_id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2462,6 +2824,8 @@ pub struct ChatBskyConvoLeaveConvoInput {
 pub struct ChatBskyConvoLeaveConvoOutput {
   pub convo_id: String,
   pub rev: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2470,6 +2834,8 @@ pub struct ChatBskyConvoLeaveConvoOutput {
 pub struct ChatBskyConvoListConvosOutput {
   pub cursor: Option<String>,
   pub convos: Vec<ChatBskyConvoDefsConvoView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2477,6 +2843,8 @@ pub struct ChatBskyConvoListConvosOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoMuteConvoInput {
   pub convo_id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2484,6 +2852,8 @@ pub struct ChatBskyConvoMuteConvoInput {
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoMuteConvoOutput {
   pub convo: ChatBskyConvoDefsConvoView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2492,6 +2862,8 @@ pub struct ChatBskyConvoMuteConvoOutput {
 pub struct ChatBskyConvoSendMessageInput {
   pub convo_id: String,
   pub message: ChatBskyConvoDefsMessageInput,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2500,6 +2872,8 @@ pub struct ChatBskyConvoSendMessageInput {
 pub struct ChatBskyConvoSendMessageBatchInput {
   /// [max_length: 100]
   pub items: Vec<ChatBskyConvoSendMessageBatchBatchItem>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2507,6 +2881,8 @@ pub struct ChatBskyConvoSendMessageBatchInput {
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoSendMessageBatchOutput {
   pub items: Vec<ChatBskyConvoDefsMessageView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2515,6 +2891,8 @@ pub struct ChatBskyConvoSendMessageBatchOutput {
 pub struct ChatBskyConvoSendMessageBatchBatchItem {
   pub convo_id: String,
   pub message: ChatBskyConvoDefsMessageInput,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2522,6 +2900,8 @@ pub struct ChatBskyConvoSendMessageBatchBatchItem {
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoUnmuteConvoInput {
   pub convo_id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2529,6 +2909,8 @@ pub struct ChatBskyConvoUnmuteConvoInput {
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoUnmuteConvoOutput {
   pub convo: ChatBskyConvoDefsConvoView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2537,6 +2919,8 @@ pub struct ChatBskyConvoUnmuteConvoOutput {
 pub struct ChatBskyConvoUpdateReadInput {
   pub convo_id: String,
   pub message_id: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2544,6 +2928,8 @@ pub struct ChatBskyConvoUpdateReadInput {
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoUpdateReadOutput {
   pub convo: ChatBskyConvoDefsConvoView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2553,6 +2939,8 @@ pub struct ChatBskyModerationGetActorMetadataOutput {
   pub day: ChatBskyModerationGetActorMetadataMetadata,
   pub month: ChatBskyModerationGetActorMetadataMetadata,
   pub all: ChatBskyModerationGetActorMetadataMetadata,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2563,6 +2951,8 @@ pub struct ChatBskyModerationGetActorMetadataMetadata {
   pub messages_received: i64,
   pub convos: i64,
   pub convos_started: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2579,6 +2969,8 @@ pub enum ChatBskyModerationGetMessageContextOutputMessagesUnion {
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyModerationGetMessageContextOutput {
   pub messages: Vec<ChatBskyModerationGetMessageContextOutputMessagesUnion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2589,6 +2981,8 @@ pub struct ChatBskyModerationUpdateActorAccessInput {
   pub actor: String,
   pub allow_access: bool,
   pub ref_: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2597,6 +2991,8 @@ pub struct ChatBskyModerationUpdateActorAccessInput {
 pub struct ComAtprotoAdminDefsStatusAttr {
   pub applied: bool,
   pub ref_: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2620,6 +3016,8 @@ pub struct ComAtprotoAdminDefsAccountView {
   /// [format: datetime]
   pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
   pub threat_signatures: Option<Vec<ComAtprotoAdminDefsThreatSignature>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2628,6 +3026,8 @@ pub struct ComAtprotoAdminDefsAccountView {
 pub struct ComAtprotoAdminDefsRepoRef {
   /// [format: did]
   pub did: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2640,6 +3040,8 @@ pub struct ComAtprotoAdminDefsRepoBlobRef {
   pub cid: String,
   /// [format: at-uri]
   pub record_uri: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2648,6 +3050,8 @@ pub struct ComAtprotoAdminDefsRepoBlobRef {
 pub struct ComAtprotoAdminDefsThreatSignature {
   pub property: String,
   pub value: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2656,6 +3060,8 @@ pub struct ComAtprotoAdminDefsThreatSignature {
 pub struct ComAtprotoAdminDeleteAccountInput {
   /// [format: did]
   pub did: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2666,6 +3072,8 @@ pub struct ComAtprotoAdminDisableAccountInvitesInput {
   pub account: String,
   /// Optional reason for disabled invites.
   pub note: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2674,6 +3082,8 @@ pub struct ComAtprotoAdminDisableAccountInvitesInput {
 pub struct ComAtprotoAdminDisableInviteCodesInput {
   pub codes: Option<Vec<String>>,
   pub accounts: Option<Vec<String>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2684,6 +3094,8 @@ pub struct ComAtprotoAdminEnableAccountInvitesInput {
   pub account: String,
   /// Optional reason for enabled invites.
   pub note: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2691,6 +3103,8 @@ pub struct ComAtprotoAdminEnableAccountInvitesInput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoAdminGetAccountInfosOutput {
   pub infos: Vec<ComAtprotoAdminDefsAccountView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2699,6 +3113,8 @@ pub struct ComAtprotoAdminGetAccountInfosOutput {
 pub struct ComAtprotoAdminGetInviteCodesOutput {
   pub cursor: Option<String>,
   pub codes: Vec<ComAtprotoServerDefsInviteCode>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2719,6 +3135,8 @@ pub struct ComAtprotoAdminGetSubjectStatusOutput {
   pub subject: ComAtprotoAdminGetSubjectStatusOutputSubjectUnion,
   pub takedown: Option<ComAtprotoAdminDefsStatusAttr>,
   pub deactivated: Option<ComAtprotoAdminDefsStatusAttr>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2727,6 +3145,8 @@ pub struct ComAtprotoAdminGetSubjectStatusOutput {
 pub struct ComAtprotoAdminSearchAccountsOutput {
   pub cursor: Option<String>,
   pub accounts: Vec<ComAtprotoAdminDefsAccountView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2741,6 +3161,8 @@ pub struct ComAtprotoAdminSendEmailInput {
   pub sender_did: String,
   /// Additional comment by the sender that won't be used in the email itself but helpful to provide more context for moderators/reviewers
   pub comment: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2748,6 +3170,8 @@ pub struct ComAtprotoAdminSendEmailInput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoAdminSendEmailOutput {
   pub sent: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2757,6 +3181,8 @@ pub struct ComAtprotoAdminUpdateAccountEmailInput {
   /// [format: at-identifier] The handle or DID of the repo.
   pub account: String,
   pub email: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2767,6 +3193,8 @@ pub struct ComAtprotoAdminUpdateAccountHandleInput {
   pub did: String,
   /// [format: handle]
   pub handle: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2776,6 +3204,8 @@ pub struct ComAtprotoAdminUpdateAccountPasswordInput {
   /// [format: did]
   pub did: String,
   pub password: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2796,6 +3226,8 @@ pub struct ComAtprotoAdminUpdateSubjectStatusInput {
   pub subject: ComAtprotoAdminUpdateSubjectStatusInputSubjectUnion,
   pub takedown: Option<ComAtprotoAdminDefsStatusAttr>,
   pub deactivated: Option<ComAtprotoAdminDefsStatusAttr>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2815,6 +3247,8 @@ pub enum ComAtprotoAdminUpdateSubjectStatusOutputSubjectUnion {
 pub struct ComAtprotoAdminUpdateSubjectStatusOutput {
   pub subject: ComAtprotoAdminUpdateSubjectStatusOutputSubjectUnion,
   pub takedown: Option<ComAtprotoAdminDefsStatusAttr>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2826,6 +3260,8 @@ pub struct ComAtprotoIdentityGetRecommendedDidCredentialsOutput {
   pub also_known_as: Option<Vec<String>>,
   pub verification_methods: Option<serde_json::Value>,
   pub services: Option<serde_json::Value>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2834,6 +3270,8 @@ pub struct ComAtprotoIdentityGetRecommendedDidCredentialsOutput {
 pub struct ComAtprotoIdentityResolveHandleOutput {
   /// [format: did]
   pub did: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2846,6 +3284,8 @@ pub struct ComAtprotoIdentitySignPlcOperationInput {
   pub also_known_as: Option<Vec<String>>,
   pub verification_methods: Option<serde_json::Value>,
   pub services: Option<serde_json::Value>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2854,6 +3294,8 @@ pub struct ComAtprotoIdentitySignPlcOperationInput {
 pub struct ComAtprotoIdentitySignPlcOperationOutput {
   /// A signed DID PLC operation.
   pub operation: serde_json::Value,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2861,6 +3303,8 @@ pub struct ComAtprotoIdentitySignPlcOperationOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoIdentitySubmitPlcOperationInput {
   pub operation: serde_json::Value,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2869,6 +3313,8 @@ pub struct ComAtprotoIdentitySubmitPlcOperationInput {
 pub struct ComAtprotoIdentityUpdateHandleInput {
   /// [format: handle] The new handle.
   pub handle: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Metadata tag on an atproto resource (eg, repo or record).
@@ -2893,6 +3339,8 @@ pub struct ComAtprotoLabelDefsLabel {
   /// [format: datetime] Timestamp at which this label expires (no longer applies).
   pub exp: Option<chrono::DateTime<chrono::Utc>>,
   pub sig: Option<Vec<u8>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Metadata tags on an atproto record, published by the author within the record.
@@ -2902,6 +3350,8 @@ pub struct ComAtprotoLabelDefsLabel {
 pub struct ComAtprotoLabelDefsSelfLabels {
   /// [max_length: 10]
   pub values: Vec<ComAtprotoLabelDefsSelfLabel>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Metadata tag on an atproto record, published by the author within the record. Note that schemas should use #selfLabels, not #selfLabel.
@@ -2911,6 +3361,8 @@ pub struct ComAtprotoLabelDefsSelfLabels {
 pub struct ComAtprotoLabelDefsSelfLabel {
   /// [max_length: 128] The short string name of the value or type of this label.
   pub val: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Declares a label value and its expected interpretations and behaviors.
@@ -2929,6 +3381,8 @@ pub struct ComAtprotoLabelDefsLabelValueDefinition {
   /// Does the user need to have adult content enabled in order to configure this label?
   pub adult_only: Option<bool>,
   pub locales: Vec<ComAtprotoLabelDefsLabelValueDefinitionStrings>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Strings which describe the label in the UI, localized into a specific language.
@@ -2942,6 +3396,8 @@ pub struct ComAtprotoLabelDefsLabelValueDefinitionStrings {
   pub name: String,
   /// [max_graphemes: 10000] [max_length: 100000] A longer description of what the label means and why it might be applied.
   pub description: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2953,6 +3409,8 @@ pub struct ComAtprotoLabelDefsLabelValue(pub String);
 pub struct ComAtprotoLabelQueryLabelsOutput {
   pub cursor: Option<String>,
   pub labels: Vec<ComAtprotoLabelDefsLabel>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2961,6 +3419,8 @@ pub struct ComAtprotoLabelQueryLabelsOutput {
 pub struct ComAtprotoLabelSubscribeLabelsLabels {
   pub seq: i64,
   pub labels: Vec<ComAtprotoLabelDefsLabel>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2970,6 +3430,8 @@ pub struct ComAtprotoLabelSubscribeLabelsInfo {
   /// [known_values: ["OutdatedCursor"]]
   pub name: String,
   pub message: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2990,6 +3452,8 @@ pub struct ComAtprotoModerationCreateReportInput {
   /// [max_graphemes: 2000] [max_length: 20000] Additional context about the content and violation.
   pub reason: Option<String>,
   pub subject: ComAtprotoModerationCreateReportInputSubjectUnion,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -3014,6 +3478,8 @@ pub struct ComAtprotoModerationCreateReportOutput {
   pub reported_by: String,
   /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -3041,6 +3507,8 @@ pub struct ComAtprotoRepoApplyWritesInput {
   pub writes: Vec<ComAtprotoRepoApplyWritesInputWritesUnion>,
   /// [format: cid] If provided, the entire operation will fail if the current repo commit CID does not match this value. Used to prevent conflicting repo mutations.
   pub swap_commit: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -3060,6 +3528,8 @@ pub enum ComAtprotoRepoApplyWritesOutputResultsUnion {
 pub struct ComAtprotoRepoApplyWritesOutput {
   pub commit: Option<ComAtprotoRepoDefsCommitMeta>,
   pub results: Option<Vec<ComAtprotoRepoApplyWritesOutputResultsUnion>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Operation which creates a new record.
@@ -3072,6 +3542,8 @@ pub struct ComAtprotoRepoApplyWritesCreate {
   /// [max_length: 512]
   pub rkey: Option<String>,
   pub value: serde_json::Value,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Operation which updates an existing record.
@@ -3083,6 +3555,8 @@ pub struct ComAtprotoRepoApplyWritesUpdate {
   pub collection: String,
   pub rkey: String,
   pub value: serde_json::Value,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Operation which deletes an existing record.
@@ -3093,6 +3567,8 @@ pub struct ComAtprotoRepoApplyWritesDelete {
   /// [format: nsid]
   pub collection: String,
   pub rkey: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3105,6 +3581,8 @@ pub struct ComAtprotoRepoApplyWritesCreateResult {
   pub cid: String,
   /// [known_values: ["valid", "unknown"]]
   pub validation_status: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3117,6 +3595,8 @@ pub struct ComAtprotoRepoApplyWritesUpdateResult {
   pub cid: String,
   /// [known_values: ["valid", "unknown"]]
   pub validation_status: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -3138,6 +3618,8 @@ pub struct ComAtprotoRepoCreateRecordInput {
   pub record: serde_json::Value,
   /// [format: cid] Compare and swap with the previous commit by CID.
   pub swap_commit: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3151,6 +3633,8 @@ pub struct ComAtprotoRepoCreateRecordOutput {
   pub commit: Option<ComAtprotoRepoDefsCommitMeta>,
   /// [known_values: ["valid", "unknown"]]
   pub validation_status: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3160,6 +3644,8 @@ pub struct ComAtprotoRepoDefsCommitMeta {
   /// [format: cid]
   pub cid: String,
   pub rev: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3176,6 +3662,8 @@ pub struct ComAtprotoRepoDeleteRecordInput {
   pub swap_record: Option<String>,
   /// [format: cid] Compare and swap with the previous commit by CID.
   pub swap_commit: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3183,6 +3671,8 @@ pub struct ComAtprotoRepoDeleteRecordInput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoDeleteRecordOutput {
   pub commit: Option<ComAtprotoRepoDefsCommitMeta>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3199,6 +3689,8 @@ pub struct ComAtprotoRepoDescribeRepoOutput {
   pub collections: Vec<String>,
   /// Indicates if handle is currently valid (resolves bi-directionally)
   pub handle_is_correct: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3210,6 +3702,8 @@ pub struct ComAtprotoRepoGetRecordOutput {
   /// [format: cid]
   pub cid: Option<String>,
   pub value: serde_json::Value,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3218,6 +3712,8 @@ pub struct ComAtprotoRepoGetRecordOutput {
 pub struct ComAtprotoRepoListMissingBlobsOutput {
   pub cursor: Option<String>,
   pub blobs: Vec<ComAtprotoRepoListMissingBlobsRecordBlob>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3228,6 +3724,8 @@ pub struct ComAtprotoRepoListMissingBlobsRecordBlob {
   pub cid: String,
   /// [format: at-uri]
   pub record_uri: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3236,6 +3734,8 @@ pub struct ComAtprotoRepoListMissingBlobsRecordBlob {
 pub struct ComAtprotoRepoListRecordsOutput {
   pub cursor: Option<String>,
   pub records: Vec<ComAtprotoRepoListRecordsRecord>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3247,6 +3747,8 @@ pub struct ComAtprotoRepoListRecordsRecord {
   /// [format: cid]
   pub cid: String,
   pub value: serde_json::Value,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3267,6 +3769,8 @@ pub struct ComAtprotoRepoPutRecordInput {
   pub swap_record: Option<String>,
   /// [format: cid] Compare and swap with the previous commit by CID.
   pub swap_commit: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3280,6 +3784,8 @@ pub struct ComAtprotoRepoPutRecordOutput {
   pub commit: Option<ComAtprotoRepoDefsCommitMeta>,
   /// [known_values: ["valid", "unknown"]]
   pub validation_status: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3290,6 +3796,8 @@ pub struct ComAtprotoRepoStrongRef {
   pub uri: String,
   /// [format: cid]
   pub cid: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3297,6 +3805,8 @@ pub struct ComAtprotoRepoStrongRef {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoRepoUploadBlobOutput {
   pub blob: Blob,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3313,6 +3823,8 @@ pub struct ComAtprotoServerCheckAccountStatusOutput {
   pub private_state_values: i64,
   pub expected_blobs: i64,
   pub imported_blobs: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3321,6 +3833,8 @@ pub struct ComAtprotoServerCheckAccountStatusOutput {
 pub struct ComAtprotoServerConfirmEmailInput {
   pub email: String,
   pub token: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3341,6 +3855,8 @@ pub struct ComAtprotoServerCreateAccountInput {
   pub recovery_key: Option<String>,
   /// A signed DID PLC operation to be submitted as part of importing an existing account to this instance. NOTE: this optional field may be updated when full account migration is implemented.
   pub plc_op: Option<serde_json::Value>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Account login session returned on successful account creation.
@@ -3356,6 +3872,8 @@ pub struct ComAtprotoServerCreateAccountOutput {
   pub did: String,
   /// Complete DID document.
   pub did_doc: Option<serde_json::Value>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3366,6 +3884,8 @@ pub struct ComAtprotoServerCreateAppPasswordInput {
   pub name: String,
   /// If an app password has 'privileged' access to possibly sensitive account state. Meant for use with trusted clients.
   pub privileged: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3377,6 +3897,8 @@ pub struct ComAtprotoServerCreateAppPasswordAppPassword {
   /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub privileged: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3386,6 +3908,8 @@ pub struct ComAtprotoServerCreateInviteCodeInput {
   pub use_count: i64,
   /// [format: did]
   pub for_account: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3393,6 +3917,8 @@ pub struct ComAtprotoServerCreateInviteCodeInput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerCreateInviteCodeOutput {
   pub code: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3403,6 +3929,8 @@ pub struct ComAtprotoServerCreateInviteCodesInput {
   pub code_count: i64,
   pub use_count: i64,
   pub for_accounts: Option<Vec<String>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3410,6 +3938,8 @@ pub struct ComAtprotoServerCreateInviteCodesInput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerCreateInviteCodesOutput {
   pub codes: Vec<ComAtprotoServerCreateInviteCodesAccountCodes>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3418,6 +3948,8 @@ pub struct ComAtprotoServerCreateInviteCodesOutput {
 pub struct ComAtprotoServerCreateInviteCodesAccountCodes {
   pub account: String,
   pub codes: Vec<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3428,6 +3960,8 @@ pub struct ComAtprotoServerCreateSessionInput {
   pub identifier: String,
   pub password: String,
   pub auth_factor_token: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3447,6 +3981,8 @@ pub struct ComAtprotoServerCreateSessionOutput {
   pub active: Option<bool>,
   /// [known_values: ["takendown", "suspended", "deactivated"]] If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.
   pub status: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3455,6 +3991,8 @@ pub struct ComAtprotoServerCreateSessionOutput {
 pub struct ComAtprotoServerDeactivateAccountInput {
   /// [format: datetime] A recommendation to server as to how long they should hold onto the deactivated account before deleting.
   pub delete_after: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3469,6 +4007,8 @@ pub struct ComAtprotoServerDefsInviteCode {
   /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub uses: Vec<ComAtprotoServerDefsInviteCodeUse>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3479,6 +4019,8 @@ pub struct ComAtprotoServerDefsInviteCodeUse {
   pub used_by: String,
   /// [format: datetime]
   pub used_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3489,6 +4031,8 @@ pub struct ComAtprotoServerDeleteAccountInput {
   pub did: String,
   pub password: String,
   pub token: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3507,6 +4051,8 @@ pub struct ComAtprotoServerDescribeServerOutput {
   pub contact: Option<ComAtprotoServerDescribeServerContact>,
   /// [format: did]
   pub did: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3517,6 +4063,8 @@ pub struct ComAtprotoServerDescribeServerLinks {
   pub privacy_policy: Option<String>,
   /// [format: uri]
   pub terms_of_service: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3524,6 +4072,8 @@ pub struct ComAtprotoServerDescribeServerLinks {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerDescribeServerContact {
   pub email: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3531,6 +4081,8 @@ pub struct ComAtprotoServerDescribeServerContact {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerGetAccountInviteCodesOutput {
   pub codes: Vec<ComAtprotoServerDefsInviteCode>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3538,6 +4090,8 @@ pub struct ComAtprotoServerGetAccountInviteCodesOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerGetServiceAuthOutput {
   pub token: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3555,6 +4109,8 @@ pub struct ComAtprotoServerGetSessionOutput {
   pub active: Option<bool>,
   /// [known_values: ["takendown", "suspended", "deactivated"]] If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.
   pub status: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3562,6 +4118,8 @@ pub struct ComAtprotoServerGetSessionOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerListAppPasswordsOutput {
   pub passwords: Vec<ComAtprotoServerListAppPasswordsAppPassword>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3572,6 +4130,8 @@ pub struct ComAtprotoServerListAppPasswordsAppPassword {
   /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub privileged: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3588,6 +4148,8 @@ pub struct ComAtprotoServerRefreshSessionOutput {
   pub active: Option<bool>,
   /// [known_values: ["takendown", "suspended", "deactivated"]] Hosting status of the account. If not specified, then assume 'active'.
   pub status: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3595,6 +4157,8 @@ pub struct ComAtprotoServerRefreshSessionOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerRequestEmailUpdateOutput {
   pub token_required: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3602,6 +4166,8 @@ pub struct ComAtprotoServerRequestEmailUpdateOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerRequestPasswordResetInput {
   pub email: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3610,6 +4176,8 @@ pub struct ComAtprotoServerRequestPasswordResetInput {
 pub struct ComAtprotoServerReserveSigningKeyInput {
   /// [format: did] The DID to reserve a key for.
   pub did: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3618,6 +4186,8 @@ pub struct ComAtprotoServerReserveSigningKeyInput {
 pub struct ComAtprotoServerReserveSigningKeyOutput {
   /// The public key for the reserved signing key, in did:key serialization.
   pub signing_key: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3626,6 +4196,8 @@ pub struct ComAtprotoServerReserveSigningKeyOutput {
 pub struct ComAtprotoServerResetPasswordInput {
   pub token: String,
   pub password: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3633,6 +4205,8 @@ pub struct ComAtprotoServerResetPasswordInput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoServerRevokeAppPasswordInput {
   pub name: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3643,6 +4217,8 @@ pub struct ComAtprotoServerUpdateEmailInput {
   pub email_auth_factor: Option<bool>,
   /// Requires a token from com.atproto.sever.requestEmailUpdate if the account's email has been confirmed.
   pub token: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3651,6 +4227,8 @@ pub struct ComAtprotoServerUpdateEmailInput {
 pub struct ComAtprotoSyncGetHeadOutput {
   /// [format: cid]
   pub root: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3660,6 +4238,8 @@ pub struct ComAtprotoSyncGetLatestCommitOutput {
   /// [format: cid]
   pub cid: String,
   pub rev: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3673,6 +4253,8 @@ pub struct ComAtprotoSyncGetRepoStatusOutput {
   pub status: Option<String>,
   /// Optional field, the current rev of the repo, if active=true
   pub rev: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3681,6 +4263,8 @@ pub struct ComAtprotoSyncGetRepoStatusOutput {
 pub struct ComAtprotoSyncListBlobsOutput {
   pub cursor: Option<String>,
   pub cids: Vec<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3689,6 +4273,8 @@ pub struct ComAtprotoSyncListBlobsOutput {
 pub struct ComAtprotoSyncListReposOutput {
   pub cursor: Option<String>,
   pub repos: Vec<ComAtprotoSyncListReposRepo>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3703,6 +4289,8 @@ pub struct ComAtprotoSyncListReposRepo {
   pub active: Option<bool>,
   /// [known_values: ["takendown", "suspended", "deactivated"]] If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.
   pub status: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3711,6 +4299,8 @@ pub struct ComAtprotoSyncListReposRepo {
 pub struct ComAtprotoSyncNotifyOfUpdateInput {
   /// Hostname of the current service (usually a PDS) that is notifying of update.
   pub hostname: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3719,6 +4309,8 @@ pub struct ComAtprotoSyncNotifyOfUpdateInput {
 pub struct ComAtprotoSyncRequestCrawlInput {
   /// Hostname of the current service (eg, PDS) that is requesting to be crawled.
   pub hostname: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Represents an update of repository state. Note that empty commits are allowed, which include no repo data changes, but an update to rev and signature.
@@ -3749,6 +4341,8 @@ pub struct ComAtprotoSyncSubscribeReposCommit {
   pub blobs: Vec<ciborium::Value>,
   /// [format: datetime] Timestamp of when this message was originally broadcast.
   pub time: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Represents a change to an account's identity. Could be an updated handle, signing key, or pds hosting endpoint. Serves as a prod to all downstream services to refresh their identity cache.
@@ -3763,6 +4357,8 @@ pub struct ComAtprotoSyncSubscribeReposIdentity {
   pub time: chrono::DateTime<chrono::Utc>,
   /// [format: handle] The current handle for the account, or 'handle.invalid' if validation fails. This field is optional, might have been validated or passed-through from an upstream source. Semantics and behaviors for PDS vs Relay may evolve in the future; see atproto specs for more details.
   pub handle: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Represents a change to an account's status on a host (eg, PDS or Relay). The semantics of this event are that the status is at the host which emitted the event, not necessarily that at the currently active PDS. Eg, a Relay takedown would emit a takedown with active=false, even if the PDS is still active.
@@ -3779,6 +4375,8 @@ pub struct ComAtprotoSyncSubscribeReposAccount {
   pub active: bool,
   /// [known_values: ["takendown", "suspended", "deleted", "deactivated"]] If active=false, this optional field indicates a reason for why the account is not active.
   pub status: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// DEPRECATED -- Use #identity event instead
@@ -3793,6 +4391,8 @@ pub struct ComAtprotoSyncSubscribeReposHandle {
   pub handle: String,
   /// [format: datetime]
   pub time: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// DEPRECATED -- Use #account event instead
@@ -3806,6 +4406,8 @@ pub struct ComAtprotoSyncSubscribeReposMigrate {
   pub migrate_to: Option<String>,
   /// [format: datetime]
   pub time: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// DEPRECATED -- Use #account event instead
@@ -3818,6 +4420,8 @@ pub struct ComAtprotoSyncSubscribeReposTombstone {
   pub did: String,
   /// [format: datetime]
   pub time: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3827,6 +4431,8 @@ pub struct ComAtprotoSyncSubscribeReposInfo {
   /// [known_values: ["OutdatedCursor"]]
   pub name: String,
   pub message: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// A repo operation, ie a mutation of a single record.
@@ -3839,6 +4445,8 @@ pub struct ComAtprotoSyncSubscribeReposRepoOp {
   pub path: String,
   /// For creates and updates, the new record CID. For deletions, null.
   pub cid: Option<ciborium::Value>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3848,6 +4456,8 @@ pub struct ComAtprotoTempCheckSignupQueueOutput {
   pub activated: bool,
   pub place_in_queue: Option<i64>,
   pub estimated_time_ms: Option<i64>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3855,6 +4465,8 @@ pub struct ComAtprotoTempCheckSignupQueueOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoTempFetchLabelsOutput {
   pub labels: Vec<ComAtprotoLabelDefsLabel>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3862,6 +4474,8 @@ pub struct ComAtprotoTempFetchLabelsOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoTempRequestPhoneVerificationInput {
   pub phone_number: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3878,6 +4492,8 @@ pub struct ToolsOzoneCommunicationCreateTemplateInput {
   pub lang: Option<String>,
   /// [format: did] DID of the user who is creating the template.
   pub created_by: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3900,6 +4516,8 @@ pub struct ToolsOzoneCommunicationDefsTemplateView {
   pub created_at: chrono::DateTime<chrono::Utc>,
   /// [format: datetime]
   pub updated_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3907,6 +4525,8 @@ pub struct ToolsOzoneCommunicationDefsTemplateView {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneCommunicationDeleteTemplateInput {
   pub id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3914,6 +4534,8 @@ pub struct ToolsOzoneCommunicationDeleteTemplateInput {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneCommunicationListTemplatesOutput {
   pub communication_templates: Vec<ToolsOzoneCommunicationDefsTemplateView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -3933,6 +4555,8 @@ pub struct ToolsOzoneCommunicationUpdateTemplateInput {
   /// [format: did] DID of the user who is updating the template.
   pub updated_by: Option<String>,
   pub disabled: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4005,6 +4629,8 @@ pub struct ToolsOzoneModerationDefsModEventView {
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub creator_handle: Option<String>,
   pub subject_handle: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4077,6 +4703,8 @@ pub struct ToolsOzoneModerationDefsModEventViewDetail {
   pub created_by: String,
   /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4131,6 +4759,8 @@ pub struct ToolsOzoneModerationDefsSubjectStatusView {
   /// [format: datetime]
   pub suspend_until: Option<chrono::DateTime<chrono::Utc>>,
   pub tags: Option<Vec<String>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4146,6 +4776,8 @@ pub struct ToolsOzoneModerationDefsModEventTakedown {
   pub duration_in_hours: Option<i64>,
   /// If true, all other reports on content authored by this account will be resolved (acknowledged).
   pub acknowledge_account_subjects: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Revert take down action on a subject
@@ -4155,6 +4787,8 @@ pub struct ToolsOzoneModerationDefsModEventTakedown {
 pub struct ToolsOzoneModerationDefsModEventReverseTakedown {
   /// Describe reasoning behind the reversal.
   pub comment: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Resolve appeal on a subject
@@ -4164,6 +4798,8 @@ pub struct ToolsOzoneModerationDefsModEventReverseTakedown {
 pub struct ToolsOzoneModerationDefsModEventResolveAppeal {
   /// Describe resolution.
   pub comment: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Add a comment to a subject
@@ -4174,6 +4810,8 @@ pub struct ToolsOzoneModerationDefsModEventComment {
   pub comment: String,
   /// Make the comment persistent on the subject
   pub sticky: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Report a subject
@@ -4185,6 +4823,8 @@ pub struct ToolsOzoneModerationDefsModEventReport {
   /// Set to true if the reporter was muted from reporting at the time of the event. These reports won't impact the reviewState of the subject.
   pub is_reporter_muted: Option<bool>,
   pub report_type: ComAtprotoModerationDefsReasonType,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Apply/Negate labels on a subject
@@ -4195,6 +4835,8 @@ pub struct ToolsOzoneModerationDefsModEventLabel {
   pub comment: Option<String>,
   pub create_label_vals: Vec<String>,
   pub negate_label_vals: Vec<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4202,6 +4844,8 @@ pub struct ToolsOzoneModerationDefsModEventLabel {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventAcknowledge {
   pub comment: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4209,6 +4853,8 @@ pub struct ToolsOzoneModerationDefsModEventAcknowledge {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventEscalate {
   pub comment: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Mute incoming reports on a subject
@@ -4219,6 +4865,8 @@ pub struct ToolsOzoneModerationDefsModEventMute {
   pub comment: Option<String>,
   /// Indicates how long the subject should remain muted.
   pub duration_in_hours: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Unmute action on a subject
@@ -4228,6 +4876,8 @@ pub struct ToolsOzoneModerationDefsModEventMute {
 pub struct ToolsOzoneModerationDefsModEventUnmute {
   /// Describe reasoning behind the reversal.
   pub comment: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Mute incoming reports from an account
@@ -4238,6 +4888,8 @@ pub struct ToolsOzoneModerationDefsModEventMuteReporter {
   pub comment: Option<String>,
   /// Indicates how long the account should remain muted. Falsy value here means a permanent mute.
   pub duration_in_hours: Option<i64>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Unmute incoming reports from an account
@@ -4247,6 +4899,8 @@ pub struct ToolsOzoneModerationDefsModEventMuteReporter {
 pub struct ToolsOzoneModerationDefsModEventUnmuteReporter {
   /// Describe reasoning behind the reversal.
   pub comment: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Keep a log of outgoing email to a user
@@ -4260,6 +4914,8 @@ pub struct ToolsOzoneModerationDefsModEventEmail {
   pub content: Option<String>,
   /// Additional comment about the outgoing comm.
   pub comment: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Divert a record's blobs to a 3rd party service for further scanning/tagging
@@ -4268,6 +4924,8 @@ pub struct ToolsOzoneModerationDefsModEventEmail {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventDivert {
   pub comment: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Add/Remove a tag on a subject
@@ -4281,6 +4939,8 @@ pub struct ToolsOzoneModerationDefsModEventTag {
   pub remove: Vec<String>,
   /// Additional comment about added/removed tags.
   pub comment: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Logs account status related events on a repo subject. Normally captured by automod from the firehose and emitted to ozone for historical tracking.
@@ -4295,6 +4955,8 @@ pub struct ToolsOzoneModerationDefsAccountEvent {
   pub status: Option<String>,
   /// [format: datetime]
   pub timestamp: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Logs identity related events on a repo subject. Normally captured by automod from the firehose and emitted to ozone for historical tracking.
@@ -4310,6 +4972,8 @@ pub struct ToolsOzoneModerationDefsIdentityEvent {
   pub tombstone: Option<bool>,
   /// [format: datetime]
   pub timestamp: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Logs lifecycle event on a record subject. Normally captured by automod from the firehose and emitted to ozone for historical tracking.
@@ -4324,6 +4988,8 @@ pub struct ToolsOzoneModerationDefsRecordEvent {
   pub cid: Option<String>,
   /// [format: datetime]
   pub timestamp: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4345,6 +5011,8 @@ pub struct ToolsOzoneModerationDefsRepoView {
   /// [format: datetime]
   pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
   pub threat_signatures: Option<Vec<ComAtprotoAdminDefsThreatSignature>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4370,6 +5038,8 @@ pub struct ToolsOzoneModerationDefsRepoViewDetail {
   /// [format: datetime]
   pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
   pub threat_signatures: Option<Vec<ComAtprotoAdminDefsThreatSignature>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4378,6 +5048,8 @@ pub struct ToolsOzoneModerationDefsRepoViewDetail {
 pub struct ToolsOzoneModerationDefsRepoViewNotFound {
   /// [format: did]
   pub did: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4394,6 +5066,8 @@ pub struct ToolsOzoneModerationDefsRecordView {
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub moderation: ToolsOzoneModerationDefsModeration,
   pub repo: ToolsOzoneModerationDefsRepoView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4411,6 +5085,8 @@ pub struct ToolsOzoneModerationDefsRecordViewDetail {
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub moderation: ToolsOzoneModerationDefsModerationDetail,
   pub repo: ToolsOzoneModerationDefsRepoView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4419,6 +5095,8 @@ pub struct ToolsOzoneModerationDefsRecordViewDetail {
 pub struct ToolsOzoneModerationDefsRecordViewNotFound {
   /// [format: at-uri]
   pub uri: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4426,6 +5104,8 @@ pub struct ToolsOzoneModerationDefsRecordViewNotFound {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModeration {
   pub subject_status: Option<ToolsOzoneModerationDefsSubjectStatusView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4433,6 +5113,8 @@ pub struct ToolsOzoneModerationDefsModeration {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModerationDetail {
   pub subject_status: Option<ToolsOzoneModerationDefsSubjectStatusView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4456,6 +5138,8 @@ pub struct ToolsOzoneModerationDefsBlobView {
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub details: Option<ToolsOzoneModerationDefsBlobViewDetailsUnion>,
   pub moderation: Option<ToolsOzoneModerationDefsModeration>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4464,6 +5148,8 @@ pub struct ToolsOzoneModerationDefsBlobView {
 pub struct ToolsOzoneModerationDefsImageDetails {
   pub width: i64,
   pub height: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4473,6 +5159,8 @@ pub struct ToolsOzoneModerationDefsVideoDetails {
   pub width: i64,
   pub height: i64,
   pub length: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4491,6 +5179,8 @@ pub struct ToolsOzoneModerationDefsAccountHosting {
   pub deactivated_at: Option<chrono::DateTime<chrono::Utc>>,
   /// [format: datetime]
   pub reactivated_at: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4505,6 +5195,8 @@ pub struct ToolsOzoneModerationDefsRecordHosting {
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
   /// [format: datetime]
   pub deleted_at: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4568,6 +5260,8 @@ pub struct ToolsOzoneModerationEmitEventInput {
   pub subject_blob_cids: Option<Vec<String>>,
   /// [format: did]
   pub created_by: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4584,6 +5278,8 @@ pub enum ToolsOzoneModerationGetRecordsOutputRecordsUnion {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationGetRecordsOutput {
   pub records: Vec<ToolsOzoneModerationGetRecordsOutputRecordsUnion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4600,6 +5296,8 @@ pub enum ToolsOzoneModerationGetReposOutputReposUnion {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationGetReposOutput {
   pub repos: Vec<ToolsOzoneModerationGetReposOutputReposUnion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4608,6 +5306,8 @@ pub struct ToolsOzoneModerationGetReposOutput {
 pub struct ToolsOzoneModerationQueryEventsOutput {
   pub cursor: Option<String>,
   pub events: Vec<ToolsOzoneModerationDefsModEventView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4616,6 +5316,8 @@ pub struct ToolsOzoneModerationQueryEventsOutput {
 pub struct ToolsOzoneModerationQueryStatusesOutput {
   pub cursor: Option<String>,
   pub subject_statuses: Vec<ToolsOzoneModerationDefsSubjectStatusView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4624,6 +5326,8 @@ pub struct ToolsOzoneModerationQueryStatusesOutput {
 pub struct ToolsOzoneModerationSearchReposOutput {
   pub cursor: Option<String>,
   pub repos: Vec<ToolsOzoneModerationDefsRepoView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4635,6 +5339,8 @@ pub struct ToolsOzoneServerGetConfigOutput {
   pub blob_divert: Option<ToolsOzoneServerGetConfigServiceConfig>,
   pub chat: Option<ToolsOzoneServerGetConfigServiceConfig>,
   pub viewer: Option<ToolsOzoneServerGetConfigViewerConfig>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4643,6 +5349,8 @@ pub struct ToolsOzoneServerGetConfigOutput {
 pub struct ToolsOzoneServerGetConfigServiceConfig {
   /// [format: uri]
   pub url: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4651,6 +5359,8 @@ pub struct ToolsOzoneServerGetConfigServiceConfig {
 pub struct ToolsOzoneServerGetConfigViewerConfig {
   /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage"]]
   pub role: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4661,6 +5371,8 @@ pub struct ToolsOzoneSetAddValuesInput {
   pub name: String,
   /// [min_length: 1] [max_length: 1000] Array of string values to add to the set
   pub values: Vec<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4671,6 +5383,8 @@ pub struct ToolsOzoneSetDefsSet {
   pub name: String,
   /// [max_graphemes: 1024] [max_length: 10240]
   pub description: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4686,6 +5400,8 @@ pub struct ToolsOzoneSetDefsSetView {
   pub created_at: chrono::DateTime<chrono::Utc>,
   /// [format: datetime]
   pub updated_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4694,6 +5410,8 @@ pub struct ToolsOzoneSetDefsSetView {
 pub struct ToolsOzoneSetDeleteSetInput {
   /// Name of the set to delete
   pub name: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4707,6 +5425,8 @@ pub struct ToolsOzoneSetDeleteValuesInput {
   pub name: String,
   /// [min_length: 1] Array of string values to delete from the set
   pub values: Vec<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4716,6 +5436,8 @@ pub struct ToolsOzoneSetGetValuesOutput {
   pub set: ToolsOzoneSetDefsSetView,
   pub values: Vec<String>,
   pub cursor: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4724,6 +5446,8 @@ pub struct ToolsOzoneSetGetValuesOutput {
 pub struct ToolsOzoneSetQuerySetsOutput {
   pub sets: Vec<ToolsOzoneSetDefsSetView>,
   pub cursor: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4749,6 +5473,8 @@ pub struct ToolsOzoneSettingDefsOption {
   pub created_by: String,
   /// [format: did]
   pub last_updated_by: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4757,6 +5483,8 @@ pub struct ToolsOzoneSettingDefsOption {
 pub struct ToolsOzoneSettingListOptionsOutput {
   pub cursor: Option<String>,
   pub options: Vec<ToolsOzoneSettingDefsOption>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4767,6 +5495,8 @@ pub struct ToolsOzoneSettingRemoveOptionsInput {
   pub keys: Vec<String>,
   /// [known_values: ["instance", "personal"]]
   pub scope: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4785,6 +5515,8 @@ pub struct ToolsOzoneSettingUpsertOptionInput {
   pub description: Option<String>,
   /// [known_values: ["tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage", "tools.ozone.team.defs#roleAdmin"]]
   pub manager_role: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4792,6 +5524,8 @@ pub struct ToolsOzoneSettingUpsertOptionInput {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneSettingUpsertOptionOutput {
   pub option: ToolsOzoneSettingDefsOption,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4800,6 +5534,8 @@ pub struct ToolsOzoneSettingUpsertOptionOutput {
 pub struct ToolsOzoneSignatureDefsSigDetail {
   pub property: String,
   pub value: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4807,6 +5543,8 @@ pub struct ToolsOzoneSignatureDefsSigDetail {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneSignatureFindCorrelationOutput {
   pub details: Vec<ToolsOzoneSignatureDefsSigDetail>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4815,6 +5553,8 @@ pub struct ToolsOzoneSignatureFindCorrelationOutput {
 pub struct ToolsOzoneSignatureFindRelatedAccountsOutput {
   pub cursor: Option<String>,
   pub accounts: Vec<ToolsOzoneSignatureFindRelatedAccountsRelatedAccount>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4823,6 +5563,8 @@ pub struct ToolsOzoneSignatureFindRelatedAccountsOutput {
 pub struct ToolsOzoneSignatureFindRelatedAccountsRelatedAccount {
   pub account: ComAtprotoAdminDefsAccountView,
   pub similarities: Option<Vec<ToolsOzoneSignatureDefsSigDetail>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4831,6 +5573,8 @@ pub struct ToolsOzoneSignatureFindRelatedAccountsRelatedAccount {
 pub struct ToolsOzoneSignatureSearchAccountsOutput {
   pub cursor: Option<String>,
   pub accounts: Vec<ComAtprotoAdminDefsAccountView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4841,6 +5585,8 @@ pub struct ToolsOzoneTeamAddMemberInput {
   pub did: String,
   /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage"]]
   pub role: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4858,6 +5604,8 @@ pub struct ToolsOzoneTeamDefsMember {
   pub last_updated_by: Option<String>,
   /// [known_values: ["#roleAdmin", "#roleModerator", "#roleTriage"]]
   pub role: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4866,6 +5614,8 @@ pub struct ToolsOzoneTeamDefsMember {
 pub struct ToolsOzoneTeamDeleteMemberInput {
   /// [format: did]
   pub did: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4874,6 +5624,8 @@ pub struct ToolsOzoneTeamDeleteMemberInput {
 pub struct ToolsOzoneTeamListMembersOutput {
   pub cursor: Option<String>,
   pub members: Vec<ToolsOzoneTeamDefsMember>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -4885,6 +5637,8 @@ pub struct ToolsOzoneTeamUpdateMemberInput {
   pub disabled: Option<bool>,
   /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage"]]
   pub role: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// arproto client
@@ -4926,6 +5680,7 @@ impl Atproto {
         identifier: id.to_string(),
         password: pw.to_string(),
         auth_factor_token: None,
+        extra: std::collections::HashMap::new(),
       })
       .await?;
     {
@@ -7531,6 +8286,69 @@ impl Atproto {
     Ok(())
   }
 
+  /// Find starter packs matching search criteria. Does not require auth.
+  ///
+  /// # Arguments
+  ///
+  /// * `q` - Search query string. Syntax, phrase, boolean, and faceting is unspecified, but Lucene query syntax is recommended.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 25]
+  /// * `cursor`
+  pub async fn app_bsky_graph_search_starter_packs(
+    &self,
+    q: &str,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+  ) -> Result<AppBskyGraphSearchStarterPacksOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("q"), q.to_string()));
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.graph.searchStarterPacks",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// Unmutes the specified account. Requires auth.
   ///
   /// # Arguments
@@ -8404,6 +9222,78 @@ impl Atproto {
       .client
       .get(&format!(
         "https://{}/xrpc/app.bsky.unspecced.searchPostsSkeleton",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Backend Starter Pack search, returns only skeleton.
+  ///
+  /// # Arguments
+  ///
+  /// * `q` - Search query string; syntax, phrase, boolean, and faceting is unspecified, but Lucene query syntax is recommended.
+  /// * `viewer` - [format: did] DID of the account making the request (not included for public/unauthenticated queries).
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 25]
+  /// * `cursor` - Optional pagination mechanism; may not necessarily allow scrolling through entire result set.
+  ///
+  /// # Errors
+  ///
+  /// * `BadQueryString`
+  pub async fn app_bsky_unspecced_search_starter_packs_skeleton(
+    &self,
+    q: &str,
+    viewer: Option<&str>,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+  ) -> Result<AppBskyUnspeccedSearchStarterPacksSkeletonOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("q"), q.to_string()));
+    if let Some(viewer) = &viewer {
+      query_.push((String::from("viewer"), viewer.to_string()));
+    }
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.searchStarterPacksSkeleton",
         self.host
       ))
       .query(&query_);

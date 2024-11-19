@@ -174,8 +174,12 @@ impl FeedGeneratorFeed {
         ComAtprotoLabelDefsSelfLabels {
           values: labels
             .iter()
-            .map(|l| ComAtprotoLabelDefsSelfLabel { val: l.clone() })
+            .map(|l| ComAtprotoLabelDefsSelfLabel {
+              val: l.clone(),
+              extra: std::collections::HashMap::new(),
+            })
             .collect::<Vec<_>>(),
+          extra: std::collections::HashMap::new(),
         },
       ))
     });
@@ -347,6 +351,7 @@ impl FeedGenerator {
           record,
           swap_record: None,
           swap_commit: None,
+          extra: std::collections::HashMap::new(),
         };
         if let Err(e) = atproto.com_atproto_repo_put_record(input.clone()).await {
           tracing::warn!("{} putRecord error {e:?}", feed.display_name);
@@ -442,6 +447,7 @@ async fn xrpc_server(
           AppBskyFeedDescribeFeedGeneratorLinks {
             privacy_policy: server.privacy_policy.clone(),
             terms_of_service: server.terms_of_service.clone(),
+            extra: std::collections::HashMap::new(),
           }
         });
       let output = AppBskyFeedDescribeFeedGeneratorOutput {
@@ -450,9 +456,11 @@ async fn xrpc_server(
           .values()
           .map(|feed| AppBskyFeedDescribeFeedGeneratorFeed {
             uri: feed.to_aturi(),
+            extra: std::collections::HashMap::new(),
           })
           .collect(),
         links,
+        extra: std::collections::HashMap::new(),
       };
       Ok(axum::response::IntoResponse::into_response(axum::Json(
         output,
@@ -546,6 +554,7 @@ async fn xrpc_server(
             post: f.clone(),
             reason: None,
             feed_context: None,
+            extra: std::collections::HashMap::new(),
           })
           .collect::<Vec<_>>(),
         None => cache
@@ -555,6 +564,7 @@ async fn xrpc_server(
             post: f.clone(),
             reason: None,
             feed_context: None,
+            extra: std::collections::HashMap::new(),
           })
           .collect::<Vec<_>>(),
       };
@@ -574,6 +584,7 @@ async fn xrpc_server(
         AppBskyFeedGetFeedSkeletonOutput {
           cursor,
           feed: feeds,
+          extra: std::collections::HashMap::new(),
         },
       )))
     }

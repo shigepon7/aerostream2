@@ -80,6 +80,7 @@ async fn create_record() {
         created_at: chrono::Utc::now(),
       }),
       swap_commit: None,
+      extra: std::collections::HashMap::new(),
     })
     .await
     .is_ok());
