@@ -575,6 +575,8 @@ pub struct AppBskyActorProfile {
   pub pinned_post: Option<ComAtprotoRepoStrongRef>,
   /// [format: datetime],
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1270,6 +1272,8 @@ pub struct AppBskyFeedGenerator {
   pub labels: Option<AppBskyFeedGeneratorLabelsUnion>,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1467,6 +1471,8 @@ pub struct AppBskyFeedLike {
   pub subject: ComAtprotoRepoStrongRef,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -1514,6 +1520,8 @@ pub struct AppBskyFeedPost {
   pub tags: Option<Vec<String>>,
   /// [format: datetime] Client-declared timestamp when this post was originally created.,
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1572,6 +1580,8 @@ pub struct AppBskyFeedPostgate {
   pub detached_embedding_uris: Option<Vec<String>>,
   /// [max_length: 5],
   pub embedding_rules: Option<Vec<AppBskyFeedPostgateEmbeddingRulesUnion>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Disables embedding of this post.
@@ -1586,6 +1596,8 @@ pub struct AppBskyFeedRepost {
   pub subject: ComAtprotoRepoStrongRef,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1636,6 +1648,8 @@ pub struct AppBskyFeedThreadgate {
   pub created_at: chrono::DateTime<chrono::Utc>,
   /// [max_length: 50] List of hidden reply URIs.,
   pub hidden_replies: Option<Vec<String>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Allow replies from actors mentioned in your post.
@@ -1666,6 +1680,8 @@ pub struct AppBskyGraphBlock {
   pub subject: String,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -1829,6 +1845,8 @@ pub struct AppBskyGraphFollow {
   pub subject: String,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2008,6 +2026,8 @@ pub struct AppBskyGraphList {
   pub labels: Option<AppBskyGraphListLabelsUnion>,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Record representing a block relationship against an entire an entire list of accounts (actors).
@@ -2019,6 +2039,8 @@ pub struct AppBskyGraphListblock {
   pub subject: String,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 /// Record representing an account's inclusion on a specific list. The AppView will ignore duplicate listitem records.
@@ -2032,6 +2054,8 @@ pub struct AppBskyGraphListitem {
   pub list: String,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2090,6 +2114,8 @@ pub struct AppBskyGraphStarterpack {
   pub feeds: Option<Vec<AppBskyGraphStarterpackFeedItem>>,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2227,6 +2253,8 @@ pub struct AppBskyLabelerService {
   pub labels: Option<AppBskyLabelerServiceLabelsUnion>,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -2549,6 +2577,8 @@ pub struct AppBskyVideoUploadVideoOutput {
 pub struct ChatBskyActorDeclaration {
   /// [known_values: ["all", "none", "following"]],
   pub allow_incoming: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[serde_with::skip_serializing_none]
