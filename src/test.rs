@@ -78,6 +78,7 @@ async fn create_record() {
         labels: None,
         tags: None,
         created_at: chrono::Utc::now(),
+        extra: std::collections::HashMap::new()
       }),
       swap_commit: None,
       extra: std::collections::HashMap::new(),

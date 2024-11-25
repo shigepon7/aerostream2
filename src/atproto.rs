@@ -142,6 +142,7 @@ pub struct Blob {
   pub mime_type: String,
   pub size: Option<i64>,
   pub cid: Option<String>,
+  pub original: Option<Box<Blob>>,
 }
 
 #[serde_with::skip_serializing_none]
@@ -399,7 +400,7 @@ pub struct AppBskyActorDefsFeedViewPref {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorDefsThreadViewPref {
-  /// [known_values: ["oldest", "newest", "most-likes", "random"]] Sorting mode for threads.
+  /// [known_values: ["oldest", "newest", "most-likes", "random", "hotness"]] Sorting mode for threads.
   pub sort: Option<String>,
   /// Show followed users at the top of all replies.
   pub prioritize_followed_users: Option<bool>,
@@ -4478,6 +4479,18 @@ pub struct ComAtprotoSyncSubscribeReposRepoOp {
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoTempAddReservedHandleInput {
+  pub handle: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ComAtprotoTempAddReservedHandleOutput(pub serde_json::Value);
 
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -14191,6 +14204,57 @@ impl Atproto {
         .into_websocket()
         .await?,
     )
+  }
+
+  /// Add a handle to the set of reserved handles.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn com_atproto_temp_add_reserved_handle(
+    &self,
+    body: ComAtprotoTempAddReservedHandleInput,
+  ) -> Result<serde_json::Value> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/com.atproto.temp.addReservedHandle",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
   /// Check accounts location in signup queue.
