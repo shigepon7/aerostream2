@@ -325,6 +325,7 @@ impl FeedGenerator {
         let mut session = Atproto::default();
         if let Err(e) = session.login(handle, password).await {
           tracing::warn!("{} login error {e:?}", feed.display_name);
+          self.sessions.remove(handle);
           return;
         }
         tracing::debug!("{} login succeeded", feed.display_name);
@@ -333,6 +334,7 @@ impl FeedGenerator {
           Some(session) => session,
           None => {
             tracing::warn!("{} reload error", feed.display_name);
+            self.sessions.remove(handle);
             return;
           }
         }
