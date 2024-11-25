@@ -171,13 +171,32 @@ pub async fn token_thread(
       >,
     >,
   >,
+  user_dict: Option<String>,
 ) {
   let mut counter: u64 = 0;
   let mut builder = lindera::tokenizer::TokenizerBuilder::new().unwrap();
   builder.set_segmenter_dictionary_kind(&lindera::dictionary::DictionaryKind::IPADIC);
   builder.set_segmenter_mode(&lindera::mode::Mode::Normal);
-  let tokenizer = builder.build().unwrap();
+  if let Some(u) = &user_dict {
+    builder.set_segmenter_user_dictionary_path(std::path::Path::new(u));
+    builder.set_segmenter_user_dictionary_kind(&lindera::dictionary::DictionaryKind::IPADIC);
+    tracing::info!("TOKEN_THREAD : LOAD USER DICTIONARY : {u}");
+  }
+  let mut tokenizer = builder.build().unwrap();
+  let mut last_loaded = tokio::time::Instant::now();
   loop {
+    if let Some(u) = &user_dict {
+      if last_loaded.elapsed() > std::time::Duration::from_secs(600) {
+        let mut builder = lindera::tokenizer::TokenizerBuilder::new().unwrap();
+        builder.set_segmenter_dictionary_kind(&lindera::dictionary::DictionaryKind::IPADIC);
+        builder.set_segmenter_mode(&lindera::mode::Mode::Normal);
+        builder.set_segmenter_user_dictionary_path(std::path::Path::new(u));
+        builder.set_segmenter_user_dictionary_kind(&lindera::dictionary::DictionaryKind::IPADIC);
+        tokenizer = builder.build().unwrap();
+        last_loaded = tokio::time::Instant::now();
+        tracing::info!("TOKEN_THREAD : RELOAD USER DICTIONARY : {u}");
+      }
+    }
     let (commit, post) = match receiver.recv().await {
       Some(p) => p,
       None => continue,
@@ -255,10 +274,14 @@ pub struct Firehose {
 
 impl Firehose {
   /// create a Firehose client
-  pub fn new(size: usize) -> Self {
+  pub fn new<T: ToString>(size: usize, user_dict: Option<T>) -> Self {
     let token_receivers = std::sync::Arc::new(tokio::sync::RwLock::new(Vec::new()));
     let (token_tx, token_rx) = tokio::sync::mpsc::channel(size);
-    let token_rx_hd = tokio::spawn(token_thread(token_rx, token_receivers.clone()));
+    let token_rx_hd = tokio::spawn(token_thread(
+      token_rx,
+      token_receivers.clone(),
+      user_dict.map(|d| d.to_string()),
+    ));
 
     let ja_receivers = std::sync::Arc::new(tokio::sync::RwLock::new(vec![token_tx]));
     let (ja_tx, ja_rx) = tokio::sync::mpsc::channel(size);
