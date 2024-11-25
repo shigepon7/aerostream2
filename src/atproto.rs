@@ -136,7 +136,7 @@ pub struct Link {
 #[serde(rename_all = "camelCase")]
 pub struct Blob {
   #[serde(rename = "$type")]
-  pub type_: String,
+  pub type_: Option<String>,
   #[serde(rename = "ref")]
   pub ref_: Option<Link>,
   pub mime_type: String,
