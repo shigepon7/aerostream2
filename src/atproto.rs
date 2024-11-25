@@ -5739,12 +5739,15 @@ impl Atproto {
 
   /// refresh access token
   pub async fn refresh(&mut self) -> Result<()> {
-    let access_jwt = self.access_jwt.clone();
-    self.access_jwt = self.refresh_jwt.clone();
+    let access_jwt = { self.access_jwt.read().await.clone() };
+    self.access_jwt = std::sync::Arc::new(tokio::sync::RwLock::new({
+      self.refresh_jwt.read().await.clone()
+    }));
     let output = match self.com_atproto_server_refresh_session().await {
       Ok(o) => o,
       Err(e) => {
-        self.access_jwt = access_jwt;
+        self.access_jwt = std::sync::Arc::new(tokio::sync::RwLock::new(access_jwt));
+        tracing::warn!("com_atproto_server_refresh_session error {e:?}");
         return Err(e);
       }
     };
@@ -5756,7 +5759,10 @@ impl Atproto {
       let mut lock = self.refresh_jwt.write().await;
       *lock = Some(output.refresh_jwt.clone());
     }
-    self.com_atproto_server_get_session().await?;
+    if let Err(e) = self.com_atproto_server_get_session().await {
+      tracing::warn!("com_atproto_server_get_session error {e:?}");
+      return Err(e);
+    }
     Ok(())
   }
 
