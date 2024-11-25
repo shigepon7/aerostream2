@@ -394,9 +394,14 @@ impl FeedGenerator {
     let app = axum::Router::new()
       .route("/xrpc/:nsid", axum::routing::get(xrpc_server))
       .route("/.well-known/did.json", axum::routing::get(did_document))
+      .layer(tower_http::timeout::TimeoutLayer::new(
+        std::time::Duration::from_secs(30),
+      ))
       .with_state(self.clone());
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app)
+      .with_graceful_shutdown(shutdown_signal())
+      .await?;
     Ok(())
   }
 
@@ -590,5 +595,29 @@ async fn xrpc_server(
       )))
     }
     _ => Err(axum::http::StatusCode::NOT_FOUND),
+  }
+}
+
+async fn shutdown_signal() {
+  let ctrl_c = async {
+    tokio::signal::ctrl_c()
+      .await
+      .expect("failed to install Ctrl+C handler");
+  };
+
+  #[cfg(unix)]
+  let terminate = async {
+    tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+      .expect("failed to install signal handler")
+      .recv()
+      .await;
+  };
+
+  #[cfg(not(unix))]
+  let terminate = std::future::pending::<()>();
+
+  tokio::select! {
+      _ = ctrl_c => {},
+      _ = terminate => {},
   }
 }

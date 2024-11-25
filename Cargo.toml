@@ -29,3 +29,4 @@ lindera = { version = "0.38.0", features = ["ipadic"] }
 async-trait = "0.1.83"
 base64 = "0.22.1"
 data-encoding = "2.6.0"
+tower-http = { version = "0.6.2", features = ["timeout"] }
