@@ -188,19 +188,23 @@ pub async fn token_thread(
   let mut tokenizer = builder.build().unwrap();
   let mut last_loaded = tokio::time::Instant::now();
   loop {
-    if let Some(u) = &user_dict {
-      let path = std::path::Path::new(u);
-      if path.exists() {
-        if last_loaded.elapsed() > std::time::Duration::from_secs(600) {
-          let mut builder = lindera::tokenizer::TokenizerBuilder::new().unwrap();
-          builder.set_segmenter_dictionary_kind(&lindera::dictionary::DictionaryKind::IPADIC);
-          builder.set_segmenter_mode(&lindera::mode::Mode::Normal);
+    if last_loaded.elapsed() > std::time::Duration::from_secs(600) {
+      let mut builder = lindera::tokenizer::TokenizerBuilder::new().unwrap();
+      builder.set_segmenter_dictionary_kind(&lindera::dictionary::DictionaryKind::IPADIC);
+      builder.set_segmenter_mode(&lindera::mode::Mode::Normal);
+      if let Some(u) = &user_dict {
+        let path = std::path::Path::new(u);
+        if path.exists() {
           builder.set_segmenter_user_dictionary_path(path);
           builder.set_segmenter_user_dictionary_kind(&lindera::dictionary::DictionaryKind::IPADIC);
-          tokenizer = builder.build().unwrap();
-          last_loaded = tokio::time::Instant::now();
-          tracing::info!("TOKEN_THREAD : RELOAD USER DICTIONARY : {u}");
         }
+      }
+      tokenizer = builder.build().unwrap();
+      last_loaded = tokio::time::Instant::now();
+      if let Some(u) = &user_dict {
+        tracing::info!("TOKEN_THREAD : RELOAD USER DICTIONARY : {u}");
+      } else {
+        tracing::info!("TOKEN_THREAD : NO USER DICTIONARY");
       }
     }
     let (commit, post) = match receiver.recv().await {
