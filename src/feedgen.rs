@@ -307,13 +307,20 @@ impl FeedGenerator {
       Some(session) => match session.refresh().await {
         Ok(_) => {
           tracing::debug!("{} refresh session succeeded", feed.display_name);
-          session
+          Some(session)
         }
         Err(e) => {
           tracing::warn!("{} refresh session error {e:?}", feed.display_name);
-          return;
+          None
         }
       },
+      None => {
+        tracing::info!("{} refresh no previous session", feed.display_name);
+        None
+      }
+    };
+    let atproto = match atproto {
+      Some(a) => a,
       None => {
         let mut session = Atproto::default();
         if let Err(e) = session.login(handle, password).await {
