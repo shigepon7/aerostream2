@@ -5756,6 +5756,7 @@ impl Atproto {
       let mut lock = self.refresh_jwt.write().await;
       *lock = Some(output.refresh_jwt.clone());
     }
+    self.app_bsky_feed_describe_feed_generator().await?;
     Ok(())
   }
 
