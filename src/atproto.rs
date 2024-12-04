@@ -5739,15 +5739,12 @@ impl Atproto {
 
   /// refresh access token
   pub async fn refresh(&mut self) -> Result<()> {
-    let access_jwt = { self.access_jwt.read().await.clone() };
-    self.access_jwt = std::sync::Arc::new(tokio::sync::RwLock::new({
-      self.refresh_jwt.read().await.clone()
-    }));
+    let access_jwt = self.access_jwt.clone();
+    self.access_jwt = self.refresh_jwt.clone();
     let output = match self.com_atproto_server_refresh_session().await {
       Ok(o) => o,
       Err(e) => {
-        self.access_jwt = std::sync::Arc::new(tokio::sync::RwLock::new(access_jwt));
-        tracing::warn!("com_atproto_server_refresh_session error {e:?}");
+        self.access_jwt = access_jwt;
         return Err(e);
       }
     };
@@ -5759,10 +5756,7 @@ impl Atproto {
       let mut lock = self.refresh_jwt.write().await;
       *lock = Some(output.refresh_jwt.clone());
     }
-    if let Err(e) = self.com_atproto_server_get_session().await {
-      tracing::warn!("com_atproto_server_get_session error {e:?}");
-      return Err(e);
-    }
+    self.com_atproto_server_get_session().await?;
     Ok(())
   }
 
@@ -14978,7 +14972,7 @@ impl Atproto {
   /// * `include_all_user_records` - [default: false] If true, events on all record types (posts, lists, profile etc.) or records from given 'collections' param, owned by the did are returned.
   /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `has_comment` - If true, only events with comments are returned
-  /// * `comment` - If specified, only events with comments containing the keyword are returned
+  /// * `comment` - If specified, only events with comments containing the keyword are returned. Apply || separator to use multiple keywords and match using OR condition.
   /// * `added_labels` - If specified, only events where all of these labels were added are returned
   /// * `removed_labels` - If specified, only events where all of these labels were removed are returned
   /// * `added_tags` - If specified, only events where all of these tags were added are returned

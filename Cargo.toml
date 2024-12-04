@@ -21,11 +21,11 @@ rs-car = "0.4.1"
 serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.133"
 serde_with = "3.11.0"
-tracing = "0.1.40"
-tokio = { version = "1.41.1", features = ["full"] }
+tracing = "0.1.41"
+tokio = { version = "1.42.0", features = ["full"] }
 mime_guess = "2.0.5"
-indexmap = "2.6.0"
-lindera = { version = "0.38.0", features = ["ipadic"] }
+indexmap = "2.7.0"
+lindera = { version = "0.38.1", features = ["ipadic"] }
 async-trait = "0.1.83"
 base64 = "0.22.1"
 data-encoding = "2.6.0"
