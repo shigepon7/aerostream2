@@ -2436,6 +2436,18 @@ pub struct AppBskyUnspeccedDefsSkeletonSearchStarterPack {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedDefsTrendingTopic {
+  pub topic: String,
+  pub display_name: Option<String>,
+  pub description: Option<String>,
+  pub link: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppBskyUnspeccedGetConfigOutput {
   pub check_email_confirmed: Option<bool>,
   #[serde(flatten)]
@@ -2482,6 +2494,16 @@ pub struct AppBskyUnspeccedGetTaggedSuggestionsSuggestion {
   pub subject_type: String,
   /// [format: uri]
   pub subject: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetTrendingTopicsOutput {
+  pub topics: Vec<AppBskyUnspeccedDefsTrendingTopic>,
+  pub suggested: Vec<AppBskyUnspeccedDefsTrendingTopic>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -3991,6 +4013,8 @@ pub struct ComAtprotoServerCreateSessionInput {
   pub identifier: String,
   pub password: String,
   pub auth_factor_token: Option<String>,
+  /// When true, instead of throwing error for takendown accounts, a valid response with a narrow scoped token will be returned
+  pub allow_takendown: Option<bool>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -4887,6 +4911,8 @@ pub struct ToolsOzoneModerationDefsModEventLabel {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventAcknowledge {
   pub comment: Option<String>,
+  /// If true, all other reports on content authored by this account will be resolved (acknowledged).
+  pub acknowledge_account_subjects: Option<bool>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -5723,6 +5749,7 @@ impl Atproto {
         identifier: id.to_string(),
         password: pw.to_string(),
         auth_factor_token: None,
+        allow_takendown: None,
         extra: std::collections::HashMap::new(),
       })
       .await?;
@@ -8673,18 +8700,28 @@ impl Atproto {
   ///
   /// # Arguments
   ///
+  /// * `reasons` - Notification reasons to include in response.
   /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `priority`
   /// * `cursor`
   /// * `seen_at` - [format: datetime]
   pub async fn app_bsky_notification_list_notifications(
     &self,
+    reasons: Option<&[&str]>,
     limit: Option<i64>,
     priority: Option<bool>,
     cursor: Option<&str>,
     seen_at: Option<&chrono::DateTime<chrono::Utc>>,
   ) -> Result<AppBskyNotificationListNotificationsOutput> {
     let mut query_ = Vec::new();
+    if let Some(reasons) = &reasons {
+      query_.append(
+        &mut reasons
+          .iter()
+          .map(|i| (String::from("reasons"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
+    }
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
     }
@@ -9073,6 +9110,66 @@ impl Atproto {
       "https://{}/xrpc/app.bsky.unspecced.getTaggedSuggestions",
       self.host
     ));
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get a list of trending topics
+  ///
+  /// # Arguments
+  ///
+  /// * `viewer` - [format: did] DID of the account making the request (not included for public/unauthenticated queries). Used to boost followed accounts in ranking.
+  /// * `limit` - [minimum: 1] [maximum: 25] [default: 10]
+  pub async fn app_bsky_unspecced_get_trending_topics(
+    &self,
+    viewer: Option<&str>,
+    limit: Option<i64>,
+  ) -> Result<AppBskyUnspeccedGetTrendingTopicsOutput> {
+    let mut query_ = Vec::new();
+    if let Some(viewer) = &viewer {
+      query_.push((String::from("viewer"), viewer.to_string()));
+    }
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getTrendingTopics",
+        self.host
+      ))
+      .query(&query_);
     if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
