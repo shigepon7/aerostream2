@@ -211,7 +211,7 @@ pub async fn token_thread(
       Some(p) => p,
       None => continue,
     };
-    if let Ok(tokens) = tokenizer
+    match tokenizer
       .tokenize(&post.text)
       .map(|mut tokens| {
         tokens
@@ -230,17 +230,22 @@ pub async fn token_thread(
       })
       .as_ref()
     {
-      counter += 1;
-      if counter % 100 == 0 {
-        tracing::debug!("TOKEN_RECEIVER : received {counter}");
-      }
-      for tx in ja_receivers.read().await.iter() {
-        if let Err(e) = tx
-          .send((commit.clone(), post.clone(), tokens.to_vec()))
-          .await
-        {
-          tracing::warn!("TOKEN_RECEIVER : send record error {e}");
+      Ok(tokens) => {
+        counter += 1;
+        if counter % 100 == 0 {
+          tracing::debug!("TOKEN_THREAD : received {counter}");
         }
+        for tx in ja_receivers.read().await.iter() {
+          if let Err(e) = tx
+            .send((commit.clone(), post.clone(), tokens.to_vec()))
+            .await
+          {
+            tracing::warn!("TOKEN_THREAD : send record error {e}");
+          }
+        }
+      }
+      Err(e) => {
+        tracing::warn!("TOKEN_THREAD : tokenize error {e}");
       }
     }
   }
