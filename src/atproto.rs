@@ -4843,6 +4843,8 @@ pub struct ToolsOzoneModerationDefsModEventTakedown {
   pub duration_in_hours: Option<i64>,
   /// If true, all other reports on content authored by this account will be resolved (acknowledged).
   pub acknowledge_account_subjects: Option<bool>,
+  /// [max_length: 5] Names/Keywords of the policies that drove the decision.
+  pub policies: Option<Vec<String>>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -15078,6 +15080,7 @@ impl Atproto {
   /// * `added_tags` - If specified, only events where all of these tags were added are returned
   /// * `removed_tags` - If specified, only events where all of these tags were removed are returned
   /// * `report_types`
+  /// * `policies`
   /// * `cursor`
   pub async fn tools_ozone_moderation_query_events(
     &self,
@@ -15098,6 +15101,7 @@ impl Atproto {
     added_tags: Option<&[&str]>,
     removed_tags: Option<&[&str]>,
     report_types: Option<&[&str]>,
+    policies: Option<&[&str]>,
     cursor: Option<&str>,
   ) -> Result<ToolsOzoneModerationQueryEventsOutput> {
     let mut query_ = Vec::new();
@@ -15190,6 +15194,14 @@ impl Atproto {
           .collect::<Vec<_>>(),
       );
     }
+    if let Some(policies) = &policies {
+      query_.append(
+        &mut policies
+          .iter()
+          .map(|i| (String::from("policies"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
+    }
     if let Some(cursor) = &cursor {
       query_.push((String::from("cursor"), cursor.to_string()));
     }
@@ -15239,6 +15251,9 @@ impl Atproto {
   ///
   /// # Arguments
   ///
+  /// * `queue_count` - Number of queues being used by moderators. Subjects will be split among all queues.
+  /// * `queue_index` - Index of the queue to fetch subjects from. Works only when queueCount value is specified.
+  /// * `queue_seed` - A seeder to shuffle/balance the queue items.
   /// * `include_all_user_records` - All subjects, or subjects from given 'collections' param, belonging to the account specified in the 'subject' param will be returned.
   /// * `subject` - [format: uri] The subject to get the status for.
   /// * `comment` - Search subjects by keyword from comments
@@ -15261,13 +15276,16 @@ impl Atproto {
   /// * `takendown` - Get subjects that were taken down
   /// * `appealed` - Get subjects in unresolved appealed status
   /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
-  /// * `tags`
+  /// * `tags` - [max_length: 25]
   /// * `exclude_tags`
   /// * `cursor`
   /// * `collections` - [max_length: 20] If specified, subjects belonging to the given collections will be returned. When subjectType is set to 'account', this will be ignored.
   /// * `subject_type` - [known_values: ["account", "record"]] If specified, subjects of the given type (account or record) will be returned. When this is set to 'account' the 'collections' parameter will be ignored. When includeAllUserRecords or subject is set, this will be ignored.
   pub async fn tools_ozone_moderation_query_statuses(
     &self,
+    queue_count: Option<i64>,
+    queue_index: Option<i64>,
+    queue_seed: Option<&str>,
     include_all_user_records: Option<bool>,
     subject: Option<&str>,
     comment: Option<&str>,
@@ -15297,6 +15315,15 @@ impl Atproto {
     subject_type: Option<&str>,
   ) -> Result<ToolsOzoneModerationQueryStatusesOutput> {
     let mut query_ = Vec::new();
+    if let Some(queue_count) = &queue_count {
+      query_.push((String::from("queue_count"), queue_count.to_string()));
+    }
+    if let Some(queue_index) = &queue_index {
+      query_.push((String::from("queue_index"), queue_index.to_string()));
+    }
+    if let Some(queue_seed) = &queue_seed {
+      query_.push((String::from("queue_seed"), queue_seed.to_string()));
+    }
     if let Some(include_all_user_records) = &include_all_user_records {
       query_.push((
         String::from("include_all_user_records"),
