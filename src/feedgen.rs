@@ -401,7 +401,7 @@ impl FeedGenerator {
   /// start Feed Generator server
   pub async fn start(&self) -> crate::Result<()> {
     let app = axum::Router::new()
-      .route("/xrpc/:nsid", axum::routing::get(xrpc_server))
+      .route("/xrpc/{nsid}", axum::routing::get(xrpc_server))
       .route("/.well-known/did.json", axum::routing::get(did_document))
       .layer(tower_http::timeout::TimeoutLayer::new(
         std::time::Duration::from_secs(30),
