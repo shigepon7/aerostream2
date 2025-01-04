@@ -56,7 +56,7 @@ pub async fn firehose_thread(
       let commit = match object.as_commit() {
         Some(c) => c,
         None => {
-          tracing::warn!("FIREHOSE : {hostname} : invalid commit {object:?}");
+          tracing::debug!("FIREHOSE : {hostname} : object is not commit {object:?}");
           continue;
         }
       };
