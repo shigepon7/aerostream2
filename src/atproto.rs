@@ -133,12 +133,20 @@ pub struct Link {
 
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(untagged)]
+pub enum LinkRef {
+  Link(Link),
+  Ipld(ipld_core::ipld::Ipld),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Blob {
   #[serde(rename = "$type")]
   pub type_: Option<String>,
   #[serde(rename = "ref")]
-  pub ref_: Option<Link>,
+  pub ref_: Option<LinkRef>,
   pub mime_type: String,
   pub size: Option<i64>,
   pub cid: Option<String>,

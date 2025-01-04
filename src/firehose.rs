@@ -48,11 +48,17 @@ pub async fn firehose_thread(
       }
       let object = match Object::try_from(&message) {
         Ok(o) => o,
-        Err(_) => continue,
+        Err(_) => {
+          tracing::warn!("FIREHOSE : {hostname} : invalid object {message:?}");
+          continue;
+        }
       };
       let commit = match object.as_commit() {
         Some(c) => c,
-        None => continue,
+        None => {
+          tracing::warn!("FIREHOSE : {hostname} : invalid commit {object:?}");
+          continue;
+        }
       };
       cursor = Some(commit.seq);
       for record in commit.to_records().await.into_iter() {

@@ -30,3 +30,4 @@ async-trait = "0.1.84"
 base64 = "0.22.1"
 data-encoding = "2.6.0"
 tower-http = { version = "0.6.2", features = ["timeout"] }
+ipld-core = { version = "0.4.1", features = ["serde"] }

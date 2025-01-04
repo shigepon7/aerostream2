@@ -245,21 +245,37 @@ impl ComAtprotoSyncSubscribeReposCommit {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
 pub enum Record {
+  #[serde(rename = "app.bsky.actor.profile")]
   AppBskyActorProfile(AppBskyActorProfile),
+  #[serde(rename = "app.bsky.feed.generator")]
   AppBskyFeedGenerator(AppBskyFeedGenerator),
+  #[serde(rename = "app.bsky.feed.like")]
   AppBskyFeedLike(AppBskyFeedLike),
+  #[serde(rename = "app.bsky.feed.post")]
   AppBskyFeedPost(AppBskyFeedPost),
+  #[serde(rename = "app.bsky.feed.postgate")]
   AppBskyFeedPostgate(AppBskyFeedPostgate),
+  #[serde(rename = "app.bsky.feed.repost")]
   AppBskyFeedRepost(AppBskyFeedRepost),
+  #[serde(rename = "app.bsky.feed.threadgate")]
   AppBskyFeedThreadgate(AppBskyFeedThreadgate),
+  #[serde(rename = "app.bsky.graph.block")]
   AppBskyGraphBlock(AppBskyGraphBlock),
+  #[serde(rename = "app.bsky.graph.follow")]
   AppBskyGraphFollow(AppBskyGraphFollow),
+  #[serde(rename = "app.bsky.graph.list")]
   AppBskyGraphList(AppBskyGraphList),
+  #[serde(rename = "app.bsky.graph.listblock")]
   AppBskyGraphListblock(AppBskyGraphListblock),
+  #[serde(rename = "app.bsky.graph.listitem")]
   AppBskyGraphListitem(AppBskyGraphListitem),
+  #[serde(rename = "app.bsky.graph.starterpack")]
   AppBskyGraphStarterpack(AppBskyGraphStarterpack),
+  #[serde(rename = "app.bsky.labeler.service")]
   AppBskyLabelerService(AppBskyLabelerService),
+  #[serde(rename = "chat.bsky.actor.declaration")]
   ChatBskyActorDeclaration(ChatBskyActorDeclaration),
 }
 
