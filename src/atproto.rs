@@ -133,20 +133,12 @@ pub struct Link {
 
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(untagged)]
-pub enum LinkRef {
-  Link(Link),
-  Ipld(ipld_core::ipld::Ipld),
-}
-
-#[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Blob {
   #[serde(rename = "$type")]
   pub type_: Option<String>,
   #[serde(rename = "ref")]
-  pub ref_: Option<LinkRef>,
+  pub ref_: Option<Link>,
   pub mime_type: String,
   pub size: Option<i64>,
   pub cid: Option<String>,
@@ -313,6 +305,8 @@ pub enum AppBskyActorDefsPreferencesUnion {
   AppBskyActorDefsBskyAppStatePref(Box<AppBskyActorDefsBskyAppStatePref>),
   #[serde(rename = "app.bsky.actor.defs#labelersPref")]
   AppBskyActorDefsLabelersPref(Box<AppBskyActorDefsLabelersPref>),
+  #[serde(rename = "app.bsky.actor.defs#postInteractionSettingsPref")]
+  AppBskyActorDefsPostInteractionSettingsPref(Box<AppBskyActorDefsPostInteractionSettingsPref>),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -528,6 +522,41 @@ pub struct AppBskyActorDefsNux {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum AppBskyActorDefsPostInteractionSettingsPrefThreadgateAllowRulesUnion {
+  #[serde(rename = "app.bsky.feed.threadgate#mentionRule")]
+  AppBskyFeedThreadgateMentionRule(Box<AppBskyFeedThreadgateMentionRule>),
+  #[serde(rename = "app.bsky.feed.threadgate#followerRule")]
+  AppBskyFeedThreadgateFollowerRule(Box<AppBskyFeedThreadgateFollowerRule>),
+  #[serde(rename = "app.bsky.feed.threadgate#followingRule")]
+  AppBskyFeedThreadgateFollowingRule(Box<AppBskyFeedThreadgateFollowingRule>),
+  #[serde(rename = "app.bsky.feed.threadgate#listRule")]
+  AppBskyFeedThreadgateListRule(Box<AppBskyFeedThreadgateListRule>),
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum AppBskyActorDefsPostInteractionSettingsPrefPostgateEmbeddingRulesUnion {
+  #[serde(rename = "app.bsky.feed.postgate#disableRule")]
+  AppBskyFeedPostgateDisableRule(Box<AppBskyFeedPostgateDisableRule>),
+}
+
+/// Default post interaction settings for the account. These values should be applied as default values when creating new posts. These refs should mirror the threadgate and postgate records exactly.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyActorDefsPostInteractionSettingsPref {
+  /// [max_length: 5] Matches threadgate record. List of rules defining who can reply to this users posts. If value is an empty array, no one can reply. If value is undefined, anyone can reply.
+  pub threadgate_allow_rules:
+    Option<Vec<AppBskyActorDefsPostInteractionSettingsPrefThreadgateAllowRulesUnion>>,
+  /// [max_length: 5] Matches postgate record. List of rules defining who can embed this users posts. If value is an empty array or is undefined, no particular rules apply and anyone can embed.
+  pub postgate_embedding_rules:
+    Option<Vec<AppBskyActorDefsPostInteractionSettingsPrefPostgateEmbeddingRulesUnion>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -552,6 +581,8 @@ pub struct AppBskyActorGetProfilesOutput {
 pub struct AppBskyActorGetSuggestionsOutput {
   pub cursor: Option<String>,
   pub actors: Vec<AppBskyActorDefsProfileView>,
+  /// Snowflake for this recommendation, use when submitting recommendation events.
+  pub rec_id: Option<i64>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -980,6 +1011,17 @@ pub struct AppBskyFeedDefsViewerState {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+/// Metadata about this post within the context of the thread it is in.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyFeedDefsThreadContext {
+  /// [format: at-uri]
+  pub root_author_like: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
 pub enum AppBskyFeedDefsFeedViewPostReasonUnion {
@@ -1079,6 +1121,7 @@ pub struct AppBskyFeedDefsThreadViewPost {
   pub post: AppBskyFeedDefsPostView,
   pub parent: Option<AppBskyFeedDefsThreadViewPostParentUnion>,
   pub replies: Option<Vec<AppBskyFeedDefsThreadViewPostRepliesUnion>>,
+  pub thread_context: Option<AppBskyFeedDefsThreadContext>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -1141,6 +1184,8 @@ pub struct AppBskyFeedDefsGeneratorView {
   pub accepts_interactions: Option<bool>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub viewer: Option<AppBskyFeedDefsGeneratorViewerState>,
+  /// [known_values: ["app.bsky.feed.defs#contentModeUnspecified", "app.bsky.feed.defs#contentModeVideo"]]
+  pub content_mode: Option<String>,
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   #[serde(flatten)]
@@ -1279,6 +1324,8 @@ pub struct AppBskyFeedGenerator {
   pub accepts_interactions: Option<bool>,
   /// Self-label values,
   pub labels: Option<AppBskyFeedGeneratorLabelsUnion>,
+  /// [known_values: ["app.bsky.feed.defs#contentModeUnspecified", "app.bsky.feed.defs#contentModeVideo"]],
+  pub content_mode: Option<String>,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
   #[serde(flatten)]
@@ -1587,7 +1634,7 @@ pub struct AppBskyFeedPostgate {
   pub post: String,
   /// [max_length: 50] List of AT-URIs embedding this post that the author has detached from.,
   pub detached_embedding_uris: Option<Vec<String>>,
-  /// [max_length: 5],
+  /// [max_length: 5] List of rules defining who can embed this post. If value is an empty array or is undefined, no particular rules apply and anyone can embed.,
   pub embedding_rules: Option<Vec<AppBskyFeedPostgateEmbeddingRulesUnion>>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -1638,6 +1685,8 @@ pub struct AppBskyFeedSendInteractionsOutput(pub serde_json::Value);
 pub enum AppBskyFeedThreadgateAllowUnion {
   #[serde(rename = "app.bsky.feed.threadgate#mentionRule")]
   AppBskyFeedThreadgateMentionRule(Box<AppBskyFeedThreadgateMentionRule>),
+  #[serde(rename = "app.bsky.feed.threadgate#followerRule")]
+  AppBskyFeedThreadgateFollowerRule(Box<AppBskyFeedThreadgateFollowerRule>),
   #[serde(rename = "app.bsky.feed.threadgate#followingRule")]
   AppBskyFeedThreadgateFollowingRule(Box<AppBskyFeedThreadgateFollowingRule>),
   #[serde(rename = "app.bsky.feed.threadgate#listRule")]
@@ -1651,7 +1700,7 @@ pub enum AppBskyFeedThreadgateAllowUnion {
 pub struct AppBskyFeedThreadgate {
   /// [format: at-uri] Reference (AT-URI) to the post record.,
   pub post: String,
-  /// [max_length: 5],
+  /// [max_length: 5] List of rules defining who can reply to this post. If value is an empty array, no one can reply. If value is undefined, anyone can reply.,
   pub allow: Option<Vec<AppBskyFeedThreadgateAllowUnion>>,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
@@ -1664,6 +1713,10 @@ pub struct AppBskyFeedThreadgate {
 /// Allow replies from actors mentioned in your post.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AppBskyFeedThreadgateMentionRule(pub serde_json::Value);
+
+/// Allow replies from actors who follow you.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AppBskyFeedThreadgateFollowerRule(pub serde_json::Value);
 
 /// Allow replies from actors you follow.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -2007,6 +2060,8 @@ pub struct AppBskyGraphGetSuggestedFollowsByActorOutput {
   pub suggestions: Vec<AppBskyActorDefsProfileView>,
   /// [default: false] If true, response has fallen-back to generic results, and is not scoped using relativeToDid
   pub is_fallback: Option<bool>,
+  /// Snowflake for this recommendation, use when submitting recommendation events.
+  pub rec_id: Option<i64>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -2480,6 +2535,8 @@ pub struct AppBskyUnspeccedGetSuggestionsSkeletonOutput {
   pub actors: Vec<AppBskyUnspeccedDefsSkeletonSearchActor>,
   /// [format: did] DID of the account these suggestions are relative to. If this is returned undefined, suggestions are based on the viewer.
   pub relative_to_did: Option<String>,
+  /// Snowflake for this recommendation, use when submitting recommendation events.
+  pub rec_id: Option<i64>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -3491,6 +3548,17 @@ pub struct ComAtprotoLabelSubscribeLabelsInfo {
   /// [known_values: ["OutdatedCursor"]]
   pub name: String,
   pub message: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Representation of Lexicon schemas themselves, when published as atproto records. Note that the schema language is not defined in Lexicon; this meta schema currently only includes a single version field ('lexicon'). See the atproto specifications for description of the other expected top-level fields ('id', 'defs', etc).
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoLexiconSchema {
+  /// Indicates the 'version' of the Lexicon language. Must be '1' for the current atproto/Lexicon schema system.,
+  pub lexicon: i64,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -4677,6 +4745,8 @@ pub enum ToolsOzoneModerationDefsModEventViewEventUnion {
   ToolsOzoneModerationDefsIdentityEvent(Box<ToolsOzoneModerationDefsIdentityEvent>),
   #[serde(rename = "tools.ozone.moderation.defs#recordEvent")]
   ToolsOzoneModerationDefsRecordEvent(Box<ToolsOzoneModerationDefsRecordEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#modEventPriorityScore")]
+  ToolsOzoneModerationDefsModEventPriorityScore(Box<ToolsOzoneModerationDefsModEventPriorityScore>),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4751,6 +4821,8 @@ pub enum ToolsOzoneModerationDefsModEventViewDetailEventUnion {
   ToolsOzoneModerationDefsIdentityEvent(Box<ToolsOzoneModerationDefsIdentityEvent>),
   #[serde(rename = "tools.ozone.moderation.defs#recordEvent")]
   ToolsOzoneModerationDefsRecordEvent(Box<ToolsOzoneModerationDefsRecordEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#modEventPriorityScore")]
+  ToolsOzoneModerationDefsModEventPriorityScore(Box<ToolsOzoneModerationDefsModEventPriorityScore>),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -4816,6 +4888,8 @@ pub struct ToolsOzoneModerationDefsSubjectStatusView {
   pub review_state: ToolsOzoneModerationDefsSubjectReviewState,
   /// Sticky comment on the subject.
   pub comment: Option<String>,
+  /// [minimum: 0] [maximum: 100] Numeric value representing the level of priority. Higher score means higher priority.
+  pub priority_score: Option<i64>,
   /// [format: datetime]
   pub mute_until: Option<chrono::DateTime<chrono::Utc>>,
   /// [format: datetime]
@@ -4834,6 +4908,54 @@ pub struct ToolsOzoneModerationDefsSubjectStatusView {
   /// [format: datetime]
   pub suspend_until: Option<chrono::DateTime<chrono::Utc>>,
   pub tags: Option<Vec<String>>,
+  /// Statistics related to the account subject
+  pub account_stats: Option<ToolsOzoneModerationDefsAccountStats>,
+  /// Statistics related to the record subjects authored by the subject's account
+  pub records_stats: Option<ToolsOzoneModerationDefsRecordsStats>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Statistics about a particular account subject
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsAccountStats {
+  /// Total number of reports on the account
+  pub report_count: Option<i64>,
+  /// Total number of appeals against a moderation action on the account
+  pub appeal_count: Option<i64>,
+  /// Number of times the account was suspended
+  pub suspend_count: Option<i64>,
+  /// Number of times the account was escalated
+  pub escalate_count: Option<i64>,
+  /// Number of times the account was taken down
+  pub takedown_count: Option<i64>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Statistics about a set of record subject items
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsRecordsStats {
+  /// Cumulative sum of the number of reports on the items in the set
+  pub total_reports: Option<i64>,
+  /// Number of items that were reported at least once
+  pub reported_count: Option<i64>,
+  /// Number of items that were escalated at least once
+  pub escalated_count: Option<i64>,
+  /// Number of items that were appealed at least once
+  pub appealed_count: Option<i64>,
+  /// Total number of item in the set
+  pub subject_count: Option<i64>,
+  /// Number of item currently in "reviewOpen" or "reviewEscalated" state
+  pub pending_count: Option<i64>,
+  /// Number of item currently in "reviewNone" or "reviewClosed" state
+  pub processed_count: Option<i64>,
+  /// Number of item currently taken down
+  pub takendown_count: Option<i64>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -4912,6 +5034,20 @@ pub struct ToolsOzoneModerationDefsModEventLabel {
   pub comment: Option<String>,
   pub create_label_vals: Vec<String>,
   pub negate_label_vals: Vec<String>,
+  /// Indicates how long the label will remain on the subject. Only applies on labels that are being added.
+  pub duration_in_hours: Option<i64>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Set priority score of the subject. Higher score means higher priority.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsModEventPriorityScore {
+  pub comment: Option<String>,
+  /// [minimum: 0] [maximum: 100]
+  pub score: i64,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -5319,6 +5455,8 @@ pub enum ToolsOzoneModerationEmitEventInputEventUnion {
   ToolsOzoneModerationDefsIdentityEvent(Box<ToolsOzoneModerationDefsIdentityEvent>),
   #[serde(rename = "tools.ozone.moderation.defs#recordEvent")]
   ToolsOzoneModerationDefsRecordEvent(Box<ToolsOzoneModerationDefsRecordEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#modEventPriorityScore")]
+  ToolsOzoneModerationDefsModEventPriorityScore(Box<ToolsOzoneModerationDefsModEventPriorityScore>),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -6378,7 +6516,7 @@ impl Atproto {
   /// * `actor` - [format: at-identifier]
   /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
-  /// * `filter` - [known_values: ["posts_with_replies", "posts_no_replies", "posts_with_media", "posts_and_author_threads"]] [default: posts_with_replies] Combinations of post/repost types to include in response.
+  /// * `filter` - [known_values: ["posts_with_replies", "posts_no_replies", "posts_with_media", "posts_and_author_threads", "posts_with_video"]] [default: posts_with_replies] Combinations of post/repost types to include in response.
   /// * `include_pins` - [default: false]
   ///
   /// # Errors
@@ -15279,7 +15417,7 @@ impl Atproto {
   /// * `review_state` - Specify when fetching subjects in a certain state
   /// * `ignore_subjects`
   /// * `last_reviewed_by` - [format: did] Get all subject statuses that were reviewed by a specific moderator
-  /// * `sort_field` - [default: lastReportedAt] [enum: ["lastReviewedAt", "lastReportedAt"]]
+  /// * `sort_field` - [default: lastReportedAt] [enum: ["lastReviewedAt", "lastReportedAt", "reportedRecordsCount", "takendownRecordsCount", "priorityScore"]]
   /// * `sort_direction` - [default: desc] [enum: ["asc", "desc"]]
   /// * `takendown` - Get subjects that were taken down
   /// * `appealed` - Get subjects in unresolved appealed status
@@ -15289,6 +15427,10 @@ impl Atproto {
   /// * `cursor`
   /// * `collections` - [max_length: 20] If specified, subjects belonging to the given collections will be returned. When subjectType is set to 'account', this will be ignored.
   /// * `subject_type` - [known_values: ["account", "record"]] If specified, subjects of the given type (account or record) will be returned. When this is set to 'account' the 'collections' parameter will be ignored. When includeAllUserRecords or subject is set, this will be ignored.
+  /// * `min_account_suspend_count` - If specified, only subjects that belong to an account that has at least this many suspensions will be returned.
+  /// * `min_reported_records_count` - If specified, only subjects that belong to an account that has at least this many reported records will be returned.
+  /// * `min_takendown_records_count` - If specified, only subjects that belong to an account that has at least this many taken down records will be returned.
+  /// * `min_priority_score` - [minimum: 0] [maximum: 100] If specified, only subjects that have priority score value above the given value will be returned.
   pub async fn tools_ozone_moderation_query_statuses(
     &self,
     queue_count: Option<i64>,
@@ -15321,6 +15463,10 @@ impl Atproto {
     cursor: Option<&str>,
     collections: Option<&[&str]>,
     subject_type: Option<&str>,
+    min_account_suspend_count: Option<i64>,
+    min_reported_records_count: Option<i64>,
+    min_takendown_records_count: Option<i64>,
+    min_priority_score: Option<i64>,
   ) -> Result<ToolsOzoneModerationQueryStatusesOutput> {
     let mut query_ = Vec::new();
     if let Some(queue_count) = &queue_count {
@@ -15461,6 +15607,30 @@ impl Atproto {
     }
     if let Some(subject_type) = &subject_type {
       query_.push((String::from("subject_type"), subject_type.to_string()));
+    }
+    if let Some(min_account_suspend_count) = &min_account_suspend_count {
+      query_.push((
+        String::from("min_account_suspend_count"),
+        min_account_suspend_count.to_string(),
+      ));
+    }
+    if let Some(min_reported_records_count) = &min_reported_records_count {
+      query_.push((
+        String::from("min_reported_records_count"),
+        min_reported_records_count.to_string(),
+      ));
+    }
+    if let Some(min_takendown_records_count) = &min_takendown_records_count {
+      query_.push((
+        String::from("min_takendown_records_count"),
+        min_takendown_records_count.to_string(),
+      ));
+    }
+    if let Some(min_priority_score) = &min_priority_score {
+      query_.push((
+        String::from("min_priority_score"),
+        min_priority_score.to_string(),
+      ));
     }
     let mut request = self
       .client
