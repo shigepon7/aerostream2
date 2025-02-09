@@ -24,6 +24,19 @@ pub struct JetstreamCommit {
   pub cid: Option<String>,
 }
 
+impl JetstreamCommit {
+  pub fn as_record(&self) -> Option<crate::Record> {
+    self.record.clone()
+  }
+
+  pub fn as_post(&self) -> Option<crate::AppBskyFeedPost> {
+    self
+      .record
+      .as_ref()
+      .and_then(|r| r.as_app_bsky_feed_post().cloned())
+  }
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct JetstreamIdentity {
   pub did: String,
@@ -51,6 +64,38 @@ pub struct JetstreamEvent {
 }
 
 impl JetstreamEvent {
+  pub fn as_did(&self) -> String {
+    self.did.clone()
+  }
+
+  pub fn as_time(&self) -> Option<chrono::DateTime<chrono::Utc>> {
+    chrono::DateTime::from_timestamp_micros(self.time_us as i64)
+  }
+
+  pub fn as_kind(&self) -> JetstreamKind {
+    self.kind.clone()
+  }
+
+  pub fn as_commit(&self) -> Option<JetstreamCommit> {
+    self.commit.clone()
+  }
+
+  pub fn as_record(&self) -> Option<crate::Record> {
+    self.as_commit().and_then(|c| c.as_record())
+  }
+
+  pub fn as_post(&self) -> Option<crate::AppBskyFeedPost> {
+    self.as_commit().and_then(|c| c.as_post())
+  }
+
+  pub fn as_identity(&self) -> Option<JetstreamIdentity> {
+    self.identity.clone()
+  }
+
+  pub fn as_account(&self) -> Option<JetstreamAccount> {
+    self.account.clone()
+  }
+
   pub fn to_aturi(&self) -> Option<String> {
     self
       .commit
