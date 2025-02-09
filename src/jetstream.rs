@@ -245,7 +245,9 @@ async fn event_receiver_thread(config: Jetstream, tx: tokio::sync::mpsc::Sender<
         Some(e) => match e {
           Ok(e) => match e {
             reqwest_websocket::Message::Text(t) => {
-              let event = serde_json::from_str(&t).unwrap();
+              let Ok(event) = serde_json::from_str(&t) else {
+                continue;
+              };
               tracing::debug!("{event:?}");
               if let Err(e) = tx.send(event).await {
                 tracing::error!("{e}");
