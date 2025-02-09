@@ -192,6 +192,8 @@ pub enum Record {
   AppBskyLabelerService(AppBskyLabelerService),
   #[serde(rename = "chat.bsky.actor.declaration")]
   ChatBskyActorDeclaration(ChatBskyActorDeclaration),
+  #[serde(untagged)]
+  Other(serde_json::Value),
 }
 
 impl Record {
@@ -296,6 +298,13 @@ impl Record {
   pub fn as_chat_bsky_actor_declaration(&self) -> Option<&ChatBskyActorDeclaration> {
     match self {
       Self::ChatBskyActorDeclaration(v) => Some(v),
+      _ => None,
+    }
+  }
+
+  pub fn as_other(&self) -> Option<&serde_json::Value> {
+    match self {
+      Self::Other(v) => Some(v),
       _ => None,
     }
   }

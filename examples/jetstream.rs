@@ -5,8 +5,8 @@ async fn main() {
   jetstream.connect().await.unwrap();
   loop {
     match rx.recv().await {
-      Some((_, token)) => {
-        println!("{token:?}");
+      Some((event, token)) => {
+        println!("{event:?}\n{token:?}");
       }
       None => {
         break;
