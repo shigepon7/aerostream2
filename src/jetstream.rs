@@ -50,6 +50,15 @@ pub struct JetstreamEvent {
   pub account: Option<JetstreamAccount>,
 }
 
+impl JetstreamEvent {
+  pub fn to_aturi(&self) -> Option<String> {
+    self
+      .commit
+      .as_ref()
+      .map(|c| format!("at://{}/{}/{}", self.did, c.collection, c.rkey))
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct Jetstream {
   pub host: String,
