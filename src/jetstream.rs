@@ -307,7 +307,11 @@ async fn event_receiver_thread(config: Jetstream, tx: tokio::sync::mpsc::Sender<
             break;
           }
         },
-        None => {}
+        None => {
+          tracing::warn!("session maybe closed");
+          tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+          break;
+        }
       }
     }
   }
