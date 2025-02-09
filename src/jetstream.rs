@@ -137,47 +137,41 @@ impl Jetstream {
     self
   }
 
-  pub async fn add_commit_receiver(
-    &self,
-  ) -> crate::Result<tokio::sync::mpsc::Receiver<JetstreamEvent>> {
+  pub async fn add_commit_receiver(&self) -> tokio::sync::mpsc::Receiver<JetstreamEvent> {
     let (tx, rx) = tokio::sync::mpsc::channel::<JetstreamEvent>(self.size);
     self.commit_receivers.write().await.push(tx);
-    Ok(rx)
+    rx
   }
 
-  pub async fn add_post_receiver(
-    &self,
-  ) -> crate::Result<tokio::sync::mpsc::Receiver<JetstreamEvent>> {
+  pub async fn add_post_receiver(&self) -> tokio::sync::mpsc::Receiver<JetstreamEvent> {
     let (tx, rx) = tokio::sync::mpsc::channel::<JetstreamEvent>(self.size);
     self.post_receivers.write().await.push(tx);
-    Ok(rx)
+    rx
   }
 
-  pub async fn add_ja_receiver(
-    &self,
-  ) -> crate::Result<tokio::sync::mpsc::Receiver<JetstreamEvent>> {
+  pub async fn add_ja_receiver(&self) -> tokio::sync::mpsc::Receiver<JetstreamEvent> {
     let (tx, rx) = tokio::sync::mpsc::channel::<JetstreamEvent>(self.size);
     self.ja_receivers.write().await.push(tx);
-    Ok(rx)
+    rx
   }
 
   pub async fn add_token_receiver(
     &self,
-  ) -> crate::Result<tokio::sync::mpsc::Receiver<(JetstreamEvent, Vec<Vec<String>>)>> {
+  ) -> tokio::sync::mpsc::Receiver<(JetstreamEvent, Vec<Vec<String>>)> {
     let (tx, rx) = tokio::sync::mpsc::channel::<(JetstreamEvent, Vec<Vec<String>>)>(self.size);
     self.token_receivers.write().await.push(tx);
-    Ok(rx)
+    rx
   }
 
   pub async fn connect(&self) -> crate::Result<()> {
-    let rx = self.add_ja_receiver().await?;
+    let rx = self.add_ja_receiver().await;
     let token_receivers = self.token_receivers.clone();
     let user_dict = self.user_dict.clone();
     tokio::spawn(async move { token_receiver_thread(rx, token_receivers, user_dict).await });
-    let rx = self.add_post_receiver().await?;
+    let rx = self.add_post_receiver().await;
     let ja_receivers = self.ja_receivers.clone();
     tokio::spawn(async move { ja_receiver_thread(rx, ja_receivers).await });
-    let rx = self.add_commit_receiver().await?;
+    let rx = self.add_commit_receiver().await;
     let post_receivers = self.post_receivers.clone();
     tokio::spawn(async move { post_receiver_thread(rx, post_receivers).await });
     let (commit_thread_tx, rx) = tokio::sync::mpsc::channel::<JetstreamEvent>(self.size);
