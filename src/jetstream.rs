@@ -56,7 +56,7 @@ pub struct JetstreamAccount {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct JetstreamEvent {
   pub did: String,
-  pub time_us: u64,
+  pub time_us: i64,
   pub kind: JetstreamKind,
   pub commit: Option<JetstreamCommit>,
   pub identity: Option<JetstreamIdentity>,
@@ -238,6 +238,7 @@ impl Jetstream {
 }
 
 async fn event_receiver_thread(config: Jetstream, tx: tokio::sync::mpsc::Sender<JetstreamEvent>) {
+  let mut cursor = config.cursor.unwrap_or(0);
   loop {
     let mut request = reqwest::Client::new().get(&format!("wss://{}/subscribe", config.host));
     request = request.query(
@@ -259,7 +260,7 @@ async fn event_receiver_thread(config: Jetstream, tx: tokio::sync::mpsc::Sender<
     if let Some(max_message_size_bytes) = &config.max_message_size_bytes {
       request = request.query(&[("maxMessageSizeBytes", max_message_size_bytes)]);
     }
-    if let Some(cursor) = &config.cursor {
+    if cursor > 0 {
       request = request.query(&[("cursor", cursor)]);
     }
     if let Some(compress) = &config.compress {
@@ -290,10 +291,11 @@ async fn event_receiver_thread(config: Jetstream, tx: tokio::sync::mpsc::Sender<
         Some(e) => match e {
           Ok(e) => match e {
             reqwest_websocket::Message::Text(t) => {
-              let Ok(event) = serde_json::from_str(&t) else {
+              let Ok(event) = serde_json::from_str::<JetstreamEvent>(&t) else {
                 continue;
               };
               tracing::debug!("{event:?}");
+              cursor = event.time_us;
               if let Err(e) = tx.send(event).await {
                 tracing::error!("{e}");
                 std::process::exit(0);
