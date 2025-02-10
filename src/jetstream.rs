@@ -275,8 +275,9 @@ async fn event_receiver_thread(config: Jetstream, tx: tokio::sync::mpsc::Sender<
     {
       Ok(r) => r,
       Err(e) => {
-        tracing::error!("{e}");
-        std::process::exit(0);
+        tracing::warn!("connect websocket error : {e:?}");
+        tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+        continue;
       }
     };
     let mut socket = match response.into_websocket().await {
@@ -287,32 +288,36 @@ async fn event_receiver_thread(config: Jetstream, tx: tokio::sync::mpsc::Sender<
       }
     };
     loop {
-      match futures_util::StreamExt::next(&mut socket).await {
-        Some(e) => match e {
-          Ok(e) => match e {
-            reqwest_websocket::Message::Text(t) => {
-              let Ok(event) = serde_json::from_str::<JetstreamEvent>(&t) else {
-                continue;
-              };
-              tracing::debug!("{event:?}");
-              cursor = event.time_us;
-              if let Err(e) = tx.send(event).await {
-                tracing::error!("{e}");
-                std::process::exit(0);
-              }
-            }
-            _ => {}
-          },
-          Err(e) => {
-            tracing::warn!("{e}");
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
-            break;
-          }
-        },
-        None => {
+      let message = match tokio::time::timeout(
+        std::time::Duration::from_secs(60),
+        futures_util::TryStreamExt::try_next(&mut socket),
+      )
+      .await
+      {
+        Ok(Ok(Some(m))) => m,
+        Ok(Ok(None)) => {
           tracing::warn!("session maybe closed");
-          tokio::time::sleep(std::time::Duration::from_secs(5)).await;
           break;
+        }
+        Ok(Err(e)) => {
+          tracing::warn!("receive error: {e}");
+          break;
+        }
+        Err(e) => {
+          tracing::warn!("receive timeout: {e}");
+          break;
+        }
+      };
+      if let reqwest_websocket::Message::Text(t) = &message {
+        let Ok(event) = serde_json::from_str::<JetstreamEvent>(&t) else {
+          tracing::debug!("cannto read event: {t}");
+          continue;
+        };
+        tracing::trace!("{event:?}");
+        cursor = event.time_us;
+        if let Err(e) = tx.send(event).await {
+          tracing::error!("{e}");
+          std::process::exit(0);
         }
       }
     }
