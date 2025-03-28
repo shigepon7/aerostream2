@@ -3,12 +3,11 @@ use crate::*;
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum Object {
   Commit(ComAtprotoSyncSubscribeReposCommit),
+  Sync(ComAtprotoSyncSubscribeReposSync),
   Identity(ComAtprotoSyncSubscribeReposIdentity),
   Account(ComAtprotoSyncSubscribeReposAccount),
-  Handle(ComAtprotoSyncSubscribeReposHandle),
-  Migrate(ComAtprotoSyncSubscribeReposMigrate),
-  Tombstone(ComAtprotoSyncSubscribeReposTombstone),
   Info(ComAtprotoSyncSubscribeReposInfo),
+  RepoOp(ComAtprotoSyncSubscribeReposRepoOp),
 }
 
 impl From<ComAtprotoSyncSubscribeReposCommit> for Object {
@@ -29,27 +28,15 @@ impl From<ComAtprotoSyncSubscribeReposAccount> for Object {
   }
 }
 
-impl From<ComAtprotoSyncSubscribeReposHandle> for Object {
-  fn from(value: ComAtprotoSyncSubscribeReposHandle) -> Self {
-    Self::Handle(value)
-  }
-}
-
-impl From<ComAtprotoSyncSubscribeReposMigrate> for Object {
-  fn from(value: ComAtprotoSyncSubscribeReposMigrate) -> Self {
-    Self::Migrate(value)
-  }
-}
-
-impl From<ComAtprotoSyncSubscribeReposTombstone> for Object {
-  fn from(value: ComAtprotoSyncSubscribeReposTombstone) -> Self {
-    Self::Tombstone(value)
-  }
-}
-
 impl From<ComAtprotoSyncSubscribeReposInfo> for Object {
   fn from(value: ComAtprotoSyncSubscribeReposInfo) -> Self {
     Self::Info(value)
+  }
+}
+
+impl From<ComAtprotoSyncSubscribeReposRepoOp> for Object {
+  fn from(value: ComAtprotoSyncSubscribeReposRepoOp) -> Self {
+    Self::RepoOp(value)
   }
 }
 
@@ -72,22 +59,14 @@ impl TryFrom<&reqwest_websocket::Message> for Object {
         ciborium::from_reader::<ComAtprotoSyncSubscribeReposAccount, _>(&bin[buf.len()..])
       {
         return Ok(account.into());
-      } else if let Ok(handle) =
-        ciborium::from_reader::<ComAtprotoSyncSubscribeReposHandle, _>(&bin[buf.len()..])
-      {
-        return Ok(handle.into());
-      } else if let Ok(migrate) =
-        ciborium::from_reader::<ComAtprotoSyncSubscribeReposMigrate, _>(&bin[buf.len()..])
-      {
-        return Ok(migrate.into());
-      } else if let Ok(tombstone) =
-        ciborium::from_reader::<ComAtprotoSyncSubscribeReposTombstone, _>(&bin[buf.len()..])
-      {
-        return Ok(tombstone.into());
       } else if let Ok(info) =
         ciborium::from_reader::<ComAtprotoSyncSubscribeReposInfo, _>(&bin[buf.len()..])
       {
         return Ok(info.into());
+      } else if let Ok(repoop) =
+        ciborium::from_reader::<ComAtprotoSyncSubscribeReposRepoOp, _>(&bin[buf.len()..])
+      {
+        return Ok(repoop.into());
       } else {
         return Err(Error::Other(String::from("unknown data type")));
       }
@@ -118,30 +97,16 @@ impl Object {
     }
   }
 
-  pub fn as_handle(&self) -> Option<&ComAtprotoSyncSubscribeReposHandle> {
-    match self {
-      Self::Handle(h) => Some(h),
-      _ => None,
-    }
-  }
-
-  pub fn as_migrate(&self) -> Option<&ComAtprotoSyncSubscribeReposMigrate> {
-    match self {
-      Self::Migrate(m) => Some(m),
-      _ => None,
-    }
-  }
-
-  pub fn as_tombstone(&self) -> Option<&ComAtprotoSyncSubscribeReposTombstone> {
-    match self {
-      Self::Tombstone(t) => Some(t),
-      _ => None,
-    }
-  }
-
   pub fn as_info(&self) -> Option<&ComAtprotoSyncSubscribeReposInfo> {
     match self {
       Self::Info(i) => Some(i),
+      _ => None,
+    }
+  }
+
+  pub fn as_repo_op(&self) -> Option<&ComAtprotoSyncSubscribeReposRepoOp> {
+    match self {
+      Self::RepoOp(r) => Some(r),
       _ => None,
     }
   }

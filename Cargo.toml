@@ -10,25 +10,25 @@ repository = "https://github.com/shigepon7/aerostream2/"
 version = "0.1.0"
 
 [dependencies]
-async-trait = "0.1.86"
-axum = {version = "0.8.1", features = ["macros"]}
+async-trait = "0.1.88"
+axum = {version = "0.8.3", features = ["macros"]}
 base64 = "0.22.1"
-chrono = {version = "0.4.39", features = ["serde"]}
+chrono = {version = "0.4.40", features = ["serde"]}
 ciborium = "0.2.2"
-data-encoding = "2.7.0"
+data-encoding = "2.8.0"
 dotenvy = "0.15.7"
 futures-util = "0.3.31"
-indexmap = "2.7.1"
-ipld-core = {version = "0.4.1", features = ["serde"]}
-lindera = {version = "0.39.0", features = ["ipadic"]}
+indexmap = "2.8.0"
+ipld-core = {version = "0.4.2", features = ["serde"]}
+lindera = {version = "0.40.1", features = ["ipadic"]}
 mime_guess = "2.0.5"
-reqwest = {version = "0.12.12", features = ["json"]}
+reqwest = {version = "0.12.15", features = ["json"]}
 reqwest-websocket = "0.4.4"
-rs-car = "0.4.1"
-serde = {version = "1.0.217", features = ["derive"]}
-serde_ipld_dagcbor = "0.6.1"
-serde_json = "1.0.138"
+rs-car = "0.5.0"
+serde = {version = "1.0.219", features = ["derive"]}
+serde_ipld_dagcbor = "0.6.2"
+serde_json = "1.0.140"
 serde_with = "3.12.0"
-tokio = {version = "1.43.0", features = ["full"]}
+tokio = {version = "1.44.1", features = ["full"]}
 tower-http = {version = "0.6.2", features = ["timeout"]}
 tracing = "0.1.41"

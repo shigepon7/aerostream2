@@ -915,7 +915,7 @@ pub struct AppBskyEmbedRecordWithMediaView {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyEmbedVideo {
-  /// [accept: ["video/mp4"]] [max_size: 50000000]
+  /// [accept: ["video/mp4"]] [max_size: 100000000] The mp4 video file. May be up to 100mb, formerly limited to 50mb.
   pub video: Blob,
   /// [max_length: 20]
   pub captions: Option<Vec<AppBskyEmbedVideoCaption>>,
@@ -2257,6 +2257,12 @@ pub struct AppBskyLabelerDefsLabelerViewDetailed {
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
+  /// The set of report reason 'codes' which are in-scope for this service to review and action. These usually align to policy categories. If not defined (distinct from empty array), all reason types are allowed.
+  pub reason_types: Option<Vec<ComAtprotoModerationDefsReasonType>>,
+  /// The set of subject types (account, record, etc) this service accepts reports on.
+  pub subject_types: Option<Vec<ComAtprotoModerationDefsSubjectType>>,
+  /// Set of record types (collection NSIDs) which can be reported to this service. If not defined (distinct from empty array), default is any record type.
+  pub subject_collections: Option<Vec<String>>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -2317,6 +2323,12 @@ pub struct AppBskyLabelerService {
   pub labels: Option<AppBskyLabelerServiceLabelsUnion>,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  /// The set of report reason 'codes' which are in-scope for this service to review and action. These usually align to policy categories. If not defined (distinct from empty array), all reason types are allowed.,
+  pub reason_types: Option<Vec<ComAtprotoModerationDefsReasonType>>,
+  /// The set of subject types (account, record, etc) this service accepts reports on.,
+  pub subject_types: Option<Vec<ComAtprotoModerationDefsSubjectType>>,
+  /// Set of record types (collection NSIDs) which can be reported to this service. If not defined (distinct from empty array), default is any record type.,
+  pub subject_collections: Option<Vec<String>>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -2696,6 +2708,46 @@ pub struct ChatBskyActorDeleteAccountOutput(pub serde_json::Value);
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoAcceptConvoInput {
+  pub convo_id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoAcceptConvoOutput {
+  /// Rev when the convo was accepted. If not present, the convo was already accepted.
+  pub rev: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoAddReactionInput {
+  pub convo_id: String,
+  pub message_id: String,
+  /// [max_graphemes: 1] [max_length: 32] [min_length: 1]
+  pub value: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoAddReactionOutput {
+  pub message: ChatBskyConvoDefsMessageView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoDefsMessageRef {
   /// [format: did]
   pub did: String,
@@ -2743,6 +2795,8 @@ pub struct ChatBskyConvoDefsMessageView {
   /// Annotations of text (mentions, URLs, hashtags, etc)
   pub facets: Option<Vec<AppBskyRichtextFacet>>,
   pub embed: Option<ChatBskyConvoDefsMessageViewEmbedUnion>,
+  /// Reactions to this message, in ascending order of creation time.
+  pub reactions: Option<Vec<ChatBskyConvoDefsReactionView>>,
   pub sender: ChatBskyConvoDefsMessageViewSender,
   /// [format: datetime]
   pub sent_at: chrono::DateTime<chrono::Utc>,
@@ -2773,6 +2827,38 @@ pub struct ChatBskyConvoDefsMessageViewSender {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoDefsReactionView {
+  pub value: String,
+  pub sender: ChatBskyConvoDefsReactionViewSender,
+  /// [format: datetime]
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoDefsReactionViewSender {
+  /// [format: did]
+  pub did: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoDefsMessageAndReactionView {
+  pub message: ChatBskyConvoDefsMessageView,
+  pub reaction: ChatBskyConvoDefsReactionView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
 pub enum ChatBskyConvoDefsConvoViewLastMessageUnion {
@@ -2780,6 +2866,13 @@ pub enum ChatBskyConvoDefsConvoViewLastMessageUnion {
   ChatBskyConvoDefsMessageView(Box<ChatBskyConvoDefsMessageView>),
   #[serde(rename = "chat.bsky.convo.defs#deletedMessageView")]
   ChatBskyConvoDefsDeletedMessageView(Box<ChatBskyConvoDefsDeletedMessageView>),
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ChatBskyConvoDefsConvoViewLastReactionUnion {
+  #[serde(rename = "chat.bsky.convo.defs#messageAndReactionView")]
+  ChatBskyConvoDefsMessageAndReactionView(Box<ChatBskyConvoDefsMessageAndReactionView>),
 }
 
 #[serde_with::skip_serializing_none]
@@ -2790,8 +2883,10 @@ pub struct ChatBskyConvoDefsConvoView {
   pub rev: String,
   pub members: Vec<ChatBskyActorDefsProfileViewBasic>,
   pub last_message: Option<ChatBskyConvoDefsConvoViewLastMessageUnion>,
+  pub last_reaction: Option<ChatBskyConvoDefsConvoViewLastReactionUnion>,
   pub muted: bool,
-  pub opened: Option<bool>,
+  /// [known_values: ["request", "accepted"]]
+  pub status: Option<String>,
   pub unread_count: i64,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -2810,7 +2905,37 @@ pub struct ChatBskyConvoDefsLogBeginConvo {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoDefsLogAcceptConvo {
+  pub rev: String,
+  pub convo_id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoDefsLogLeaveConvo {
+  pub rev: String,
+  pub convo_id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoDefsLogMuteConvo {
+  pub rev: String,
+  pub convo_id: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoDefsLogUnmuteConvo {
   pub rev: String,
   pub convo_id: String,
   #[serde(flatten)]
@@ -2857,6 +2982,68 @@ pub struct ChatBskyConvoDefsLogDeleteMessage {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ChatBskyConvoDefsLogReadMessageMessageUnion {
+  #[serde(rename = "chat.bsky.convo.defs#messageView")]
+  ChatBskyConvoDefsMessageView(Box<ChatBskyConvoDefsMessageView>),
+  #[serde(rename = "chat.bsky.convo.defs#deletedMessageView")]
+  ChatBskyConvoDefsDeletedMessageView(Box<ChatBskyConvoDefsDeletedMessageView>),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoDefsLogReadMessage {
+  pub rev: String,
+  pub convo_id: String,
+  pub message: ChatBskyConvoDefsLogReadMessageMessageUnion,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ChatBskyConvoDefsLogAddReactionMessageUnion {
+  #[serde(rename = "chat.bsky.convo.defs#messageView")]
+  ChatBskyConvoDefsMessageView(Box<ChatBskyConvoDefsMessageView>),
+  #[serde(rename = "chat.bsky.convo.defs#deletedMessageView")]
+  ChatBskyConvoDefsDeletedMessageView(Box<ChatBskyConvoDefsDeletedMessageView>),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoDefsLogAddReaction {
+  pub rev: String,
+  pub convo_id: String,
+  pub message: ChatBskyConvoDefsLogAddReactionMessageUnion,
+  pub reaction: ChatBskyConvoDefsReactionView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ChatBskyConvoDefsLogRemoveReactionMessageUnion {
+  #[serde(rename = "chat.bsky.convo.defs#messageView")]
+  ChatBskyConvoDefsMessageView(Box<ChatBskyConvoDefsMessageView>),
+  #[serde(rename = "chat.bsky.convo.defs#deletedMessageView")]
+  ChatBskyConvoDefsDeletedMessageView(Box<ChatBskyConvoDefsDeletedMessageView>),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoDefsLogRemoveReaction {
+  pub rev: String,
+  pub convo_id: String,
+  pub message: ChatBskyConvoDefsLogRemoveReactionMessageUnion,
+  pub reaction: ChatBskyConvoDefsReactionView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -2879,6 +3066,16 @@ pub struct ChatBskyConvoGetConvoOutput {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoGetConvoAvailabilityOutput {
+  pub can_chat: bool,
+  pub convo: Option<ChatBskyConvoDefsConvoView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoGetConvoForMembersOutput {
   pub convo: ChatBskyConvoDefsConvoView,
   #[serde(flatten)]
@@ -2890,12 +3087,24 @@ pub struct ChatBskyConvoGetConvoForMembersOutput {
 pub enum ChatBskyConvoGetLogOutputLogsUnion {
   #[serde(rename = "chat.bsky.convo.defs#logBeginConvo")]
   ChatBskyConvoDefsLogBeginConvo(Box<ChatBskyConvoDefsLogBeginConvo>),
+  #[serde(rename = "chat.bsky.convo.defs#logAcceptConvo")]
+  ChatBskyConvoDefsLogAcceptConvo(Box<ChatBskyConvoDefsLogAcceptConvo>),
   #[serde(rename = "chat.bsky.convo.defs#logLeaveConvo")]
   ChatBskyConvoDefsLogLeaveConvo(Box<ChatBskyConvoDefsLogLeaveConvo>),
+  #[serde(rename = "chat.bsky.convo.defs#logMuteConvo")]
+  ChatBskyConvoDefsLogMuteConvo(Box<ChatBskyConvoDefsLogMuteConvo>),
+  #[serde(rename = "chat.bsky.convo.defs#logUnmuteConvo")]
+  ChatBskyConvoDefsLogUnmuteConvo(Box<ChatBskyConvoDefsLogUnmuteConvo>),
   #[serde(rename = "chat.bsky.convo.defs#logCreateMessage")]
   ChatBskyConvoDefsLogCreateMessage(Box<ChatBskyConvoDefsLogCreateMessage>),
   #[serde(rename = "chat.bsky.convo.defs#logDeleteMessage")]
   ChatBskyConvoDefsLogDeleteMessage(Box<ChatBskyConvoDefsLogDeleteMessage>),
+  #[serde(rename = "chat.bsky.convo.defs#logReadMessage")]
+  ChatBskyConvoDefsLogReadMessage(Box<ChatBskyConvoDefsLogReadMessage>),
+  #[serde(rename = "chat.bsky.convo.defs#logAddReaction")]
+  ChatBskyConvoDefsLogAddReaction(Box<ChatBskyConvoDefsLogAddReaction>),
+  #[serde(rename = "chat.bsky.convo.defs#logRemoveReaction")]
+  ChatBskyConvoDefsLogRemoveReaction(Box<ChatBskyConvoDefsLogRemoveReaction>),
 }
 
 #[serde_with::skip_serializing_none]
@@ -2977,6 +3186,27 @@ pub struct ChatBskyConvoMuteConvoOutput {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoRemoveReactionInput {
+  pub convo_id: String,
+  pub message_id: String,
+  /// [max_graphemes: 1] [max_length: 32] [min_length: 1]
+  pub value: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoRemoveReactionOutput {
+  pub message: ChatBskyConvoDefsMessageView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoSendMessageInput {
   pub convo_id: String,
   pub message: ChatBskyConvoDefsMessageInput,
@@ -3027,6 +3257,26 @@ pub struct ChatBskyConvoUnmuteConvoInput {
 #[serde(rename_all = "camelCase")]
 pub struct ChatBskyConvoUnmuteConvoOutput {
   pub convo: ChatBskyConvoDefsConvoView,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoUpdateAllReadInput {
+  /// [known_values: ["request", "accepted"]]
+  pub status: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatBskyConvoUpdateAllReadOutput {
+  /// The count of updated convos.
+  pub updated_count: i64,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -3372,12 +3622,46 @@ pub struct ComAtprotoAdminUpdateSubjectStatusOutput {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ComAtprotoIdentityDefsIdentityInfo {
+  /// [format: did]
+  pub did: String,
+  /// [format: handle] The validated handle of the account; or 'handle.invalid' if the handle did not bi-directionally match the DID document.
+  pub handle: String,
+  /// The complete DID document for the identity.
+  pub did_doc: serde_json::Value,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ComAtprotoIdentityGetRecommendedDidCredentialsOutput {
   /// Recommended rotation keys for PLC dids. Should be undefined (or ignored) for did:webs.
   pub rotation_keys: Option<Vec<String>>,
   pub also_known_as: Option<Vec<String>>,
   pub verification_methods: Option<serde_json::Value>,
   pub services: Option<serde_json::Value>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoIdentityRefreshIdentityInput {
+  /// [format: at-identifier]
+  pub identifier: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoIdentityResolveDidOutput {
+  /// The complete DID document for the identity.
+  pub did_doc: serde_json::Value,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -3614,6 +3898,10 @@ pub struct ComAtprotoModerationCreateReportOutput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ComAtprotoModerationDefsReasonType(pub String);
 
+/// Tag describing a type of subject that might be reported.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ComAtprotoModerationDefsSubjectType(pub String);
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
 pub enum ComAtprotoRepoApplyWritesInputWritesUnion {
@@ -3668,7 +3956,7 @@ pub struct ComAtprotoRepoApplyWritesOutput {
 pub struct ComAtprotoRepoApplyWritesCreate {
   /// [format: nsid]
   pub collection: String,
-  /// [max_length: 512]
+  /// [format: record-key] [max_length: 512] NOTE: maxLength is redundant with record-key format. Keeping it temporarily to ensure backwards compatibility.
   pub rkey: Option<String>,
   pub value: serde_json::Value,
   #[serde(flatten)]
@@ -3682,6 +3970,7 @@ pub struct ComAtprotoRepoApplyWritesCreate {
 pub struct ComAtprotoRepoApplyWritesUpdate {
   /// [format: nsid]
   pub collection: String,
+  /// [format: record-key]
   pub rkey: String,
   pub value: serde_json::Value,
   #[serde(flatten)]
@@ -3695,6 +3984,7 @@ pub struct ComAtprotoRepoApplyWritesUpdate {
 pub struct ComAtprotoRepoApplyWritesDelete {
   /// [format: nsid]
   pub collection: String,
+  /// [format: record-key]
   pub rkey: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -3739,7 +4029,7 @@ pub struct ComAtprotoRepoCreateRecordInput {
   pub repo: String,
   /// [format: nsid] The NSID of the record collection.
   pub collection: String,
-  /// [max_length: 512] The Record Key.
+  /// [format: record-key] [max_length: 512] The Record Key.
   pub rkey: Option<String>,
   /// Can be set to 'false' to skip Lexicon schema validation of record data, 'true' to require it, or leave unset to validate only for known Lexicons.
   pub validate: Option<bool>,
@@ -3772,6 +4062,7 @@ pub struct ComAtprotoRepoCreateRecordOutput {
 pub struct ComAtprotoRepoDefsCommitMeta {
   /// [format: cid]
   pub cid: String,
+  /// [format: tid]
   pub rev: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -3785,7 +4076,7 @@ pub struct ComAtprotoRepoDeleteRecordInput {
   pub repo: String,
   /// [format: nsid] The NSID of the record collection.
   pub collection: String,
-  /// The Record Key.
+  /// [format: record-key] The Record Key.
   pub rkey: String,
   /// [format: cid] Compare and swap with the previous record by CID.
   pub swap_record: Option<String>,
@@ -3888,7 +4179,7 @@ pub struct ComAtprotoRepoPutRecordInput {
   pub repo: String,
   /// [format: nsid] The NSID of the record collection.
   pub collection: String,
-  /// [max_length: 512] The Record Key.
+  /// [format: record-key] [max_length: 512] The Record Key.
   pub rkey: String,
   /// Can be set to 'false' to skip Lexicon schema validation of record data, 'true' to require it, or leave unset to validate only for known Lexicons.
   pub validate: Option<bool>,
@@ -4368,6 +4659,7 @@ pub struct ComAtprotoSyncGetHeadOutput {
 pub struct ComAtprotoSyncGetLatestCommitOutput {
   /// [format: cid]
   pub cid: String,
+  /// [format: tid]
   pub rev: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -4380,9 +4672,9 @@ pub struct ComAtprotoSyncGetRepoStatusOutput {
   /// [format: did]
   pub did: String,
   pub active: bool,
-  /// [known_values: ["takendown", "suspended", "deactivated"]] If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.
+  /// [known_values: ["takendown", "suspended", "deleted", "deactivated", "desynchronized", "throttled"]] If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.
   pub status: Option<String>,
-  /// Optional field, the current rev of the repo, if active=true
+  /// [format: tid] Optional field, the current rev of the repo, if active=true
   pub rev: Option<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -4416,10 +4708,31 @@ pub struct ComAtprotoSyncListReposRepo {
   pub did: String,
   /// [format: cid] Current repo commit CID
   pub head: String,
+  /// [format: tid]
   pub rev: String,
   pub active: Option<bool>,
-  /// [known_values: ["takendown", "suspended", "deactivated"]] If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.
+  /// [known_values: ["takendown", "suspended", "deleted", "deactivated", "desynchronized", "throttled"]] If active=false, this optional field indicates a possible reason for why the account is not active. If active=false and no status is supplied, then the host makes no claim for why the repository is no longer being hosted.
   pub status: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoSyncListReposByCollectionOutput {
+  pub cursor: Option<String>,
+  pub repos: Vec<ComAtprotoSyncListReposByCollectionRepo>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoSyncListReposByCollectionRepo {
+  /// [format: did]
+  pub did: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -4453,23 +4766,42 @@ pub struct ComAtprotoSyncSubscribeReposCommit {
   pub seq: i64,
   /// DEPRECATED -- unused
   pub rebase: bool,
-  /// Indicates that this commit contained too many ops, or data size was too large. Consumers will need to make a separate request to get missing data.
+  /// DEPRECATED -- replaced by #sync event and data limits. Indicates that this commit contained too many ops, or data size was too large. Consumers will need to make a separate request to get missing data.
   pub too_big: bool,
-  /// [format: did] The repo this event comes from.
+  /// [format: did] The repo this event comes from. Note that all other message types name this field 'did'.
   pub repo: String,
   /// Repo commit object CID.
   pub commit: ciborium::Value,
-  /// DEPRECATED -- unused. WARNING -- nullable and optional; stick with optional to ensure golang interoperability.
-  pub prev: Option<ciborium::Value>,
-  /// The rev of the emitted commit. Note that this information is also in the commit object included in blocks, unless this is a tooBig event.
+  /// [format: tid] The rev of the emitted commit. Note that this information is also in the commit object included in blocks, unless this is a tooBig event.
   pub rev: String,
-  /// The rev of the last emitted commit from this repo (if any).
+  /// [format: tid] The rev of the last emitted commit from this repo (if any).
   pub since: Option<String>,
-  /// [max_length: 1000000]
+  /// [max_length: 2000000]
   pub blocks: Vec<u8>,
   /// [max_length: 200]
   pub ops: Vec<ComAtprotoSyncSubscribeReposRepoOp>,
   pub blobs: Vec<ciborium::Value>,
+  /// The root CID of the MST tree for the previous commit from this repo (indicated by the 'since' revision field in this message). Corresponds to the 'data' field in the repo commit object. NOTE: this field is effectively required for the 'inductive' version of firehose.
+  pub prev_data: Option<ciborium::Value>,
+  /// [format: datetime] Timestamp of when this message was originally broadcast.
+  pub time: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Updates the repo to a new state, without necessarily including that state on the firehose. Used to recover from broken commit streams, data loss incidents, or in situations where upstream host does not know recent state of the repository.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoSyncSubscribeReposSync {
+  /// The stream sequence number of this message.
+  pub seq: i64,
+  /// [format: did] The account this repo event corresponds to. Must match that in the commit object.
+  pub did: String,
+  /// [max_length: 10000]
+  pub blocks: Vec<u8>,
+  /// The rev of the commit. This value must match that in the commit object.
+  pub rev: String,
   /// [format: datetime] Timestamp of when this message was originally broadcast.
   pub time: chrono::DateTime<chrono::Utc>,
   #[serde(flatten)]
@@ -4504,53 +4836,8 @@ pub struct ComAtprotoSyncSubscribeReposAccount {
   pub time: chrono::DateTime<chrono::Utc>,
   /// Indicates that the account has a repository which can be fetched from the host that emitted this event.
   pub active: bool,
-  /// [known_values: ["takendown", "suspended", "deleted", "deactivated"]] If active=false, this optional field indicates a reason for why the account is not active.
+  /// [known_values: ["takendown", "suspended", "deleted", "deactivated", "desynchronized", "throttled"]] If active=false, this optional field indicates a reason for why the account is not active.
   pub status: Option<String>,
-  #[serde(flatten)]
-  pub extra: std::collections::HashMap<String, serde_json::Value>,
-}
-
-/// DEPRECATED -- Use #identity event instead
-#[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ComAtprotoSyncSubscribeReposHandle {
-  pub seq: i64,
-  /// [format: did]
-  pub did: String,
-  /// [format: handle]
-  pub handle: String,
-  /// [format: datetime]
-  pub time: chrono::DateTime<chrono::Utc>,
-  #[serde(flatten)]
-  pub extra: std::collections::HashMap<String, serde_json::Value>,
-}
-
-/// DEPRECATED -- Use #account event instead
-#[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ComAtprotoSyncSubscribeReposMigrate {
-  pub seq: i64,
-  /// [format: did]
-  pub did: String,
-  pub migrate_to: Option<String>,
-  /// [format: datetime]
-  pub time: chrono::DateTime<chrono::Utc>,
-  #[serde(flatten)]
-  pub extra: std::collections::HashMap<String, serde_json::Value>,
-}
-
-/// DEPRECATED -- Use #account event instead
-#[serde_with::skip_serializing_none]
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ComAtprotoSyncSubscribeReposTombstone {
-  pub seq: i64,
-  /// [format: did]
-  pub did: String,
-  /// [format: datetime]
-  pub time: chrono::DateTime<chrono::Utc>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -4576,6 +4863,8 @@ pub struct ComAtprotoSyncSubscribeReposRepoOp {
   pub path: String,
   /// For creates and updates, the new record CID. For deletions, null.
   pub cid: Option<ciborium::Value>,
+  /// For updates and deletes, the previous record CID (required for inductive firehose). For creations, field should not be defined.
+  pub prev: Option<ciborium::Value>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -4916,6 +5205,25 @@ pub struct ToolsOzoneModerationDefsSubjectStatusView {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ToolsOzoneModerationDefsSubjectViewProfileUnion {}
+
+/// Detailed view of a subject. For record subjects, the author's repo and profile will be returned.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsSubjectView {
+  pub type_: ComAtprotoModerationDefsSubjectType,
+  pub subject: String,
+  pub status: Option<ToolsOzoneModerationDefsSubjectStatusView>,
+  pub repo: Option<ToolsOzoneModerationDefsRepoViewDetail>,
+  pub profile: Option<ToolsOzoneModerationDefsSubjectViewProfileUnion>,
+  pub record: Option<ToolsOzoneModerationDefsRecordViewDetail>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 /// Statistics about a particular account subject
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -5001,12 +5309,12 @@ pub struct ToolsOzoneModerationDefsModEventResolveAppeal {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
-/// Add a comment to a subject
+/// Add a comment to a subject. An empty comment will clear any previously set sticky comment.
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationDefsModEventComment {
-  pub comment: String,
+  pub comment: Option<String>,
   /// Make the comment persistent on the subject
   pub sticky: Option<bool>,
   #[serde(flatten)]
@@ -5414,6 +5722,32 @@ pub struct ToolsOzoneModerationDefsRecordHosting {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsReporterStats {
+  /// [format: did]
+  pub did: String,
+  /// The total number of reports made by the user on accounts.
+  pub account_report_count: i64,
+  /// The total number of reports made by the user on records.
+  pub record_report_count: i64,
+  /// The total number of accounts reported by the user.
+  pub reported_account_count: i64,
+  /// The total number of records reported by the user.
+  pub reported_record_count: i64,
+  /// The total number of accounts taken down as a result of the user's reports.
+  pub takendown_account_count: i64,
+  /// The total number of records taken down as a result of the user's reports.
+  pub takendown_record_count: i64,
+  /// The total number of accounts labeled as a result of the user's reports.
+  pub labeled_account_count: i64,
+  /// The total number of records labeled as a result of the user's reports.
+  pub labeled_record_count: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
 pub enum ToolsOzoneModerationEmitEventInputEventUnion {
@@ -5447,6 +5781,8 @@ pub enum ToolsOzoneModerationEmitEventInputEventUnion {
   ToolsOzoneModerationDefsModEventResolveAppeal(Box<ToolsOzoneModerationDefsModEventResolveAppeal>),
   #[serde(rename = "tools.ozone.moderation.defs#modEventEmail")]
   ToolsOzoneModerationDefsModEventEmail(Box<ToolsOzoneModerationDefsModEventEmail>),
+  #[serde(rename = "tools.ozone.moderation.defs#modEventDivert")]
+  ToolsOzoneModerationDefsModEventDivert(Box<ToolsOzoneModerationDefsModEventDivert>),
   #[serde(rename = "tools.ozone.moderation.defs#modEventTag")]
   ToolsOzoneModerationDefsModEventTag(Box<ToolsOzoneModerationDefsModEventTag>),
   #[serde(rename = "tools.ozone.moderation.defs#accountEvent")]
@@ -5499,6 +5835,15 @@ pub struct ToolsOzoneModerationGetRecordsOutput {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationGetReporterStatsOutput {
+  pub stats: Vec<ToolsOzoneModerationDefsReporterStats>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
 pub enum ToolsOzoneModerationGetReposOutputReposUnion {
@@ -5513,6 +5858,15 @@ pub enum ToolsOzoneModerationGetReposOutputReposUnion {
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationGetReposOutput {
   pub repos: Vec<ToolsOzoneModerationGetReposOutputReposUnion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationGetSubjectsOutput {
+  pub subjects: Vec<ToolsOzoneModerationDefsSubjectView>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -9861,6 +10215,112 @@ impl Atproto {
   /// # Arguments
   ///
   /// * body
+  pub async fn chat_bsky_convo_accept_convo(
+    &self,
+    body: ChatBskyConvoAcceptConvoInput,
+  ) -> Result<ChatBskyConvoAcceptConvoOutput> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/chat.bsky.convo.acceptConvo",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Adds an emoji reaction to a message. Requires authentication. It is idempotent, so multiple calls from the same user with the same emoji result in a single reaction.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `ReactionMessageDeleted` - Indicates that the message has been deleted and reactions can no longer be added/removed.
+  /// * `ReactionLimitReached` - Indicates that the message has the maximum number of reactions allowed for a single user, and the requested reaction wasn't yet present. If it was already present, the request will not fail since it is idempotent.
+  /// * `ReactionInvalidValue` - Indicates the value for the reaction is not acceptable. In general, this means it is not an emoji.
+  pub async fn chat_bsky_convo_add_reaction(
+    &self,
+    body: ChatBskyConvoAddReactionInput,
+  ) -> Result<ChatBskyConvoAddReactionOutput> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/chat.bsky.convo.addReaction",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// # Arguments
+  ///
+  /// * body
   pub async fn chat_bsky_convo_delete_message_for_self(
     &self,
     body: ChatBskyConvoDeleteMessageForSelfInput,
@@ -9920,6 +10380,64 @@ impl Atproto {
       .client
       .get(&format!(
         "https://{}/xrpc/chat.bsky.convo.getConvo",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get whether the requester and the other members can chat. If an existing convo is found for these members, it is returned.
+  ///
+  /// # Arguments
+  ///
+  /// * `members` - [min_length: 1] [max_length: 10]
+  pub async fn chat_bsky_convo_get_convo_availability(
+    &self,
+    members: &[&str],
+  ) -> Result<ChatBskyConvoGetConvoAvailabilityOutput> {
+    let mut query_ = Vec::new();
+    query_.append(
+      &mut members
+        .iter()
+        .map(|i| (String::from("members"), i.to_string()))
+        .collect::<Vec<_>>(),
+    );
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/chat.bsky.convo.getConvoAvailability",
         self.host
       ))
       .query(&query_);
@@ -10181,10 +10699,14 @@ impl Atproto {
   ///
   /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
+  /// * `read_state` - [known_values: ["unread"]]
+  /// * `status` - [known_values: ["request", "accepted"]]
   pub async fn chat_bsky_convo_list_convos(
     &self,
     limit: Option<i64>,
     cursor: Option<&str>,
+    read_state: Option<&str>,
+    status: Option<&str>,
   ) -> Result<ChatBskyConvoListConvosOutput> {
     let mut query_ = Vec::new();
     if let Some(limit) = &limit {
@@ -10192,6 +10714,12 @@ impl Atproto {
     }
     if let Some(cursor) = &cursor {
       query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    if let Some(read_state) = &read_state {
+      query_.push((String::from("read_state"), read_state.to_string()));
+    }
+    if let Some(status) = &status {
+      query_.push((String::from("status"), status.to_string()));
     }
     let mut request = self
       .client
@@ -10246,6 +10774,62 @@ impl Atproto {
       .client
       .post(&format!(
         "https://{}/xrpc/chat.bsky.convo.muteConvo",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Removes an emoji reaction from a message. Requires authentication. It is idempotent, so multiple calls from the same user with the same emoji result in that reaction not being present, even if it already wasn't.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `ReactionMessageDeleted` - Indicates that the message has been deleted and reactions can no longer be added/removed.
+  /// * `ReactionInvalidValue` - Indicates the value for the reaction is not acceptable. In general, this means it is not an emoji.
+  pub async fn chat_bsky_convo_remove_reaction(
+    &self,
+    body: ChatBskyConvoRemoveReactionInput,
+  ) -> Result<ChatBskyConvoRemoveReactionOutput> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/chat.bsky.convo.removeReaction",
         self.host
       ))
       .json(&body);
@@ -10393,6 +10977,55 @@ impl Atproto {
       .client
       .post(&format!(
         "https://{}/xrpc/chat.bsky.convo.unmuteConvo",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn chat_bsky_convo_update_all_read(
+    &self,
+    body: ChatBskyConvoUpdateAllReadInput,
+  ) -> Result<ChatBskyConvoUpdateAllReadOutput> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/chat.bsky.convo.updateAllRead",
         self.host
       ))
       .json(&body);
@@ -11446,6 +12079,63 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
+  /// Request that the server re-resolve an identity (DID and handle). The server may ignore this request, or require authentication, depending on the role, implementation, and policy of the server.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `HandleNotFound` - The resolution process confirmed that the handle does not resolve to any DID.
+  /// * `DidNotFound` - The DID resolution process confirmed that there is no current DID.
+  /// * `DidDeactivated` - The DID previously existed, but has been deactivated.
+  pub async fn com_atproto_identity_refresh_identity(
+    &self,
+    body: ComAtprotoIdentityRefreshIdentityInput,
+  ) -> Result<ComAtprotoIdentityDefsIdentityInfo> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/com.atproto.identity.refreshIdentity",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// Request an email with a code to in order to request a signed PLC operation. Requires Auth.
   pub async fn com_atproto_identity_request_plc_operation_signature(&self) -> Result<()> {
     let mut request = self.client.post(&format!(
@@ -11486,11 +12176,73 @@ impl Atproto {
     Ok(())
   }
 
-  /// Resolves a handle (domain name) to a DID.
+  /// Resolves DID to DID document. Does not bi-directionally verify handle.
+  ///
+  /// # Arguments
+  ///
+  /// * `did` - [format: did] DID to resolve.
+  ///
+  /// # Errors
+  ///
+  /// * `DidNotFound` - The DID resolution process confirmed that there is no current DID.
+  /// * `DidDeactivated` - The DID previously existed, but has been deactivated.
+  pub async fn com_atproto_identity_resolve_did(
+    &self,
+    did: &str,
+  ) -> Result<ComAtprotoIdentityResolveDidOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("did"), did.to_string()));
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/com.atproto.identity.resolveDid",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Resolves an atproto handle (hostname) to a DID. Does not necessarily bi-directionally verify against the the DID document.
   ///
   /// # Arguments
   ///
   /// * `handle` - [format: handle] The handle to resolve.
+  ///
+  /// # Errors
+  ///
+  /// * `HandleNotFound` - The resolution process confirmed that the handle does not resolve to any DID.
   pub async fn com_atproto_identity_resolve_handle(
     &self,
     handle: &str,
@@ -11501,6 +12253,65 @@ impl Atproto {
       .client
       .get(&format!(
         "https://{}/xrpc/com.atproto.identity.resolveHandle",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Resolves an identity (DID or Handle) to a full identity (DID document and verified handle).
+  ///
+  /// # Arguments
+  ///
+  /// * `identifier` - [format: at-identifier] Handle or DID to resolve.
+  ///
+  /// # Errors
+  ///
+  /// * `HandleNotFound` - The resolution process confirmed that the handle does not resolve to any DID.
+  /// * `DidNotFound` - The DID resolution process confirmed that there is no current DID.
+  /// * `DidDeactivated` - The DID previously existed, but has been deactivated.
+  pub async fn com_atproto_identity_resolve_identity(
+    &self,
+    identifier: &str,
+  ) -> Result<ComAtprotoIdentityDefsIdentityInfo> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("identifier"), identifier.to_string()));
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/com.atproto.identity.resolveIdentity",
         self.host
       ))
       .query(&query_);
@@ -12084,7 +12895,7 @@ impl Atproto {
   ///
   /// * `repo` - [format: at-identifier] The handle or DID of the repo.
   /// * `collection` - [format: nsid] The NSID of the record collection.
-  /// * `rkey` - The Record Key.
+  /// * `rkey` - [format: record-key] The Record Key.
   /// * `cid` - [format: cid] The CID of the version of the record. If not specified, then return the most recent version.
   ///
   /// # Errors
@@ -12262,8 +13073,6 @@ impl Atproto {
   /// * `collection` - [format: nsid] The NSID of the record type.
   /// * `limit` - [minimum: 1] [maximum: 100] [default: 50] The number of records to return.
   /// * `cursor`
-  /// * `rkey_start` - DEPRECATED: The lowest sort-ordered rkey to start from (exclusive)
-  /// * `rkey_end` - DEPRECATED: The highest sort-ordered rkey to stop at (exclusive)
   /// * `reverse` - Flag to reverse the order of the returned records.
   pub async fn com_atproto_repo_list_records(
     &self,
@@ -12271,8 +13080,6 @@ impl Atproto {
     collection: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
-    rkey_start: Option<&str>,
-    rkey_end: Option<&str>,
     reverse: Option<bool>,
   ) -> Result<ComAtprotoRepoListRecordsOutput> {
     let mut query_ = Vec::new();
@@ -12283,12 +13090,6 @@ impl Atproto {
     }
     if let Some(cursor) = &cursor {
       query_.push((String::from("cursor"), cursor.to_string()));
-    }
-    if let Some(rkey_start) = &rkey_start {
-      query_.push((String::from("rkey_start"), rkey_start.to_string()));
-    }
-    if let Some(rkey_end) = &rkey_end {
-      query_.push((String::from("rkey_end"), rkey_end.to_string()));
     }
     if let Some(reverse) = &reverse {
       query_.push((String::from("reverse"), reverse.to_string()));
@@ -13991,8 +14792,7 @@ impl Atproto {
   ///
   /// * `did` - [format: did] The DID of the repo.
   /// * `collection` - [format: nsid]
-  /// * `rkey` - Record Key
-  /// * `commit` - [format: cid] DEPRECATED: referenced a repo commit by CID, and retrieved record as of that commit
+  /// * `rkey` - [format: record-key] Record Key
   ///
   /// # Errors
   ///
@@ -14006,15 +14806,11 @@ impl Atproto {
     did: &str,
     collection: &str,
     rkey: &str,
-    commit: Option<&str>,
   ) -> Result<Vec<u8>> {
     let mut query_ = Vec::new();
     query_.push((String::from("did"), did.to_string()));
     query_.push((String::from("collection"), collection.to_string()));
     query_.push((String::from("rkey"), rkey.to_string()));
-    if let Some(commit) = &commit {
-      query_.push((String::from("commit"), commit.to_string()));
-    }
     let mut request = self
       .client
       .get(&format!(
@@ -14061,7 +14857,7 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `did` - [format: did] The DID of the repo.
-  /// * `since` - The revision ('rev') of the repo to create a diff from.
+  /// * `since` - [format: tid] The revision ('rev') of the repo to create a diff from.
   ///
   /// # Errors
   ///
@@ -14178,7 +14974,7 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `did` - [format: did] The DID of the repo.
-  /// * `since` - Optional revision of the repo to list blobs since.
+  /// * `since` - [format: tid] Optional revision of the repo to list blobs since.
   /// * `limit` - [minimum: 1] [maximum: 1000] [default: 500]
   /// * `cursor`
   ///
@@ -14308,7 +15104,70 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
-  /// Notify a crawling service of a recent update, and that crawling should resume. Intended use is after a gap between repo stream events caused the crawling service to disconnect. Does not require auth; implemented by Relay.
+  /// Enumerates all the DIDs which have records with the given collection NSID.
+  ///
+  /// # Arguments
+  ///
+  /// * `collection` - [format: nsid]
+  /// * `limit` - [minimum: 1] [maximum: 2000] [default: 500] Maximum size of response set. Recommend setting a large maximum (1000+) when enumerating large DID lists.
+  /// * `cursor`
+  pub async fn com_atproto_sync_list_repos_by_collection(
+    &self,
+    collection: &str,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+  ) -> Result<ComAtprotoSyncListReposByCollectionOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("collection"), collection.to_string()));
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/com.atproto.sync.listReposByCollection",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Notify a crawling service of a recent update, and that crawling should resume. Intended use is after a gap between repo stream events caused the crawling service to disconnect. Does not require auth; implemented by Relay. DEPRECATED: just use com.atproto.sync.requestCrawl
   ///
   /// # Arguments
   ///
@@ -14417,11 +15276,9 @@ impl Atproto {
   /// # Messages
   ///
   /// * ComAtprotoSyncSubscribeReposCommit
+  /// * ComAtprotoSyncSubscribeReposSync
   /// * ComAtprotoSyncSubscribeReposIdentity
   /// * ComAtprotoSyncSubscribeReposAccount
-  /// * ComAtprotoSyncSubscribeReposHandle
-  /// * ComAtprotoSyncSubscribeReposMigrate
-  /// * ComAtprotoSyncSubscribeReposTombstone
   /// * ComAtprotoSyncSubscribeReposInfo
   ///
   /// # Errors
@@ -15147,6 +16004,64 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
+  /// Get reporter stats for a list of users.
+  ///
+  /// # Arguments
+  ///
+  /// * `dids` - [max_length: 100]
+  pub async fn tools_ozone_moderation_get_reporter_stats(
+    &self,
+    dids: &[&str],
+  ) -> Result<ToolsOzoneModerationGetReporterStatsOutput> {
+    let mut query_ = Vec::new();
+    query_.append(
+      &mut dids
+        .iter()
+        .map(|i| (String::from("dids"), i.to_string()))
+        .collect::<Vec<_>>(),
+    );
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.moderation.getReporterStats",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// Get details about some repositories.
   ///
   /// # Arguments
@@ -15167,6 +16082,64 @@ impl Atproto {
       .client
       .get(&format!(
         "https://{}/xrpc/tools.ozone.moderation.getRepos",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get details about subjects.
+  ///
+  /// # Arguments
+  ///
+  /// * `subjects` - [min_length: 1] [max_length: 100]
+  pub async fn tools_ozone_moderation_get_subjects(
+    &self,
+    subjects: &[&str],
+  ) -> Result<ToolsOzoneModerationGetSubjectsOutput> {
+    let mut query_ = Vec::new();
+    query_.append(
+      &mut subjects
+        .iter()
+        .map(|i| (String::from("subjects"), i.to_string()))
+        .collect::<Vec<_>>(),
+    );
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.moderation.getSubjects",
         self.host
       ))
       .query(&query_);
@@ -16619,14 +17592,34 @@ impl Atproto {
   ///
   /// # Arguments
   ///
+  /// * `q`
+  /// * `disabled`
+  /// * `roles`
   /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
   pub async fn tools_ozone_team_list_members(
     &self,
+    q: Option<&str>,
+    disabled: Option<bool>,
+    roles: Option<&[&str]>,
     limit: Option<i64>,
     cursor: Option<&str>,
   ) -> Result<ToolsOzoneTeamListMembersOutput> {
     let mut query_ = Vec::new();
+    if let Some(q) = &q {
+      query_.push((String::from("q"), q.to_string()));
+    }
+    if let Some(disabled) = &disabled {
+      query_.push((String::from("disabled"), disabled.to_string()));
+    }
+    if let Some(roles) = &roles {
+      query_.append(
+        &mut roles
+          .iter()
+          .map(|i| (String::from("roles"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
+    }
     if let Some(limit) = &limit {
       query_.push((String::from("limit"), limit.to_string()));
     }
