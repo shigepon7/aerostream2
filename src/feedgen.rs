@@ -600,6 +600,7 @@ async fn xrpc_server(
         AppBskyFeedGetFeedSkeletonOutput {
           cursor,
           feed: feeds,
+          req_id: None,
           extra: std::collections::HashMap::new(),
         },
       )))

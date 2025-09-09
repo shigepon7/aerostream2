@@ -44,7 +44,7 @@ impl TryFrom<&reqwest_websocket::Message> for Object {
   type Error = crate::Error;
   fn try_from(value: &reqwest_websocket::Message) -> std::result::Result<Self, Self::Error> {
     if let reqwest_websocket::Message::Binary(bin) = value {
-      let header = ciborium::from_reader::<ciborium::Value, _>(bin.as_slice())?;
+      let header = ciborium::from_reader::<ciborium::Value, _>(std::io::Cursor::new(bin.to_vec()))?;
       let mut buf = Vec::new();
       ciborium::into_writer(&header, &mut buf)?;
       if let Ok(commit) =

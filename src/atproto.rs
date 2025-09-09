@@ -162,6 +162,8 @@ pub struct AppBskyActorDefsProfileViewBasic {
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   /// [format: datetime]
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+  pub verification: Option<AppBskyActorDefsVerificationState>,
+  pub status: Option<AppBskyActorDefsStatusView>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -187,6 +189,8 @@ pub struct AppBskyActorDefsProfileView {
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
   pub viewer: Option<AppBskyActorDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
+  pub verification: Option<AppBskyActorDefsVerificationState>,
+  pub status: Option<AppBskyActorDefsStatusView>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -219,6 +223,8 @@ pub struct AppBskyActorDefsProfileViewDetailed {
   pub viewer: Option<AppBskyActorDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub pinned_post: Option<ComAtprotoRepoStrongRef>,
+  pub verification: Option<AppBskyActorDefsVerificationState>,
+  pub status: Option<AppBskyActorDefsStatusView>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -232,6 +238,7 @@ pub struct AppBskyActorDefsProfileAssociated {
   pub starter_packs: Option<i64>,
   pub labeler: Option<bool>,
   pub chat: Option<AppBskyActorDefsProfileAssociatedChat>,
+  pub activity_subscription: Option<AppBskyActorDefsProfileAssociatedActivitySubscription>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -242,6 +249,16 @@ pub struct AppBskyActorDefsProfileAssociated {
 pub struct AppBskyActorDefsProfileAssociatedChat {
   /// [known_values: ["all", "none", "following"]]
   pub allow_incoming: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyActorDefsProfileAssociatedActivitySubscription {
+  /// [known_values: ["followers", "mutuals", "none"]]
+  pub allow_subscriptions: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -261,7 +278,10 @@ pub struct AppBskyActorDefsViewerState {
   pub following: Option<String>,
   /// [format: at-uri]
   pub followed_by: Option<String>,
+  /// This property is present only in selected cases, as an optimization.
   pub known_followers: Option<AppBskyActorDefsKnownFollowers>,
+  /// This property is present only in selected cases, as an optimization.
+  pub activity_subscription: Option<AppBskyNotificationDefsActivitySubscription>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -274,6 +294,38 @@ pub struct AppBskyActorDefsKnownFollowers {
   pub count: i64,
   /// [min_length: 0] [max_length: 5]
   pub followers: Vec<AppBskyActorDefsProfileViewBasic>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Represents the verification information about the user this object is attached to.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyActorDefsVerificationState {
+  /// All verifications issued by trusted verifiers on behalf of this user. Verifications by untrusted verifiers are not included.
+  pub verifications: Vec<AppBskyActorDefsVerificationView>,
+  /// [known_values: ["valid", "invalid", "none"]] The user's status as a verified account.
+  pub verified_status: String,
+  /// [known_values: ["valid", "invalid", "none"]] The user's status as a trusted verifier.
+  pub trusted_verifier_status: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// An individual verification for an associated subject.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyActorDefsVerificationView {
+  /// [format: did] The user who issued this verification.
+  pub issuer: String,
+  /// [format: at-uri] The AT-URI of the verification record.
+  pub uri: String,
+  /// True if the verification passes validation, otherwise false.
+  pub is_valid: bool,
+  /// [format: datetime] Timestamp when the verification was created.
+  pub created_at: chrono::DateTime<chrono::Utc>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -307,6 +359,8 @@ pub enum AppBskyActorDefsPreferencesUnion {
   AppBskyActorDefsLabelersPref(Box<AppBskyActorDefsLabelersPref>),
   #[serde(rename = "app.bsky.actor.defs#postInteractionSettingsPref")]
   AppBskyActorDefsPostInteractionSettingsPref(Box<AppBskyActorDefsPostInteractionSettingsPref>),
+  #[serde(rename = "app.bsky.actor.defs#verificationPrefs")]
+  AppBskyActorDefsVerificationPrefs(Box<AppBskyActorDefsVerificationPrefs>),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -522,6 +576,17 @@ pub struct AppBskyActorDefsNux {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+/// Preferences for how verified accounts appear in the app.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyActorDefsVerificationPrefs {
+  /// [default: false] Hide the blue check badges for verified accounts and trusted verifiers.
+  pub hide_badges: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
 pub enum AppBskyActorDefsPostInteractionSettingsPrefThreadgateAllowRulesUnion {
@@ -553,6 +618,32 @@ pub struct AppBskyActorDefsPostInteractionSettingsPref {
   /// [max_length: 5] Matches postgate record. List of rules defining who can embed this users posts. If value is an empty array or is undefined, no particular rules apply and anyone can embed.
   pub postgate_embedding_rules:
     Option<Vec<AppBskyActorDefsPostInteractionSettingsPrefPostgateEmbeddingRulesUnion>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// An optional embed associated with the status.
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum AppBskyActorDefsStatusViewEmbedUnion {
+  #[serde(rename = "app.bsky.embed.external#view")]
+  AppBskyEmbedExternalView(Box<AppBskyEmbedExternalView>),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyActorDefsStatusView {
+  /// [known_values: ["app.bsky.actor.status#live"]] The status for the account.
+  pub status: String,
+  pub record: serde_json::Value,
+  /// An optional embed associated with the status.
+  pub embed: Option<AppBskyActorDefsStatusViewEmbedUnion>,
+  /// [format: datetime] The date when this status will expire. The application might choose to no longer return the status after expiration.
+  pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// True if the status is not expired, false if it is expired. Only present if expiration was set.
+  pub is_active: Option<bool>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -643,6 +734,99 @@ pub struct AppBskyActorSearchActorsOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyActorSearchActorsTypeaheadOutput {
   pub actors: Vec<AppBskyActorDefsProfileViewBasic>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// An optional embed associated with the status.
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum AppBskyActorStatusEmbedUnion {
+  #[serde(rename = "app.bsky.embed.external")]
+  AppBskyEmbedExternal(Box<AppBskyEmbedExternal>),
+}
+
+/// A declaration of a Bluesky account status.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyActorStatus {
+  /// [known_values: ["app.bsky.actor.status#live"]] The status for the account.,
+  pub status: String,
+  /// An optional embed associated with the status.,
+  pub embed: Option<AppBskyActorStatusEmbedUnion>,
+  /// [minimum: 1] The duration of the status in minutes. Applications can choose to impose minimum and maximum limits.,
+  pub duration_minutes: Option<i64>,
+  /// [format: datetime],
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyBookmarkCreateBookmarkInput {
+  /// [format: at-uri]
+  pub uri: String,
+  /// [format: cid]
+  pub cid: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Object used to store bookmark data in stash.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyBookmarkDefsBookmark {
+  /// A strong ref to the record to be bookmarked. Currently, only `app.bsky.feed.post` records are supported.
+  pub subject: ComAtprotoRepoStrongRef,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum AppBskyBookmarkDefsBookmarkViewItemUnion {
+  #[serde(rename = "app.bsky.feed.defs#blockedPost")]
+  AppBskyFeedDefsBlockedPost(Box<AppBskyFeedDefsBlockedPost>),
+  #[serde(rename = "app.bsky.feed.defs#notFoundPost")]
+  AppBskyFeedDefsNotFoundPost(Box<AppBskyFeedDefsNotFoundPost>),
+  #[serde(rename = "app.bsky.feed.defs#postView")]
+  AppBskyFeedDefsPostView(Box<AppBskyFeedDefsPostView>),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyBookmarkDefsBookmarkView {
+  /// A strong ref to the bookmarked record.
+  pub subject: ComAtprotoRepoStrongRef,
+  /// [format: datetime]
+  pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+  pub item: AppBskyBookmarkDefsBookmarkViewItemUnion,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyBookmarkDeleteBookmarkInput {
+  /// [format: at-uri]
+  pub uri: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyBookmarkGetBookmarksOutput {
+  pub cursor: Option<String>,
+  pub bookmarks: Vec<AppBskyBookmarkDefsBookmarkView>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -981,6 +1165,7 @@ pub struct AppBskyFeedDefsPostView {
   pub author: AppBskyActorDefsProfileViewBasic,
   pub record: serde_json::Value,
   pub embed: Option<AppBskyFeedDefsPostViewEmbedUnion>,
+  pub bookmark_count: Option<i64>,
   pub reply_count: Option<i64>,
   pub repost_count: Option<i64>,
   pub like_count: Option<i64>,
@@ -1003,6 +1188,7 @@ pub struct AppBskyFeedDefsViewerState {
   pub repost: Option<String>,
   /// [format: at-uri]
   pub like: Option<String>,
+  pub bookmarked: Option<bool>,
   pub thread_muted: Option<bool>,
   pub reply_disabled: Option<bool>,
   pub embedding_disabled: Option<bool>,
@@ -1040,6 +1226,8 @@ pub struct AppBskyFeedDefsFeedViewPost {
   pub reason: Option<AppBskyFeedDefsFeedViewPostReasonUnion>,
   /// [max_length: 2000] Context provided by feed generator that may be passed back alongside interactions.
   pub feed_context: Option<String>,
+  /// [max_length: 100] Unique identifier per request that may be passed back alongside interactions.
+  pub req_id: Option<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -1083,6 +1271,10 @@ pub struct AppBskyFeedDefsReplyRef {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyFeedDefsReasonRepost {
   pub by: AppBskyActorDefsProfileViewBasic,
+  /// [format: at-uri]
+  pub uri: Option<String>,
+  /// [format: cid]
+  pub cid: Option<String>,
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   #[serde(flatten)]
@@ -1261,6 +1453,8 @@ pub struct AppBskyFeedDefsInteraction {
   pub event: Option<String>,
   /// [max_length: 2000] Context on a feed item that was originally supplied by the feed generator on getFeedSkeleton.
   pub feed_context: Option<String>,
+  /// [max_length: 100] Unique identifier per request that may be passed back alongside interactions.
+  pub req_id: Option<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -1400,6 +1594,8 @@ pub struct AppBskyFeedGetFeedGeneratorsOutput {
 pub struct AppBskyFeedGetFeedSkeletonOutput {
   pub cursor: Option<String>,
   pub feed: Vec<AppBskyFeedDefsSkeletonFeedPost>,
+  /// [max_length: 100] Unique identifier per request that may be passed back alongside interactions.
+  pub req_id: Option<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -1527,6 +1723,7 @@ pub struct AppBskyFeedLike {
   pub subject: ComAtprotoRepoStrongRef,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  pub via: Option<ComAtprotoRepoStrongRef>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -1652,6 +1849,7 @@ pub struct AppBskyFeedRepost {
   pub subject: ComAtprotoRepoStrongRef,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  pub via: Option<ComAtprotoRepoStrongRef>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -2008,6 +2206,27 @@ pub struct AppBskyGraphGetListsOutput {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AppBskyGraphGetListsWithMembershipOutput {
+  pub cursor: Option<String>,
+  pub lists_with_membership: Vec<AppBskyGraphGetListsWithMembershipListWithMembership>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// A list and an optional list item indicating membership of a target user to that list.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyGraphGetListsWithMembershipListWithMembership {
+  pub list: AppBskyGraphDefsListView,
+  pub list_item: Option<AppBskyGraphDefsListItemView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphGetMutesOutput {
   pub cursor: Option<String>,
   pub mutes: Vec<AppBskyActorDefsProfileView>,
@@ -2049,6 +2268,28 @@ pub struct AppBskyGraphGetStarterPackOutput {
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyGraphGetStarterPacksOutput {
   pub starter_packs: Vec<AppBskyGraphDefsStarterPackViewBasic>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyGraphGetStarterPacksWithMembershipOutput {
+  pub cursor: Option<String>,
+  pub starter_packs_with_membership:
+    Vec<AppBskyGraphGetStarterPacksWithMembershipStarterPackWithMembership>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// A starter pack and an optional list item indicating membership of a target user to that starter pack.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyGraphGetStarterPacksWithMembershipStarterPackWithMembership {
+  pub starter_pack: AppBskyGraphDefsStarterPackView,
+  pub list_item: Option<AppBskyGraphDefsListItemView>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -2222,6 +2463,23 @@ pub struct AppBskyGraphUnmuteThreadInput {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+/// Record declaring a verification relationship between two accounts. Verifications are only considered valid by an app if issued by an account the app considers trusted.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyGraphVerification {
+  /// [format: did] DID of the subject the verification applies to.,
+  pub subject: String,
+  /// [format: handle] Handle of the subject the verification applies to at the moment of verifying, which might not be the same at the time of viewing. The verification is only valid if the current handle matches the one at the time of verifying.,
+  pub handle: String,
+  /// Display name of the subject the verification applies to at the moment of verifying, which might not be the same at the time of viewing. The verification is only valid if the current displayName matches the one at the time of verifying.,
+  pub display_name: String,
+  /// [format: datetime] Date of when the verification was created.,
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -2333,11 +2591,120 @@ pub struct AppBskyLabelerService {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+/// A declaration of the user's choices related to notifications that can be produced by them.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationDeclaration {
+  /// [known_values: ["followers", "mutuals", "none"]] A declaration of the user's preference for allowing activity subscriptions from other users. Absence of a record implies 'followers'.,
+  pub allow_subscriptions: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AppBskyNotificationDefsRecordDeleted(pub serde_json::Value);
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationDefsChatPreference {
+  /// [known_values: ["all", "accepted"]]
+  pub include: String,
+  pub push: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationDefsFilterablePreference {
+  /// [known_values: ["all", "follows"]]
+  pub include: String,
+  pub list: bool,
+  pub push: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationDefsPreference {
+  pub list: bool,
+  pub push: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationDefsPreferences {
+  pub chat: AppBskyNotificationDefsChatPreference,
+  pub follow: AppBskyNotificationDefsFilterablePreference,
+  pub like: AppBskyNotificationDefsFilterablePreference,
+  pub like_via_repost: AppBskyNotificationDefsFilterablePreference,
+  pub mention: AppBskyNotificationDefsFilterablePreference,
+  pub quote: AppBskyNotificationDefsFilterablePreference,
+  pub reply: AppBskyNotificationDefsFilterablePreference,
+  pub repost: AppBskyNotificationDefsFilterablePreference,
+  pub repost_via_repost: AppBskyNotificationDefsFilterablePreference,
+  pub starterpack_joined: AppBskyNotificationDefsPreference,
+  pub subscribed_post: AppBskyNotificationDefsPreference,
+  pub unverified: AppBskyNotificationDefsPreference,
+  pub verified: AppBskyNotificationDefsPreference,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationDefsActivitySubscription {
+  pub post: bool,
+  pub reply: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Object used to store activity subscription data in stash.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationDefsSubjectActivitySubscription {
+  /// [format: did]
+  pub subject: String,
+  pub activity_subscription: AppBskyNotificationDefsActivitySubscription,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationGetPreferencesOutput {
+  pub preferences: AppBskyNotificationDefsPreferences,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppBskyNotificationGetUnreadCountOutput {
   pub count: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationListActivitySubscriptionsOutput {
+  pub cursor: Option<String>,
+  pub subscriptions: Vec<AppBskyActorDefsProfileView>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -2364,7 +2731,7 @@ pub struct AppBskyNotificationListNotificationsNotification {
   /// [format: cid]
   pub cid: String,
   pub author: AppBskyActorDefsProfileView,
-  /// [known_values: ["like", "repost", "follow", "mention", "reply", "quote", "starterpack-joined"]] Expected values are 'like', 'repost', 'follow', 'mention', 'reply', 'quote', and 'starterpack-joined'.
+  /// [known_values: ["like", "repost", "follow", "mention", "reply", "quote", "starterpack-joined", "verified", "unverified", "like-via-repost", "repost-via-repost", "subscribed-post"]] The reason why this notification was delivered - e.g. your post was liked, or you received a new follower.
   pub reason: String,
   /// [format: at-uri]
   pub reason_subject: Option<String>,
@@ -2373,6 +2740,28 @@ pub struct AppBskyNotificationListNotificationsNotification {
   /// [format: datetime]
   pub indexed_at: chrono::DateTime<chrono::Utc>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationPutActivitySubscriptionInput {
+  /// [format: did]
+  pub subject: String,
+  pub activity_subscription: AppBskyNotificationDefsActivitySubscription,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationPutActivitySubscriptionOutput {
+  /// [format: did]
+  pub subject: String,
+  pub activity_subscription: Option<AppBskyNotificationDefsActivitySubscription>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -2389,7 +2778,53 @@ pub struct AppBskyNotificationPutPreferencesInput {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationPutPreferencesV2Input {
+  pub chat: Option<AppBskyNotificationDefsChatPreference>,
+  pub follow: Option<AppBskyNotificationDefsFilterablePreference>,
+  pub like: Option<AppBskyNotificationDefsFilterablePreference>,
+  pub like_via_repost: Option<AppBskyNotificationDefsFilterablePreference>,
+  pub mention: Option<AppBskyNotificationDefsFilterablePreference>,
+  pub quote: Option<AppBskyNotificationDefsFilterablePreference>,
+  pub reply: Option<AppBskyNotificationDefsFilterablePreference>,
+  pub repost: Option<AppBskyNotificationDefsFilterablePreference>,
+  pub repost_via_repost: Option<AppBskyNotificationDefsFilterablePreference>,
+  pub starterpack_joined: Option<AppBskyNotificationDefsPreference>,
+  pub subscribed_post: Option<AppBskyNotificationDefsPreference>,
+  pub unverified: Option<AppBskyNotificationDefsPreference>,
+  pub verified: Option<AppBskyNotificationDefsPreference>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationPutPreferencesV2Output {
+  pub preferences: AppBskyNotificationDefsPreferences,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppBskyNotificationRegisterPushInput {
+  /// [format: did]
+  pub service_did: String,
+  pub token: String,
+  /// [known_values: ["ios", "android", "web"]]
+  pub platform: String,
+  pub app_id: String,
+  /// Set to true when the actor is age restricted
+  pub age_restricted: Option<bool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyNotificationUnregisterPushInput {
   /// [format: did]
   pub service_did: String,
   pub token: String,
@@ -2523,8 +2958,128 @@ pub struct AppBskyUnspeccedDefsTrendingTopic {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedDefsSkeletonTrend {
+  pub topic: String,
+  pub display_name: String,
+  pub link: String,
+  /// [format: datetime]
+  pub started_at: chrono::DateTime<chrono::Utc>,
+  pub post_count: i64,
+  /// [known_values: ["hot"]]
+  pub status: Option<String>,
+  pub category: Option<String>,
+  pub dids: Vec<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedDefsTrendView {
+  pub topic: String,
+  pub display_name: String,
+  pub link: String,
+  /// [format: datetime]
+  pub started_at: chrono::DateTime<chrono::Utc>,
+  pub post_count: i64,
+  /// [known_values: ["hot"]]
+  pub status: Option<String>,
+  pub category: Option<String>,
+  pub actors: Vec<AppBskyActorDefsProfileViewBasic>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedDefsThreadItemPost {
+  pub post: AppBskyFeedDefsPostView,
+  /// This post has more parents that were not present in the response. This is just a boolean, without the number of parents.
+  pub more_parents: bool,
+  /// This post has more replies that were not present in the response. This is a numeric value, which is best-effort and might not be accurate.
+  pub more_replies: i64,
+  /// This post is part of a contiguous thread by the OP from the thread root. Many different OP threads can happen in the same thread.
+  pub op_thread: bool,
+  /// The threadgate created by the author indicates this post as a reply to be hidden for everyone consuming the thread.
+  pub hidden_by_threadgate: bool,
+  /// This is by an account muted by the viewer requesting it.
+  pub muted_by_viewer: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AppBskyUnspeccedDefsThreadItemNoUnauthenticated(pub serde_json::Value);
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AppBskyUnspeccedDefsThreadItemNotFound(pub serde_json::Value);
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedDefsThreadItemBlocked {
+  pub author: AppBskyFeedDefsBlockedAuthor,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// The computed state of the age assurance process, returned to the user in question on certain authenticated requests.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedDefsAgeAssuranceState {
+  /// [format: datetime] The timestamp when this state was last updated.
+  pub last_initiated_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [known_values: ["unknown", "pending", "assured", "blocked"]] The status of the age assurance process.
+  pub status: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Object used to store age assurance data in stash.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedDefsAgeAssuranceEvent {
+  /// [format: datetime] The date and time of this write operation.
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  /// [known_values: ["unknown", "pending", "assured"]] The status of the age assurance process.
+  pub status: String,
+  /// The unique identifier for this instance of the age assurance flow, in UUID format.
+  pub attempt_id: String,
+  /// The email used for AA.
+  pub email: Option<String>,
+  /// The IP address used when initiating the AA flow.
+  pub init_ip: Option<String>,
+  /// The user agent used when initiating the AA flow.
+  pub init_ua: Option<String>,
+  /// The IP address used when completing the AA flow.
+  pub complete_ip: Option<String>,
+  /// The user agent used when completing the AA flow.
+  pub complete_ua: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AppBskyUnspeccedGetConfigOutput {
   pub check_email_confirmed: Option<bool>,
+  pub live_now: Option<Vec<AppBskyUnspeccedGetConfigLiveNowConfig>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetConfigLiveNowConfig {
+  /// [format: did]
+  pub did: String,
+  pub domains: Vec<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -2535,6 +3090,131 @@ pub struct AppBskyUnspeccedGetConfigOutput {
 pub struct AppBskyUnspeccedGetPopularFeedGeneratorsOutput {
   pub cursor: Option<String>,
   pub feeds: Vec<AppBskyFeedDefsGeneratorView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetPostThreadOtherV2Output {
+  /// A flat list of other thread items. The depth of each item is indicated by the depth property inside the item.
+  pub thread: Vec<AppBskyUnspeccedGetPostThreadOtherV2ThreadItem>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum AppBskyUnspeccedGetPostThreadOtherV2ThreadItemValueUnion {
+  #[serde(rename = "app.bsky.unspecced.defs#threadItemPost")]
+  AppBskyUnspeccedDefsThreadItemPost(Box<AppBskyUnspeccedDefsThreadItemPost>),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetPostThreadOtherV2ThreadItem {
+  /// [format: at-uri]
+  pub uri: String,
+  /// The nesting level of this item in the thread. Depth 0 means the anchor item. Items above have negative depths, items below have positive depths.
+  pub depth: i64,
+  pub value: AppBskyUnspeccedGetPostThreadOtherV2ThreadItemValueUnion,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetPostThreadV2Output {
+  /// A flat list of thread items. The depth of each item is indicated by the depth property inside the item.
+  pub thread: Vec<AppBskyUnspeccedGetPostThreadV2ThreadItem>,
+  pub threadgate: Option<AppBskyFeedDefsThreadgateView>,
+  /// Whether this thread has additional replies. If true, a call can be made to the `getPostThreadOtherV2` endpoint to retrieve them.
+  pub has_other_replies: bool,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum AppBskyUnspeccedGetPostThreadV2ThreadItemValueUnion {
+  #[serde(rename = "app.bsky.unspecced.defs#threadItemPost")]
+  AppBskyUnspeccedDefsThreadItemPost(Box<AppBskyUnspeccedDefsThreadItemPost>),
+  #[serde(rename = "app.bsky.unspecced.defs#threadItemNoUnauthenticated")]
+  AppBskyUnspeccedDefsThreadItemNoUnauthenticated(
+    Box<AppBskyUnspeccedDefsThreadItemNoUnauthenticated>,
+  ),
+  #[serde(rename = "app.bsky.unspecced.defs#threadItemNotFound")]
+  AppBskyUnspeccedDefsThreadItemNotFound(Box<AppBskyUnspeccedDefsThreadItemNotFound>),
+  #[serde(rename = "app.bsky.unspecced.defs#threadItemBlocked")]
+  AppBskyUnspeccedDefsThreadItemBlocked(Box<AppBskyUnspeccedDefsThreadItemBlocked>),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetPostThreadV2ThreadItem {
+  /// [format: at-uri]
+  pub uri: String,
+  /// The nesting level of this item in the thread. Depth 0 means the anchor item. Items above have negative depths, items below have positive depths.
+  pub depth: i64,
+  pub value: AppBskyUnspeccedGetPostThreadV2ThreadItemValueUnion,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetSuggestedFeedsOutput {
+  pub feeds: Vec<AppBskyFeedDefsGeneratorView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetSuggestedFeedsSkeletonOutput {
+  pub feeds: Vec<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetSuggestedStarterPacksOutput {
+  pub starter_packs: Vec<AppBskyGraphDefsStarterPackView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetSuggestedStarterPacksSkeletonOutput {
+  pub starter_packs: Vec<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetSuggestedUsersOutput {
+  pub actors: Vec<AppBskyActorDefsProfileView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetSuggestedUsersSkeletonOutput {
+  pub dids: Vec<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -2581,6 +3261,38 @@ pub struct AppBskyUnspeccedGetTaggedSuggestionsSuggestion {
 pub struct AppBskyUnspeccedGetTrendingTopicsOutput {
   pub topics: Vec<AppBskyUnspeccedDefsTrendingTopic>,
   pub suggested: Vec<AppBskyUnspeccedDefsTrendingTopic>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetTrendsOutput {
+  pub trends: Vec<AppBskyUnspeccedDefsTrendView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetTrendsSkeletonOutput {
+  pub trends: Vec<AppBskyUnspeccedDefsSkeletonTrend>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedInitAgeAssuranceInput {
+  /// The user's email address to receive assurance instructions.
+  pub email: String,
+  /// The user's preferred language for communication during the assurance process.
+  pub language: String,
+  /// An ISO 3166-1 alpha-2 code of the user's location.
+  pub country_code: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -2696,8 +3408,9 @@ pub struct ChatBskyActorDefsProfileViewBasic {
   pub associated: Option<AppBskyActorDefsProfileAssociated>,
   pub viewer: Option<AppBskyActorDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
-  /// Set to true when the actor cannot actively participate in converations
+  /// Set to true when the actor cannot actively participate in conversations
   pub chat_disabled: Option<bool>,
+  pub verification: Option<AppBskyActorDefsVerificationState>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -2730,7 +3443,7 @@ pub struct ChatBskyConvoAcceptConvoOutput {
 pub struct ChatBskyConvoAddReactionInput {
   pub convo_id: String,
   pub message_id: String,
-  /// [max_graphemes: 1] [max_length: 32] [min_length: 1]
+  /// [max_graphemes: 1] [max_length: 64] [min_length: 1]
   pub value: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -3189,7 +3902,7 @@ pub struct ChatBskyConvoMuteConvoOutput {
 pub struct ChatBskyConvoRemoveReactionInput {
   pub convo_id: String,
   pub message_id: String,
-  /// [max_graphemes: 1] [max_length: 32] [min_length: 1]
+  /// [max_graphemes: 1] [max_length: 64] [min_length: 1]
   pub value: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -3576,6 +4289,18 @@ pub struct ComAtprotoAdminUpdateAccountPasswordInput {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoAdminUpdateAccountSigningKeyInput {
+  /// [format: did]
+  pub did: String,
+  /// [format: did] Did-key formatted public key
+  pub signing_key: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
 pub enum ComAtprotoAdminUpdateSubjectStatusInputSubjectUnion {
@@ -3865,6 +4590,7 @@ pub struct ComAtprotoModerationCreateReportInput {
   /// [max_graphemes: 2000] [max_length: 20000] Additional context about the content and violation.
   pub reason: Option<String>,
   pub subject: ComAtprotoModerationCreateReportInputSubjectUnion,
+  pub mod_tool: Option<ComAtprotoModerationCreateReportModTool>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -3891,6 +4617,19 @@ pub struct ComAtprotoModerationCreateReportOutput {
   pub reported_by: String,
   /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Moderation tool information for tracing the source of the action
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoModerationCreateReportModTool {
+  /// Name/identifier of the source (e.g., 'bsky-app/android', 'bsky-web/chrome')
+  pub name: String,
+  /// Additional arbitrary metadata about the source
+  pub meta: Option<serde_json::Value>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -4643,12 +5382,29 @@ pub struct ComAtprotoServerUpdateEmailInput {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ComAtprotoSyncDefsHostStatus(pub String);
+
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoSyncGetHeadOutput {
   /// [format: cid]
   pub root: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoSyncGetHostStatusOutput {
+  pub hostname: String,
+  /// Recent repo stream event sequence number. May be delayed from actual stream processing (eg, persisted cursor not in-memory cursor).
+  pub seq: Option<i64>,
+  /// Number of accounts on the server which are associated with the upstream host. Note that the upstream may actually have more accounts.
+  pub account_count: Option<i64>,
+  pub status: Option<ComAtprotoSyncDefsHostStatus>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -4686,6 +5442,31 @@ pub struct ComAtprotoSyncGetRepoStatusOutput {
 pub struct ComAtprotoSyncListBlobsOutput {
   pub cursor: Option<String>,
   pub cids: Vec<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoSyncListHostsOutput {
+  pub cursor: Option<String>,
+  /// Sort order is not formally specified. Recommended order is by time host was first seen by the server, with oldest first.
+  pub hosts: Vec<ComAtprotoSyncListHostsHost>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoSyncListHostsHost {
+  /// hostname of server; not a URL (no scheme)
+  pub hostname: String,
+  /// Recent repo stream event sequence number. May be delayed from actual stream processing (eg, persisted cursor not in-memory cursor).
+  pub seq: Option<i64>,
+  pub account_count: Option<i64>,
+  pub status: Option<ComAtprotoSyncDefsHostStatus>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -4881,6 +5662,57 @@ pub struct ComAtprotoTempAddReservedHandleInput {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ComAtprotoTempAddReservedHandleOutput(pub serde_json::Value);
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ComAtprotoTempCheckHandleAvailabilityOutputResultUnion {
+  #[serde(rename = "com.atproto.temp.checkHandleAvailability#resultAvailable")]
+  ComAtprotoTempCheckHandleAvailabilityResultAvailable(
+    Box<ComAtprotoTempCheckHandleAvailabilityResultAvailable>,
+  ),
+  #[serde(rename = "com.atproto.temp.checkHandleAvailability#resultUnavailable")]
+  ComAtprotoTempCheckHandleAvailabilityResultUnavailable(
+    Box<ComAtprotoTempCheckHandleAvailabilityResultUnavailable>,
+  ),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoTempCheckHandleAvailabilityOutput {
+  /// [format: handle] Echo of the input handle.
+  pub handle: String,
+  pub result: ComAtprotoTempCheckHandleAvailabilityOutputResultUnion,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Indicates the provided handle is available.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ComAtprotoTempCheckHandleAvailabilityResultAvailable(pub serde_json::Value);
+
+/// Indicates the provided handle is unavailable and gives suggestions of available handles.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoTempCheckHandleAvailabilityResultUnavailable {
+  /// List of suggested handles based on the provided inputs.
+  pub suggestions: Vec<ComAtprotoTempCheckHandleAvailabilitySuggestion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoTempCheckHandleAvailabilitySuggestion {
+  /// [format: handle]
+  pub handle: String,
+  /// Method used to build this suggestion. Should be considered opaque to clients. Can be used for metrics.
+  pub method: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -4906,6 +5738,16 @@ pub struct ComAtprotoTempFetchLabelsOutput {
 #[serde(rename_all = "camelCase")]
 pub struct ComAtprotoTempRequestPhoneVerificationInput {
   pub phone_number: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoTempRevokeAccountCredentialsInput {
+  /// [format: at-identifier]
+  pub account: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -4991,6 +5833,95 @@ pub struct ToolsOzoneCommunicationUpdateTemplateInput {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneHostingGetAccountHistoryOutput {
+  pub cursor: Option<String>,
+  pub events: Vec<ToolsOzoneHostingGetAccountHistoryEvent>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ToolsOzoneHostingGetAccountHistoryEventDetailsUnion {
+  #[serde(rename = "tools.ozone.hosting.getAccountHistory#accountCreated")]
+  ToolsOzoneHostingGetAccountHistoryAccountCreated(
+    Box<ToolsOzoneHostingGetAccountHistoryAccountCreated>,
+  ),
+  #[serde(rename = "tools.ozone.hosting.getAccountHistory#emailUpdated")]
+  ToolsOzoneHostingGetAccountHistoryEmailUpdated(
+    Box<ToolsOzoneHostingGetAccountHistoryEmailUpdated>,
+  ),
+  #[serde(rename = "tools.ozone.hosting.getAccountHistory#emailConfirmed")]
+  ToolsOzoneHostingGetAccountHistoryEmailConfirmed(
+    Box<ToolsOzoneHostingGetAccountHistoryEmailConfirmed>,
+  ),
+  #[serde(rename = "tools.ozone.hosting.getAccountHistory#passwordUpdated")]
+  ToolsOzoneHostingGetAccountHistoryPasswordUpdated(
+    Box<ToolsOzoneHostingGetAccountHistoryPasswordUpdated>,
+  ),
+  #[serde(rename = "tools.ozone.hosting.getAccountHistory#handleUpdated")]
+  ToolsOzoneHostingGetAccountHistoryHandleUpdated(
+    Box<ToolsOzoneHostingGetAccountHistoryHandleUpdated>,
+  ),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneHostingGetAccountHistoryEvent {
+  pub details: ToolsOzoneHostingGetAccountHistoryEventDetailsUnion,
+  pub created_by: String,
+  /// [format: datetime]
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneHostingGetAccountHistoryAccountCreated {
+  pub email: Option<String>,
+  /// [format: handle]
+  pub handle: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneHostingGetAccountHistoryEmailUpdated {
+  pub email: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneHostingGetAccountHistoryEmailConfirmed {
+  pub email: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ToolsOzoneHostingGetAccountHistoryPasswordUpdated(pub serde_json::Value);
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneHostingGetAccountHistoryHandleUpdated {
+  /// [format: handle]
+  pub handle: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
 pub enum ToolsOzoneModerationDefsModEventViewEventUnion {
@@ -5036,6 +5967,12 @@ pub enum ToolsOzoneModerationDefsModEventViewEventUnion {
   ToolsOzoneModerationDefsRecordEvent(Box<ToolsOzoneModerationDefsRecordEvent>),
   #[serde(rename = "tools.ozone.moderation.defs#modEventPriorityScore")]
   ToolsOzoneModerationDefsModEventPriorityScore(Box<ToolsOzoneModerationDefsModEventPriorityScore>),
+  #[serde(rename = "tools.ozone.moderation.defs#ageAssuranceEvent")]
+  ToolsOzoneModerationDefsAgeAssuranceEvent(Box<ToolsOzoneModerationDefsAgeAssuranceEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#ageAssuranceOverrideEvent")]
+  ToolsOzoneModerationDefsAgeAssuranceOverrideEvent(
+    Box<ToolsOzoneModerationDefsAgeAssuranceOverrideEvent>,
+  ),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -5063,6 +6000,7 @@ pub struct ToolsOzoneModerationDefsModEventView {
   pub created_at: chrono::DateTime<chrono::Utc>,
   pub creator_handle: Option<String>,
   pub subject_handle: Option<String>,
+  pub mod_tool: Option<ToolsOzoneModerationDefsModTool>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -5112,6 +6050,12 @@ pub enum ToolsOzoneModerationDefsModEventViewDetailEventUnion {
   ToolsOzoneModerationDefsRecordEvent(Box<ToolsOzoneModerationDefsRecordEvent>),
   #[serde(rename = "tools.ozone.moderation.defs#modEventPriorityScore")]
   ToolsOzoneModerationDefsModEventPriorityScore(Box<ToolsOzoneModerationDefsModEventPriorityScore>),
+  #[serde(rename = "tools.ozone.moderation.defs#ageAssuranceEvent")]
+  ToolsOzoneModerationDefsAgeAssuranceEvent(Box<ToolsOzoneModerationDefsAgeAssuranceEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#ageAssuranceOverrideEvent")]
+  ToolsOzoneModerationDefsAgeAssuranceOverrideEvent(
+    Box<ToolsOzoneModerationDefsAgeAssuranceOverrideEvent>,
+  ),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -5139,6 +6083,7 @@ pub struct ToolsOzoneModerationDefsModEventViewDetail {
   pub created_by: String,
   /// [format: datetime]
   pub created_at: chrono::DateTime<chrono::Utc>,
+  pub mod_tool: Option<ToolsOzoneModerationDefsModTool>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -5150,6 +6095,8 @@ pub enum ToolsOzoneModerationDefsSubjectStatusViewSubjectUnion {
   ComAtprotoAdminDefsRepoRef(Box<ComAtprotoAdminDefsRepoRef>),
   #[serde(rename = "com.atproto.repo.strongRef")]
   ComAtprotoRepoStrongRef(Box<ComAtprotoRepoStrongRef>),
+  #[serde(rename = "chat.bsky.convo.defs#messageRef")]
+  ChatBskyConvoDefsMessageRef(Box<ChatBskyConvoDefsMessageRef>),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -5201,6 +6148,10 @@ pub struct ToolsOzoneModerationDefsSubjectStatusView {
   pub account_stats: Option<ToolsOzoneModerationDefsAccountStats>,
   /// Statistics related to the record subjects authored by the subject's account
   pub records_stats: Option<ToolsOzoneModerationDefsRecordsStats>,
+  /// [known_values: ["pending", "assured", "unknown", "reset", "blocked"]] Current age assurance state of the subject.
+  pub age_assurance_state: Option<String>,
+  /// [known_values: ["admin", "user"]] Whether or not the last successful update to age assurance was made by the user or admin.
+  pub age_assurance_updated_by: Option<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -5356,6 +6307,42 @@ pub struct ToolsOzoneModerationDefsModEventPriorityScore {
   pub comment: Option<String>,
   /// [minimum: 0] [maximum: 100]
   pub score: i64,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Age assurance info coming directly from users. Only works on DID subjects.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsAgeAssuranceEvent {
+  /// [format: datetime] The date and time of this write operation.
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  /// [known_values: ["unknown", "pending", "assured"]] The status of the age assurance process.
+  pub status: String,
+  /// The unique identifier for this instance of the age assurance flow, in UUID format.
+  pub attempt_id: String,
+  /// The IP address used when initiating the AA flow.
+  pub init_ip: Option<String>,
+  /// The user agent used when initiating the AA flow.
+  pub init_ua: Option<String>,
+  /// The IP address used when completing the AA flow.
+  pub complete_ip: Option<String>,
+  /// The user agent used when completing the AA flow.
+  pub complete_ua: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Age assurance status override by moderators. Only works on DID subjects.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsAgeAssuranceOverrideEvent {
+  /// [known_values: ["assured", "reset", "blocked"]] The status to be set for the user decided by a moderator, overriding whatever value the user had previously. Use reset to default to original state.
+  pub status: String,
+  /// Comment describing the reason for the override.
+  pub comment: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -5748,6 +6735,19 @@ pub struct ToolsOzoneModerationDefsReporterStats {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+/// Moderation tool information for tracing the source of the action
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsModTool {
+  /// Name/identifier of the source (e.g., 'automod', 'ozone/workspace')
+  pub name: String,
+  /// Additional arbitrary metadata about the source
+  pub meta: Option<serde_json::Value>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
 pub enum ToolsOzoneModerationEmitEventInputEventUnion {
@@ -5793,6 +6793,12 @@ pub enum ToolsOzoneModerationEmitEventInputEventUnion {
   ToolsOzoneModerationDefsRecordEvent(Box<ToolsOzoneModerationDefsRecordEvent>),
   #[serde(rename = "tools.ozone.moderation.defs#modEventPriorityScore")]
   ToolsOzoneModerationDefsModEventPriorityScore(Box<ToolsOzoneModerationDefsModEventPriorityScore>),
+  #[serde(rename = "tools.ozone.moderation.defs#ageAssuranceEvent")]
+  ToolsOzoneModerationDefsAgeAssuranceEvent(Box<ToolsOzoneModerationDefsAgeAssuranceEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#ageAssuranceOverrideEvent")]
+  ToolsOzoneModerationDefsAgeAssuranceOverrideEvent(
+    Box<ToolsOzoneModerationDefsAgeAssuranceOverrideEvent>,
+  ),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -5813,6 +6819,41 @@ pub struct ToolsOzoneModerationEmitEventInput {
   pub subject_blob_cids: Option<Vec<String>>,
   /// [format: did]
   pub created_by: String,
+  pub mod_tool: Option<ToolsOzoneModerationDefsModTool>,
+  /// An optional external ID for the event, used to deduplicate events from external systems. Fails when an event of same type with the same external ID exists for the same subject.
+  pub external_id: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationGetAccountTimelineOutput {
+  pub timeline: Vec<ToolsOzoneModerationGetAccountTimelineTimelineItem>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationGetAccountTimelineTimelineItem {
+  pub day: String,
+  pub summary: Vec<ToolsOzoneModerationGetAccountTimelineTimelineItemSummary>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationGetAccountTimelineTimelineItemSummary {
+  /// [known_values: ["account", "record", "chat"]]
+  pub event_subject_type: String,
+  /// [known_values: ["tools.ozone.moderation.defs#modEventTakedown", "tools.ozone.moderation.defs#modEventReverseTakedown", "tools.ozone.moderation.defs#modEventComment", "tools.ozone.moderation.defs#modEventReport", "tools.ozone.moderation.defs#modEventLabel", "tools.ozone.moderation.defs#modEventAcknowledge", "tools.ozone.moderation.defs#modEventEscalate", "tools.ozone.moderation.defs#modEventMute", "tools.ozone.moderation.defs#modEventUnmute", "tools.ozone.moderation.defs#modEventMuteReporter", "tools.ozone.moderation.defs#modEventUnmuteReporter", "tools.ozone.moderation.defs#modEventEmail", "tools.ozone.moderation.defs#modEventResolveAppeal", "tools.ozone.moderation.defs#modEventDivert", "tools.ozone.moderation.defs#modEventTag", "tools.ozone.moderation.defs#accountEvent", "tools.ozone.moderation.defs#identityEvent", "tools.ozone.moderation.defs#recordEvent", "tools.ozone.moderation.defs#modEventPriorityScore", "tools.ozone.moderation.defs#ageAssuranceEvent", "tools.ozone.moderation.defs#ageAssuranceOverrideEvent", "tools.ozone.moderation.defs#timelineEventPlcCreate", "tools.ozone.moderation.defs#timelineEventPlcOperation", "tools.ozone.moderation.defs#timelineEventPlcTombstone", "tools.ozone.hosting.getAccountHistory#accountCreated", "tools.ozone.hosting.getAccountHistory#emailConfirmed", "tools.ozone.hosting.getAccountHistory#passwordUpdated", "tools.ozone.hosting.getAccountHistory#handleUpdated"]]
+  pub event_type: String,
+  pub count: i64,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -5901,6 +6942,179 @@ pub struct ToolsOzoneModerationSearchReposOutput {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ToolsOzoneReportDefsReasonType(pub String);
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSafelinkAddRuleInput {
+  /// The URL or domain to apply the rule to
+  pub url: String,
+  pub pattern: ToolsOzoneSafelinkDefsPatternType,
+  pub action: ToolsOzoneSafelinkDefsActionType,
+  pub reason: ToolsOzoneSafelinkDefsReasonType,
+  /// Optional comment about the decision
+  pub comment: Option<String>,
+  /// [format: did] Author DID. Only respected when using admin auth
+  pub created_by: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// An event for URL safety decisions
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSafelinkDefsEvent {
+  /// Auto-incrementing row ID
+  pub id: i64,
+  pub event_type: ToolsOzoneSafelinkDefsEventType,
+  /// The URL that this rule applies to
+  pub url: String,
+  pub pattern: ToolsOzoneSafelinkDefsPatternType,
+  pub action: ToolsOzoneSafelinkDefsActionType,
+  pub reason: ToolsOzoneSafelinkDefsReasonType,
+  /// [format: did] DID of the user who created this rule
+  pub created_by: String,
+  /// [format: datetime]
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  /// Optional comment about the decision
+  pub comment: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ToolsOzoneSafelinkDefsEventType(pub String);
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ToolsOzoneSafelinkDefsPatternType(pub String);
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ToolsOzoneSafelinkDefsActionType(pub String);
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ToolsOzoneSafelinkDefsReasonType(pub String);
+
+/// Input for creating a URL safety rule
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSafelinkDefsUrlRule {
+  /// The URL or domain to apply the rule to
+  pub url: String,
+  pub pattern: ToolsOzoneSafelinkDefsPatternType,
+  pub action: ToolsOzoneSafelinkDefsActionType,
+  pub reason: ToolsOzoneSafelinkDefsReasonType,
+  /// Optional comment about the decision
+  pub comment: Option<String>,
+  /// [format: did] DID of the user added the rule.
+  pub created_by: String,
+  /// [format: datetime] Timestamp when the rule was created
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  /// [format: datetime] Timestamp when the rule was last updated
+  pub updated_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSafelinkQueryEventsInput {
+  /// Cursor for pagination
+  pub cursor: Option<String>,
+  /// [minimum: 1] [maximum: 100] [default: 50] Maximum number of results to return
+  pub limit: Option<i64>,
+  /// Filter by specific URLs or domains
+  pub urls: Option<Vec<String>>,
+  /// Filter by pattern type
+  pub pattern_type: Option<String>,
+  /// [known_values: ["asc", "desc"]] [default: desc] Sort direction
+  pub sort_direction: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSafelinkQueryEventsOutput {
+  /// Next cursor for pagination. Only present if there are more results.
+  pub cursor: Option<String>,
+  pub events: Vec<ToolsOzoneSafelinkDefsEvent>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSafelinkQueryRulesInput {
+  /// Cursor for pagination
+  pub cursor: Option<String>,
+  /// [minimum: 1] [maximum: 100] [default: 50] Maximum number of results to return
+  pub limit: Option<i64>,
+  /// Filter by specific URLs or domains
+  pub urls: Option<Vec<String>>,
+  /// Filter by pattern type
+  pub pattern_type: Option<String>,
+  /// Filter by action types
+  pub actions: Option<Vec<String>>,
+  /// Filter by reason type
+  pub reason: Option<String>,
+  /// [format: did] Filter by rule creator
+  pub created_by: Option<String>,
+  /// [known_values: ["asc", "desc"]] [default: desc] Sort direction
+  pub sort_direction: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSafelinkQueryRulesOutput {
+  /// Next cursor for pagination. Only present if there are more results.
+  pub cursor: Option<String>,
+  pub rules: Vec<ToolsOzoneSafelinkDefsUrlRule>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSafelinkRemoveRuleInput {
+  /// The URL or domain to remove the rule for
+  pub url: String,
+  pub pattern: ToolsOzoneSafelinkDefsPatternType,
+  /// Optional comment about why the rule is being removed
+  pub comment: Option<String>,
+  /// [format: did] Optional DID of the user. Only respected when using admin auth.
+  pub created_by: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneSafelinkUpdateRuleInput {
+  /// The URL or domain to update the rule for
+  pub url: String,
+  pub pattern: ToolsOzoneSafelinkDefsPatternType,
+  pub action: ToolsOzoneSafelinkDefsActionType,
+  pub reason: ToolsOzoneSafelinkDefsReasonType,
+  /// Optional comment about the update
+  pub comment: Option<String>,
+  /// [format: did] Optional DID to credit as the creator. Only respected for admin_token authentication.
+  pub created_by: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -5910,6 +7124,8 @@ pub struct ToolsOzoneServerGetConfigOutput {
   pub blob_divert: Option<ToolsOzoneServerGetConfigServiceConfig>,
   pub chat: Option<ToolsOzoneServerGetConfigServiceConfig>,
   pub viewer: Option<ToolsOzoneServerGetConfigViewerConfig>,
+  /// [format: did] The did of the verifier used for verification.
+  pub verifier_did: Option<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -5928,7 +7144,7 @@ pub struct ToolsOzoneServerGetConfigServiceConfig {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneServerGetConfigViewerConfig {
-  /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage"]]
+  /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage", "tools.ozone.team.defs#roleVerifier"]]
   pub role: Option<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -6036,7 +7252,7 @@ pub struct ToolsOzoneSettingDefsOption {
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
   /// [format: datetime]
   pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
-  /// [known_values: ["tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage", "tools.ozone.team.defs#roleAdmin"]]
+  /// [known_values: ["tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage", "tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleVerifier"]]
   pub manager_role: Option<String>,
   /// [known_values: ["instance", "personal"]]
   pub scope: String,
@@ -6084,7 +7300,7 @@ pub struct ToolsOzoneSettingUpsertOptionInput {
   pub value: serde_json::Value,
   /// [max_length: 2000]
   pub description: Option<String>,
-  /// [known_values: ["tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage", "tools.ozone.team.defs#roleAdmin"]]
+  /// [known_values: ["tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage", "tools.ozone.team.defs#roleVerifier", "tools.ozone.team.defs#roleAdmin"]]
   pub manager_role: Option<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -6154,7 +7370,7 @@ pub struct ToolsOzoneSignatureSearchAccountsOutput {
 pub struct ToolsOzoneTeamAddMemberInput {
   /// [format: did]
   pub did: String,
-  /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage"]]
+  /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleVerifier", "tools.ozone.team.defs#roleTriage"]]
   pub role: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -6173,7 +7389,7 @@ pub struct ToolsOzoneTeamDefsMember {
   /// [format: datetime]
   pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
   pub last_updated_by: Option<String>,
-  /// [known_values: ["#roleAdmin", "#roleModerator", "#roleTriage"]]
+  /// [known_values: ["#roleAdmin", "#roleModerator", "#roleTriage", "#roleVerifier"]]
   pub role: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -6206,8 +7422,161 @@ pub struct ToolsOzoneTeamUpdateMemberInput {
   /// [format: did]
   pub did: String,
   pub disabled: Option<bool>,
-  /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage"]]
+  /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleVerifier", "tools.ozone.team.defs#roleTriage"]]
   pub role: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ToolsOzoneVerificationDefsVerificationViewSubjectProfileUnion {}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ToolsOzoneVerificationDefsVerificationViewIssuerProfileUnion {}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ToolsOzoneVerificationDefsVerificationViewSubjectRepoUnion {
+  #[serde(rename = "tools.ozone.moderation.defs#repoViewDetail")]
+  ToolsOzoneModerationDefsRepoViewDetail(Box<ToolsOzoneModerationDefsRepoViewDetail>),
+  #[serde(rename = "tools.ozone.moderation.defs#repoViewNotFound")]
+  ToolsOzoneModerationDefsRepoViewNotFound(Box<ToolsOzoneModerationDefsRepoViewNotFound>),
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ToolsOzoneVerificationDefsVerificationViewIssuerRepoUnion {
+  #[serde(rename = "tools.ozone.moderation.defs#repoViewDetail")]
+  ToolsOzoneModerationDefsRepoViewDetail(Box<ToolsOzoneModerationDefsRepoViewDetail>),
+  #[serde(rename = "tools.ozone.moderation.defs#repoViewNotFound")]
+  ToolsOzoneModerationDefsRepoViewNotFound(Box<ToolsOzoneModerationDefsRepoViewNotFound>),
+}
+
+/// Verification data for the associated subject.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneVerificationDefsVerificationView {
+  /// [format: did] The user who issued this verification.
+  pub issuer: String,
+  /// [format: at-uri] The AT-URI of the verification record.
+  pub uri: String,
+  /// [format: did] The subject of the verification.
+  pub subject: String,
+  /// [format: handle] Handle of the subject the verification applies to at the moment of verifying, which might not be the same at the time of viewing. The verification is only valid if the current handle matches the one at the time of verifying.
+  pub handle: String,
+  /// Display name of the subject the verification applies to at the moment of verifying, which might not be the same at the time of viewing. The verification is only valid if the current displayName matches the one at the time of verifying.
+  pub display_name: String,
+  /// [format: datetime] Timestamp when the verification was created.
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  /// Describes the reason for revocation, also indicating that the verification is no longer valid.
+  pub revoke_reason: Option<String>,
+  /// [format: datetime] Timestamp when the verification was revoked.
+  pub revoked_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: did] The user who revoked this verification.
+  pub revoked_by: Option<String>,
+  pub subject_profile: Option<ToolsOzoneVerificationDefsVerificationViewSubjectProfileUnion>,
+  pub issuer_profile: Option<ToolsOzoneVerificationDefsVerificationViewIssuerProfileUnion>,
+  pub subject_repo: Option<ToolsOzoneVerificationDefsVerificationViewSubjectRepoUnion>,
+  pub issuer_repo: Option<ToolsOzoneVerificationDefsVerificationViewIssuerRepoUnion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneVerificationGrantVerificationsInput {
+  /// [max_length: 100] Array of verification requests to process
+  pub verifications: Vec<ToolsOzoneVerificationGrantVerificationsVerificationInput>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneVerificationGrantVerificationsOutput {
+  pub verifications: Vec<ToolsOzoneVerificationDefsVerificationView>,
+  pub failed_verifications: Vec<ToolsOzoneVerificationGrantVerificationsGrantError>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneVerificationGrantVerificationsVerificationInput {
+  /// [format: did] The did of the subject being verified
+  pub subject: String,
+  /// [format: handle] Handle of the subject the verification applies to at the moment of verifying.
+  pub handle: String,
+  /// Display name of the subject the verification applies to at the moment of verifying.
+  pub display_name: String,
+  /// [format: datetime] Timestamp for verification record. Defaults to current time when not specified.
+  pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Error object for failed verifications.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneVerificationGrantVerificationsGrantError {
+  /// Error message describing the reason for failure.
+  pub error: String,
+  /// [format: did] The did of the subject being verified
+  pub subject: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneVerificationListVerificationsOutput {
+  pub cursor: Option<String>,
+  pub verifications: Vec<ToolsOzoneVerificationDefsVerificationView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneVerificationRevokeVerificationsInput {
+  /// [max_length: 100] Array of verification record uris to revoke
+  pub uris: Vec<String>,
+  /// [max_length: 1000] Reason for revoking the verification. This is optional and can be omitted if not needed.
+  pub revoke_reason: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneVerificationRevokeVerificationsOutput {
+  /// List of verification uris successfully revoked
+  pub revoked_verifications: Vec<String>,
+  /// List of verification uris that couldn't be revoked, including failure reasons
+  pub failed_revocations: Vec<ToolsOzoneVerificationRevokeVerificationsRevokeError>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Error object for failed revocations
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneVerificationRevokeVerificationsRevokeError {
+  /// [format: at-uri] The AT-URI of the verification record that failed to revoke.
+  pub uri: String,
+  /// Description of the error that occurred during revocation.
+  pub error: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -6651,6 +8020,174 @@ impl Atproto {
       .client
       .get(&format!(
         "https://{}/xrpc/app.bsky.actor.searchActorsTypeahead",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Creates a private bookmark for the specified record. Currently, only `app.bsky.feed.post` records are supported. Requires authentication.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `UnsupportedCollection` - The URI to be bookmarked is for an unsupported collection.
+  pub async fn app_bsky_bookmark_create_bookmark(
+    &self,
+    body: AppBskyBookmarkCreateBookmarkInput,
+  ) -> Result<()> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/app.bsky.bookmark.createBookmark",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    Ok(())
+  }
+
+  /// Deletes a private bookmark for the specified record. Currently, only `app.bsky.feed.post` records are supported. Requires authentication.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `UnsupportedCollection` - The URI to be bookmarked is for an unsupported collection.
+  pub async fn app_bsky_bookmark_delete_bookmark(
+    &self,
+    body: AppBskyBookmarkDeleteBookmarkInput,
+  ) -> Result<()> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/app.bsky.bookmark.deleteBookmark",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    Ok(())
+  }
+
+  /// Gets views of records bookmarked by the authenticated user. Requires authentication.
+  ///
+  /// # Arguments
+  ///
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
+  /// * `cursor`
+  pub async fn app_bsky_bookmark_get_bookmarks(
+    &self,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+  ) -> Result<AppBskyBookmarkGetBookmarksOutput> {
+    let mut query_ = Vec::new();
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.bookmark.getBookmarks",
         self.host
       ))
       .query(&query_);
@@ -7701,7 +9238,7 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
-  /// Find posts matching search criteria, returning views of those posts.
+  /// Find posts matching search criteria, returning views of those posts. Note that this API endpoint may require authentication (eg, not public) for some service providers and implementations.
   ///
   /// # Arguments
   ///
@@ -8371,11 +9908,13 @@ impl Atproto {
   /// * `actor` - [format: at-identifier] The account (actor) to enumerate lists from.
   /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
   /// * `cursor`
+  /// * `purposes` - Optional filter by list purpose. If not specified, all supported types are returned.
   pub async fn app_bsky_graph_get_lists(
     &self,
     actor: &str,
     limit: Option<i64>,
     cursor: Option<&str>,
+    purposes: Option<&[&str]>,
   ) -> Result<AppBskyGraphGetListsOutput> {
     let mut query_ = Vec::new();
     query_.push((String::from("actor"), actor.to_string()));
@@ -8385,10 +9924,91 @@ impl Atproto {
     if let Some(cursor) = &cursor {
       query_.push((String::from("cursor"), cursor.to_string()));
     }
+    if let Some(purposes) = &purposes {
+      query_.append(
+        &mut purposes
+          .iter()
+          .map(|i| (String::from("purposes"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
+    }
     let mut request = self
       .client
       .get(&format!(
         "https://{}/xrpc/app.bsky.graph.getLists",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Enumerates the lists created by the session user, and includes membership information about `actor` in those lists. Only supports curation and moderation lists (no reference lists, used in starter packs). Requires auth.
+  ///
+  /// # Arguments
+  ///
+  /// * `actor` - [format: at-identifier] The account (actor) to check for membership.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
+  /// * `cursor`
+  /// * `purposes` - Optional filter by list purpose. If not specified, all supported types are returned.
+  pub async fn app_bsky_graph_get_lists_with_membership(
+    &self,
+    actor: &str,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+    purposes: Option<&[&str]>,
+  ) -> Result<AppBskyGraphGetListsWithMembershipOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("actor"), actor.to_string()));
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    if let Some(purposes) = &purposes {
+      query_.append(
+        &mut purposes
+          .iter()
+          .map(|i| (String::from("purposes"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.graph.getListsWithMembership",
         self.host
       ))
       .query(&query_);
@@ -8627,6 +10247,69 @@ impl Atproto {
       .client
       .get(&format!(
         "https://{}/xrpc/app.bsky.graph.getStarterPacks",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Enumerates the starter packs created by the session user, and includes membership information about `actor` in those starter packs. Requires auth.
+  ///
+  /// # Arguments
+  ///
+  /// * `actor` - [format: at-identifier] The account (actor) to check for membership.
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
+  /// * `cursor`
+  pub async fn app_bsky_graph_get_starter_packs_with_membership(
+    &self,
+    actor: &str,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+  ) -> Result<AppBskyGraphGetStarterPacksWithMembershipOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("actor"), actor.to_string()));
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.graph.getStarterPacksWithMembership",
         self.host
       ))
       .query(&query_);
@@ -9138,6 +10821,49 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
+  /// Get notification-related preferences for an account. Requires auth.
+  pub async fn app_bsky_notification_get_preferences(
+    &self,
+  ) -> Result<AppBskyNotificationGetPreferencesOutput> {
+    let mut request = self.client.get(&format!(
+      "https://{}/xrpc/app.bsky.notification.getPreferences",
+      self.host
+    ));
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// Count the number of unread notifications for the requesting account. Requires auth.
   ///
   /// # Arguments
@@ -9160,6 +10886,66 @@ impl Atproto {
       .client
       .get(&format!(
         "https://{}/xrpc/app.bsky.notification.getUnreadCount",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Enumerate all accounts to which the requesting account is subscribed to receive notifications for. Requires auth.
+  ///
+  /// # Arguments
+  ///
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
+  /// * `cursor`
+  pub async fn app_bsky_notification_list_activity_subscriptions(
+    &self,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+  ) -> Result<AppBskyNotificationListActivitySubscriptionsOutput> {
+    let mut query_ = Vec::new();
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.notification.listActivitySubscriptions",
         self.host
       ))
       .query(&query_);
@@ -9278,6 +11064,57 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
+  /// Puts an activity subscription entry. The key should be omitted for creation and provided for updates. Requires auth.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn app_bsky_notification_put_activity_subscription(
+    &self,
+    body: AppBskyNotificationPutActivitySubscriptionInput,
+  ) -> Result<AppBskyNotificationPutActivitySubscriptionOutput> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/app.bsky.notification.putActivitySubscription",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// Set notification-related preferences for an account. Requires auth.
   ///
   /// # Arguments
@@ -9328,6 +11165,57 @@ impl Atproto {
     Ok(())
   }
 
+  /// Set notification-related preferences for an account. Requires auth.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn app_bsky_notification_put_preferences_v2(
+    &self,
+    body: AppBskyNotificationPutPreferencesV2Input,
+  ) -> Result<AppBskyNotificationPutPreferencesV2Output> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/app.bsky.notification.putPreferencesV2",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// Register to receive push notifications, via a specified service, for the requesting account. Requires auth.
   ///
   /// # Arguments
@@ -9341,6 +11229,56 @@ impl Atproto {
       .client
       .post(&format!(
         "https://{}/xrpc/app.bsky.notification.registerPush",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    Ok(())
+  }
+
+  /// The inverse of registerPush - inform a specified service that push notifications should no longer be sent to the given token for the requesting account. Requires auth.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn app_bsky_notification_unregister_push(
+    &self,
+    body: AppBskyNotificationUnregisterPushInput,
+  ) -> Result<()> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/app.bsky.notification.unregisterPush",
         self.host
       ))
       .json(&body);
@@ -9428,6 +11366,49 @@ impl Atproto {
     Ok(())
   }
 
+  /// Returns the current state of the age assurance process for an account. This is used to check if the user has completed age assurance or if further action is required.
+  pub async fn app_bsky_unspecced_get_age_assurance_state(
+    &self,
+  ) -> Result<AppBskyUnspeccedDefsAgeAssuranceState> {
+    let mut request = self.client.get(&format!(
+      "https://{}/xrpc/app.bsky.unspecced.getAgeAssuranceState",
+      self.host
+    ));
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// Get miscellaneous runtime configuration.
   pub async fn app_bsky_unspecced_get_config(&self) -> Result<AppBskyUnspeccedGetConfigOutput> {
     let mut request = self.client.get(&format!(
@@ -9496,6 +11477,506 @@ impl Atproto {
       .client
       .get(&format!(
         "https://{}/xrpc/app.bsky.unspecced.getPopularFeedGenerators",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// (NOTE: this endpoint is under development and WILL change without notice. Don't use it until it is moved out of `unspecced` or your application WILL break) Get additional posts under a thread e.g. replies hidden by threadgate. Based on an anchor post at any depth of the tree, returns top-level replies below that anchor. It does not include ancestors nor the anchor itself. This should be called after exhausting `app.bsky.unspecced.getPostThreadV2`. Does not require auth, but additional metadata and filtering will be applied for authed requests.
+  ///
+  /// # Arguments
+  ///
+  /// * `anchor` - [format: at-uri] Reference (AT-URI) to post record. This is the anchor post.
+  /// * `prioritize_followed_users` - [default: false] Whether to prioritize posts from followed users. It only has effect when the user is authenticated.
+  pub async fn app_bsky_unspecced_get_post_thread_other_v2(
+    &self,
+    anchor: &str,
+    prioritize_followed_users: Option<bool>,
+  ) -> Result<AppBskyUnspeccedGetPostThreadOtherV2Output> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("anchor"), anchor.to_string()));
+    if let Some(prioritize_followed_users) = &prioritize_followed_users {
+      query_.push((
+        String::from("prioritize_followed_users"),
+        prioritize_followed_users.to_string(),
+      ));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getPostThreadOtherV2",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// (NOTE: this endpoint is under development and WILL change without notice. Don't use it until it is moved out of `unspecced` or your application WILL break) Get posts in a thread. It is based in an anchor post at any depth of the tree, and returns posts above it (recursively resolving the parent, without further branching to their replies) and below it (recursive replies, with branching to their replies). Does not require auth, but additional metadata and filtering will be applied for authed requests.
+  ///
+  /// # Arguments
+  ///
+  /// * `anchor` - [format: at-uri] Reference (AT-URI) to post record. This is the anchor post, and the thread will be built around it. It can be any post in the tree, not necessarily a root post.
+  /// * `above` - [default: true] Whether to include parents above the anchor.
+  /// * `below` - [minimum: 0] [maximum: 20] [default: 6] How many levels of replies to include below the anchor.
+  /// * `branching_factor` - [minimum: 0] [maximum: 100] [default: 10] Maximum of replies to include at each level of the thread, except for the direct replies to the anchor, which are (NOTE: currently, during unspecced phase) all returned (NOTE: later they might be paginated).
+  /// * `prioritize_followed_users` - [default: false] Whether to prioritize posts from followed users. It only has effect when the user is authenticated.
+  /// * `sort` - [known_values: ["newest", "oldest", "top"]] [default: oldest] Sorting for the thread replies.
+  pub async fn app_bsky_unspecced_get_post_thread_v2(
+    &self,
+    anchor: &str,
+    above: Option<bool>,
+    below: Option<i64>,
+    branching_factor: Option<i64>,
+    prioritize_followed_users: Option<bool>,
+    sort: Option<&str>,
+  ) -> Result<AppBskyUnspeccedGetPostThreadV2Output> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("anchor"), anchor.to_string()));
+    if let Some(above) = &above {
+      query_.push((String::from("above"), above.to_string()));
+    }
+    if let Some(below) = &below {
+      query_.push((String::from("below"), below.to_string()));
+    }
+    if let Some(branching_factor) = &branching_factor {
+      query_.push((
+        String::from("branching_factor"),
+        branching_factor.to_string(),
+      ));
+    }
+    if let Some(prioritize_followed_users) = &prioritize_followed_users {
+      query_.push((
+        String::from("prioritize_followed_users"),
+        prioritize_followed_users.to_string(),
+      ));
+    }
+    if let Some(sort) = &sort {
+      query_.push((String::from("sort"), sort.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getPostThreadV2",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get a list of suggested feeds
+  ///
+  /// # Arguments
+  ///
+  /// * `limit` - [minimum: 1] [maximum: 25] [default: 10]
+  pub async fn app_bsky_unspecced_get_suggested_feeds(
+    &self,
+    limit: Option<i64>,
+  ) -> Result<AppBskyUnspeccedGetSuggestedFeedsOutput> {
+    let mut query_ = Vec::new();
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getSuggestedFeeds",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get a skeleton of suggested feeds. Intended to be called and hydrated by app.bsky.unspecced.getSuggestedFeeds
+  ///
+  /// # Arguments
+  ///
+  /// * `viewer` - [format: did] DID of the account making the request (not included for public/unauthenticated queries).
+  /// * `limit` - [minimum: 1] [maximum: 25] [default: 10]
+  pub async fn app_bsky_unspecced_get_suggested_feeds_skeleton(
+    &self,
+    viewer: Option<&str>,
+    limit: Option<i64>,
+  ) -> Result<AppBskyUnspeccedGetSuggestedFeedsSkeletonOutput> {
+    let mut query_ = Vec::new();
+    if let Some(viewer) = &viewer {
+      query_.push((String::from("viewer"), viewer.to_string()));
+    }
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getSuggestedFeedsSkeleton",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get a list of suggested starterpacks
+  ///
+  /// # Arguments
+  ///
+  /// * `limit` - [minimum: 1] [maximum: 25] [default: 10]
+  pub async fn app_bsky_unspecced_get_suggested_starter_packs(
+    &self,
+    limit: Option<i64>,
+  ) -> Result<AppBskyUnspeccedGetSuggestedStarterPacksOutput> {
+    let mut query_ = Vec::new();
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getSuggestedStarterPacks",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get a skeleton of suggested starterpacks. Intended to be called and hydrated by app.bsky.unspecced.getSuggestedStarterpacks
+  ///
+  /// # Arguments
+  ///
+  /// * `viewer` - [format: did] DID of the account making the request (not included for public/unauthenticated queries).
+  /// * `limit` - [minimum: 1] [maximum: 25] [default: 10]
+  pub async fn app_bsky_unspecced_get_suggested_starter_packs_skeleton(
+    &self,
+    viewer: Option<&str>,
+    limit: Option<i64>,
+  ) -> Result<AppBskyUnspeccedGetSuggestedStarterPacksSkeletonOutput> {
+    let mut query_ = Vec::new();
+    if let Some(viewer) = &viewer {
+      query_.push((String::from("viewer"), viewer.to_string()));
+    }
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getSuggestedStarterPacksSkeleton",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get a list of suggested users
+  ///
+  /// # Arguments
+  ///
+  /// * `category` - Category of users to get suggestions for.
+  /// * `limit` - [minimum: 1] [maximum: 50] [default: 25]
+  pub async fn app_bsky_unspecced_get_suggested_users(
+    &self,
+    category: Option<&str>,
+    limit: Option<i64>,
+  ) -> Result<AppBskyUnspeccedGetSuggestedUsersOutput> {
+    let mut query_ = Vec::new();
+    if let Some(category) = &category {
+      query_.push((String::from("category"), category.to_string()));
+    }
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getSuggestedUsers",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get a skeleton of suggested users. Intended to be called and hydrated by app.bsky.unspecced.getSuggestedUsers
+  ///
+  /// # Arguments
+  ///
+  /// * `viewer` - [format: did] DID of the account making the request (not included for public/unauthenticated queries).
+  /// * `category` - Category of users to get suggestions for.
+  /// * `limit` - [minimum: 1] [maximum: 50] [default: 25]
+  pub async fn app_bsky_unspecced_get_suggested_users_skeleton(
+    &self,
+    viewer: Option<&str>,
+    category: Option<&str>,
+    limit: Option<i64>,
+  ) -> Result<AppBskyUnspeccedGetSuggestedUsersSkeletonOutput> {
+    let mut query_ = Vec::new();
+    if let Some(viewer) = &viewer {
+      query_.push((String::from("viewer"), viewer.to_string()));
+    }
+    if let Some(category) = &category {
+      query_.push((String::from("category"), category.to_string()));
+    }
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getSuggestedUsersSkeleton",
         self.host
       ))
       .query(&query_);
@@ -9672,6 +12153,178 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get the current trends on the network
+  ///
+  /// # Arguments
+  ///
+  /// * `limit` - [minimum: 1] [maximum: 25] [default: 10]
+  pub async fn app_bsky_unspecced_get_trends(
+    &self,
+    limit: Option<i64>,
+  ) -> Result<AppBskyUnspeccedGetTrendsOutput> {
+    let mut query_ = Vec::new();
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getTrends",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get the skeleton of trends on the network. Intended to be called and then hydrated through app.bsky.unspecced.getTrends
+  ///
+  /// # Arguments
+  ///
+  /// * `viewer` - [format: did] DID of the account making the request (not included for public/unauthenticated queries).
+  /// * `limit` - [minimum: 1] [maximum: 25] [default: 10]
+  pub async fn app_bsky_unspecced_get_trends_skeleton(
+    &self,
+    viewer: Option<&str>,
+    limit: Option<i64>,
+  ) -> Result<AppBskyUnspeccedGetTrendsSkeletonOutput> {
+    let mut query_ = Vec::new();
+    if let Some(viewer) = &viewer {
+      query_.push((String::from("viewer"), viewer.to_string()));
+    }
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getTrendsSkeleton",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Initiate age assurance for an account. This is a one-time action that will start the process of verifying the user's age.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `InvalidEmail`
+  /// * `DidTooLong`
+  /// * `InvalidInitiation`
+  pub async fn app_bsky_unspecced_init_age_assurance(
+    &self,
+    body: AppBskyUnspeccedInitAgeAssuranceInput,
+  ) -> Result<AppBskyUnspeccedDefsAgeAssuranceState> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.initAgeAssurance",
+        self.host
+      ))
+      .json(&body);
     if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
@@ -11948,6 +14601,56 @@ impl Atproto {
       .client
       .post(&format!(
         "https://{}/xrpc/com.atproto.admin.updateAccountPassword",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    Ok(())
+  }
+
+  /// Administrative action to update an account's signing key in their Did document.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn com_atproto_admin_update_account_signing_key(
+    &self,
+    body: ComAtprotoAdminUpdateAccountSigningKeyInput,
+  ) -> Result<()> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/com.atproto.admin.updateAccountSigningKey",
         self.host
       ))
       .json(&body);
@@ -14726,6 +17429,63 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
+  /// Returns information about a specified upstream host, as consumed by the server. Implemented by relays.
+  ///
+  /// # Arguments
+  ///
+  /// * `hostname` - Hostname of the host (eg, PDS or relay) being queried.
+  ///
+  /// # Errors
+  ///
+  /// * `HostNotFound`
+  pub async fn com_atproto_sync_get_host_status(
+    &self,
+    hostname: &str,
+  ) -> Result<ComAtprotoSyncGetHostStatusOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("hostname"), hostname.to_string()));
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/com.atproto.sync.getHostStatus",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// Get the current commit CID & revision of the specified repo. Does not require auth.
   ///
   /// # Arguments
@@ -15044,6 +17804,66 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
+  /// Enumerates upstream hosts (eg, PDS or relay instances) that this service consumes from. Implemented by relays.
+  ///
+  /// # Arguments
+  ///
+  /// * `limit` - [minimum: 1] [maximum: 1000] [default: 200]
+  /// * `cursor`
+  pub async fn com_atproto_sync_list_hosts(
+    &self,
+    limit: Option<i64>,
+    cursor: Option<&str>,
+  ) -> Result<ComAtprotoSyncListHostsOutput> {
+    let mut query_ = Vec::new();
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/com.atproto.sync.listHosts",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// Enumerates all the DID, rev, and commit CID for all repos hosted by this service. Does not require auth; implemented by PDS and Relay.
   ///
   /// # Arguments
@@ -15222,6 +18042,10 @@ impl Atproto {
   /// # Arguments
   ///
   /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `HostBanned`
   pub async fn com_atproto_sync_request_crawl(
     &self,
     body: ComAtprotoSyncRequestCrawlInput,
@@ -15328,6 +18152,73 @@ impl Atproto {
         self.host
       ))
       .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Checks whether the provided handle is available. If the handle is not available, available suggestions will be returned. Optional inputs will be used to generate suggestions.
+  ///
+  /// # Arguments
+  ///
+  /// * `handle` - [format: handle] Tentative handle. Will be checked for availability or used to build handle suggestions.
+  /// * `email` - User-provided email. Might be used to build handle suggestions.
+  /// * `birth_date` - [format: datetime] User-provided birth date. Might be used to build handle suggestions.
+  ///
+  /// # Errors
+  ///
+  /// * `InvalidEmail` - An invalid email was provided.
+  pub async fn com_atproto_temp_check_handle_availability(
+    &self,
+    handle: &str,
+    email: Option<&str>,
+    birth_date: Option<&chrono::DateTime<chrono::Utc>>,
+  ) -> Result<ComAtprotoTempCheckHandleAvailabilityOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("handle"), handle.to_string()));
+    if let Some(email) = &email {
+      query_.push((String::from("email"), email.to_string()));
+    }
+    if let Some(birth_date) = &birth_date {
+      query_.push((String::from("birth_date"), birth_date.to_rfc3339()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/com.atproto.temp.checkHandleAvailability",
+        self.host
+      ))
+      .query(&query_);
     if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
@@ -15479,6 +18370,56 @@ impl Atproto {
       .client
       .post(&format!(
         "https://{}/xrpc/com.atproto.temp.requestPhoneVerification",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    Ok(())
+  }
+
+  /// Revoke sessions, password, and app passwords associated with account. May be resolved by a password reset.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn com_atproto_temp_revoke_account_credentials(
+    &self,
+    body: ComAtprotoTempRevokeAccountCredentialsInput,
+  ) -> Result<()> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/com.atproto.temp.revokeAccountCredentials",
         self.host
       ))
       .json(&body);
@@ -15719,6 +18660,79 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
+  /// Get account history, e.g. log of updated email addresses or other identity information.
+  ///
+  /// # Arguments
+  ///
+  /// * `did` - [format: did]
+  /// * `events`
+  /// * `cursor`
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50]
+  pub async fn tools_ozone_hosting_get_account_history(
+    &self,
+    did: &str,
+    events: Option<&[&str]>,
+    cursor: Option<&str>,
+    limit: Option<i64>,
+  ) -> Result<ToolsOzoneHostingGetAccountHistoryOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("did"), did.to_string()));
+    if let Some(events) = &events {
+      query_.append(
+        &mut events
+          .iter()
+          .map(|i| (String::from("events"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
+    }
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.hosting.getAccountHistory",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// Take a moderation action on an actor.
   ///
   /// # Arguments
@@ -15728,6 +18742,7 @@ impl Atproto {
   /// # Errors
   ///
   /// * `SubjectHasAction`
+  /// * `DuplicateExternalId` - An event with the same external ID already exists for the subject.
   pub async fn tools_ozone_moderation_emit_event(
     &self,
     body: ToolsOzoneModerationEmitEventInput,
@@ -15739,6 +18754,63 @@ impl Atproto {
         self.host
       ))
       .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get timeline of all available events of an account. This includes moderation events, account history and did history.
+  ///
+  /// # Arguments
+  ///
+  /// * `did` - [format: did]
+  ///
+  /// # Errors
+  ///
+  /// * `RepoNotFound`
+  pub async fn tools_ozone_moderation_get_account_timeline(
+    &self,
+    did: &str,
+  ) -> Result<ToolsOzoneModerationGetAccountTimelineOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("did"), did.to_string()));
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.moderation.getAccountTimeline",
+        self.host
+      ))
+      .query(&query_);
     if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
@@ -16200,6 +19272,9 @@ impl Atproto {
   /// * `removed_tags` - If specified, only events where all of these tags were removed are returned
   /// * `report_types`
   /// * `policies`
+  /// * `mod_tool` - If specified, only events where the modTool name matches any of the given values are returned
+  /// * `batch_id` - If specified, only events where the batchId matches the given value are returned
+  /// * `age_assurance_state` - [known_values: ["pending", "assured", "unknown", "reset", "blocked"]] If specified, only events where the age assurance state matches the given value are returned
   /// * `cursor`
   pub async fn tools_ozone_moderation_query_events(
     &self,
@@ -16221,6 +19296,9 @@ impl Atproto {
     removed_tags: Option<&[&str]>,
     report_types: Option<&[&str]>,
     policies: Option<&[&str]>,
+    mod_tool: Option<&[&str]>,
+    batch_id: Option<&str>,
+    age_assurance_state: Option<&str>,
     cursor: Option<&str>,
   ) -> Result<ToolsOzoneModerationQueryEventsOutput> {
     let mut query_ = Vec::new();
@@ -16321,6 +19399,23 @@ impl Atproto {
           .collect::<Vec<_>>(),
       );
     }
+    if let Some(mod_tool) = &mod_tool {
+      query_.append(
+        &mut mod_tool
+          .iter()
+          .map(|i| (String::from("mod_tool"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
+    }
+    if let Some(batch_id) = &batch_id {
+      query_.push((String::from("batch_id"), batch_id.to_string()));
+    }
+    if let Some(age_assurance_state) = &age_assurance_state {
+      query_.push((
+        String::from("age_assurance_state"),
+        age_assurance_state.to_string(),
+      ));
+    }
     if let Some(cursor) = &cursor {
       query_.push((String::from("cursor"), cursor.to_string()));
     }
@@ -16404,6 +19499,7 @@ impl Atproto {
   /// * `min_reported_records_count` - If specified, only subjects that belong to an account that has at least this many reported records will be returned.
   /// * `min_takendown_records_count` - If specified, only subjects that belong to an account that has at least this many taken down records will be returned.
   /// * `min_priority_score` - [minimum: 0] [maximum: 100] If specified, only subjects that have priority score value above the given value will be returned.
+  /// * `age_assurance_state` - [known_values: ["pending", "assured", "unknown", "reset", "blocked"]] If specified, only subjects with the given age assurance state will be returned.
   pub async fn tools_ozone_moderation_query_statuses(
     &self,
     queue_count: Option<i64>,
@@ -16440,6 +19536,7 @@ impl Atproto {
     min_reported_records_count: Option<i64>,
     min_takendown_records_count: Option<i64>,
     min_priority_score: Option<i64>,
+    age_assurance_state: Option<&str>,
   ) -> Result<ToolsOzoneModerationQueryStatusesOutput> {
     let mut query_ = Vec::new();
     if let Some(queue_count) = &queue_count {
@@ -16605,6 +19702,12 @@ impl Atproto {
         min_priority_score.to_string(),
       ));
     }
+    if let Some(age_assurance_state) = &age_assurance_state {
+      query_.push((
+        String::from("age_assurance_state"),
+        age_assurance_state.to_string(),
+      ));
+    }
     let mut request = self
       .client
       .get(&format!(
@@ -16682,6 +19785,274 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Add a new URL safety rule
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `InvalidUrl` - The provided URL is invalid
+  /// * `RuleAlreadyExists` - A rule for this URL/domain already exists
+  pub async fn tools_ozone_safelink_add_rule(
+    &self,
+    body: ToolsOzoneSafelinkAddRuleInput,
+  ) -> Result<ToolsOzoneSafelinkDefsEvent> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.safelink.addRule",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Query URL safety audit events
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn tools_ozone_safelink_query_events(
+    &self,
+    body: ToolsOzoneSafelinkQueryEventsInput,
+  ) -> Result<ToolsOzoneSafelinkQueryEventsOutput> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.safelink.queryEvents",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Query URL safety rules
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn tools_ozone_safelink_query_rules(
+    &self,
+    body: ToolsOzoneSafelinkQueryRulesInput,
+  ) -> Result<ToolsOzoneSafelinkQueryRulesOutput> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.safelink.queryRules",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Remove an existing URL safety rule
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `RuleNotFound` - No active rule found for this URL/domain
+  pub async fn tools_ozone_safelink_remove_rule(
+    &self,
+    body: ToolsOzoneSafelinkRemoveRuleInput,
+  ) -> Result<ToolsOzoneSafelinkDefsEvent> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.safelink.removeRule",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Update an existing URL safety rule
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `RuleNotFound` - No active rule found for this URL/domain
+  pub async fn tools_ozone_safelink_update_rule(
+    &self,
+    body: ToolsOzoneSafelinkUpdateRuleInput,
+  ) -> Result<ToolsOzoneSafelinkDefsEvent> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.safelink.updateRule",
+        self.host
+      ))
+      .json(&body);
     if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
@@ -17685,6 +21056,208 @@ impl Atproto {
       .client
       .post(&format!(
         "https://{}/xrpc/tools.ozone.team.updateMember",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Grant verifications to multiple subjects. Allows batch processing of up to 100 verifications at once.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn tools_ozone_verification_grant_verifications(
+    &self,
+    body: ToolsOzoneVerificationGrantVerificationsInput,
+  ) -> Result<ToolsOzoneVerificationGrantVerificationsOutput> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.verification.grantVerifications",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// List verifications
+  ///
+  /// # Arguments
+  ///
+  /// * `cursor` - Pagination cursor
+  /// * `limit` - [minimum: 1] [maximum: 100] [default: 50] Maximum number of results to return
+  /// * `created_after` - [format: datetime] Filter to verifications created after this timestamp
+  /// * `created_before` - [format: datetime] Filter to verifications created before this timestamp
+  /// * `issuers` - [max_length: 100] Filter to verifications from specific issuers
+  /// * `subjects` - [max_length: 100] Filter to specific verified DIDs
+  /// * `sort_direction` - [default: desc] [enum: ["asc", "desc"]] Sort direction for creation date
+  /// * `is_revoked` - Filter to verifications that are revoked or not. By default, includes both.
+  pub async fn tools_ozone_verification_list_verifications(
+    &self,
+    cursor: Option<&str>,
+    limit: Option<i64>,
+    created_after: Option<&chrono::DateTime<chrono::Utc>>,
+    created_before: Option<&chrono::DateTime<chrono::Utc>>,
+    issuers: Option<&[&str]>,
+    subjects: Option<&[&str]>,
+    sort_direction: Option<&str>,
+    is_revoked: Option<bool>,
+  ) -> Result<ToolsOzoneVerificationListVerificationsOutput> {
+    let mut query_ = Vec::new();
+    if let Some(cursor) = &cursor {
+      query_.push((String::from("cursor"), cursor.to_string()));
+    }
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    if let Some(created_after) = &created_after {
+      query_.push((String::from("created_after"), created_after.to_rfc3339()));
+    }
+    if let Some(created_before) = &created_before {
+      query_.push((String::from("created_before"), created_before.to_rfc3339()));
+    }
+    if let Some(issuers) = &issuers {
+      query_.append(
+        &mut issuers
+          .iter()
+          .map(|i| (String::from("issuers"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
+    }
+    if let Some(subjects) = &subjects {
+      query_.append(
+        &mut subjects
+          .iter()
+          .map(|i| (String::from("subjects"), i.to_string()))
+          .collect::<Vec<_>>(),
+      );
+    }
+    if let Some(sort_direction) = &sort_direction {
+      query_.push((String::from("sort_direction"), sort_direction.to_string()));
+    }
+    if let Some(is_revoked) = &is_revoked {
+      query_.push((String::from("is_revoked"), is_revoked.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/tools.ozone.verification.listVerifications",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Revoke previously granted verifications in batches of up to 100.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn tools_ozone_verification_revoke_verifications(
+    &self,
+    body: ToolsOzoneVerificationRevokeVerificationsInput,
+  ) -> Result<ToolsOzoneVerificationRevokeVerificationsOutput> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.verification.revokeVerifications",
         self.host
       ))
       .json(&body);

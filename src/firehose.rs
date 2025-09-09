@@ -180,32 +180,33 @@ pub async fn token_thread(
   user_dict: Option<String>,
 ) {
   let mut counter: u64 = 0;
-  let mut builder = lindera::tokenizer::TokenizerBuilder::new().unwrap();
-  builder.set_segmenter_dictionary_kind(&lindera::dictionary::DictionaryKind::IPADIC);
-  builder.set_segmenter_mode(&lindera::mode::Mode::Normal);
-  if let Some(u) = &user_dict {
-    let path = std::path::Path::new(u);
-    if path.exists() {
-      builder.set_segmenter_user_dictionary_path(path);
-      builder.set_segmenter_user_dictionary_kind(&lindera::dictionary::DictionaryKind::IPADIC);
-      tracing::info!("TOKEN_THREAD : LOAD USER DICTIONARY : {u}");
+  let dictionary = match lindera::dictionary::load_dictionary("embedded://ipadic") {
+    Ok(d) => d,
+    Err(e) => {
+      tracing::error!("{e}");
+      std::process::exit(0);
     }
-  }
-  let mut tokenizer = builder.build().unwrap();
+  };
+  let segmenter = lindera::segmenter::Segmenter::new(
+    lindera::mode::Mode::Normal,
+    dictionary.clone(),
+    user_dict.as_ref().and_then(|u| {
+      lindera::dictionary::load_user_dictionary(u, &lindera::dictionary::Metadata::default()).ok()
+    }),
+  );
+  let mut tokenizer = lindera::tokenizer::Tokenizer::new(segmenter);
   let mut last_loaded = tokio::time::Instant::now();
   loop {
     if last_loaded.elapsed() > std::time::Duration::from_secs(600) {
-      let mut builder = lindera::tokenizer::TokenizerBuilder::new().unwrap();
-      builder.set_segmenter_dictionary_kind(&lindera::dictionary::DictionaryKind::IPADIC);
-      builder.set_segmenter_mode(&lindera::mode::Mode::Normal);
-      if let Some(u) = &user_dict {
-        let path = std::path::Path::new(u);
-        if path.exists() {
-          builder.set_segmenter_user_dictionary_path(path);
-          builder.set_segmenter_user_dictionary_kind(&lindera::dictionary::DictionaryKind::IPADIC);
-        }
-      }
-      tokenizer = builder.build().unwrap();
+      let segmenter = lindera::segmenter::Segmenter::new(
+        lindera::mode::Mode::Normal,
+        dictionary.clone(),
+        user_dict.as_ref().and_then(|u| {
+          lindera::dictionary::load_user_dictionary(u, &lindera::dictionary::Metadata::default())
+            .ok()
+        }),
+      );
+      tokenizer = lindera::tokenizer::Tokenizer::new(segmenter);
       last_loaded = tokio::time::Instant::now();
       if let Some(u) = &user_dict {
         tracing::info!("TOKEN_THREAD : RELOAD USER DICTIONARY : {u}");
