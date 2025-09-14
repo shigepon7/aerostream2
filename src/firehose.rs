@@ -225,7 +225,7 @@ pub async fn token_thread(
           .iter_mut()
           .map(|t| {
             vec![
-              vec![t.text.to_string()],
+              vec![t.surface.to_string()],
               t.details()
                 .iter()
                 .map(|t| t.to_string())
