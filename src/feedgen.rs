@@ -404,7 +404,8 @@ impl FeedGenerator {
     let app = axum::Router::new()
       .route("/xrpc/{nsid}", axum::routing::get(xrpc_server))
       .route("/.well-known/did.json", axum::routing::get(did_document))
-      .layer(tower_http::timeout::TimeoutLayer::new(
+      .layer(tower_http::timeout::TimeoutLayer::with_status_code(
+        http::StatusCode::REQUEST_TIMEOUT,
         std::time::Duration::from_secs(30),
       ))
       .with_state(self.clone());

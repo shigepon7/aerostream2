@@ -18,11 +18,12 @@ ciborium = "0.2.2"
 data-encoding = "2.8.0"
 dotenvy = "0.15.7"
 futures-util = "0.3.31"
-indexmap = "2.11.1"
+http = "1.4.0"
+indexmap = "2.12.1"
 ipld-core = {version = "0.4.2", features = ["serde"]}
 lindera = {version = "1.1.2", features = ["embedded-ipadic"]}
 mime_guess = "2.0.5"
-reqwest = {version = "0.12.15", features = ["json"]}
+reqwest = {version = "0.12.24", default-features = false, features = ["json", "rustls-tls-webpki-roots"]}
 reqwest-websocket = "0.5.1"
 rs-car = "0.5.0"
 serde = {version = "1.0.219", features = ["derive"]}

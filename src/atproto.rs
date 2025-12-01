@@ -155,6 +155,7 @@ pub struct AppBskyActorDefsProfileViewBasic {
   pub handle: String,
   /// [max_graphemes: 64] [max_length: 640]
   pub display_name: Option<String>,
+  pub pronouns: Option<String>,
   /// [format: uri]
   pub avatar: Option<String>,
   pub associated: Option<AppBskyActorDefsProfileAssociated>,
@@ -164,6 +165,8 @@ pub struct AppBskyActorDefsProfileViewBasic {
   pub created_at: Option<chrono::DateTime<chrono::Utc>>,
   pub verification: Option<AppBskyActorDefsVerificationState>,
   pub status: Option<AppBskyActorDefsStatusView>,
+  /// Debug information for internal development
+  pub debug: Option<serde_json::Value>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -178,6 +181,7 @@ pub struct AppBskyActorDefsProfileView {
   pub handle: String,
   /// [max_graphemes: 64] [max_length: 640]
   pub display_name: Option<String>,
+  pub pronouns: Option<String>,
   /// [max_graphemes: 256] [max_length: 2560]
   pub description: Option<String>,
   /// [format: uri]
@@ -191,6 +195,8 @@ pub struct AppBskyActorDefsProfileView {
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub verification: Option<AppBskyActorDefsVerificationState>,
   pub status: Option<AppBskyActorDefsStatusView>,
+  /// Debug information for internal development
+  pub debug: Option<serde_json::Value>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -207,6 +213,9 @@ pub struct AppBskyActorDefsProfileViewDetailed {
   pub display_name: Option<String>,
   /// [max_graphemes: 256] [max_length: 2560]
   pub description: Option<String>,
+  pub pronouns: Option<String>,
+  /// [format: uri]
+  pub website: Option<String>,
   /// [format: uri]
   pub avatar: Option<String>,
   /// [format: uri]
@@ -225,6 +234,8 @@ pub struct AppBskyActorDefsProfileViewDetailed {
   pub pinned_post: Option<ComAtprotoRepoStrongRef>,
   pub verification: Option<AppBskyActorDefsVerificationState>,
   pub status: Option<AppBskyActorDefsStatusView>,
+  /// Debug information for internal development
+  pub debug: Option<serde_json::Value>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -458,8 +469,6 @@ pub struct AppBskyActorDefsFeedViewPref {
 pub struct AppBskyActorDefsThreadViewPref {
   /// [known_values: ["oldest", "newest", "most-likes", "random", "hotness"]] Sorting mode for threads.
   pub sort: Option<String>,
-  /// Show followed users at the top of all replies.
-  pub prioritize_followed_users: Option<bool>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -696,6 +705,10 @@ pub struct AppBskyActorProfile {
   pub display_name: Option<String>,
   /// [max_graphemes: 256] [max_length: 2560] Free-form profile description text.,
   pub description: Option<String>,
+  /// [max_graphemes: 20] [max_length: 200] Free-form pronouns text.,
+  pub pronouns: Option<String>,
+  /// [format: uri],
+  pub website: Option<String>,
   /// [accept: ["image/png", "image/jpeg"]] [max_size: 1000000] Small image to be displayed next to posts from account. AKA, 'profile picture',
   pub avatar: Option<Blob>,
   /// [accept: ["image/png", "image/jpeg"]] [max_size: 1000000] Larger horizontal image to display behind profile view.,
@@ -760,6 +773,236 @@ pub struct AppBskyActorStatus {
   pub duration_minutes: Option<i64>,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceBeginInput {
+  /// The user's email address to receive Age Assurance instructions.
+  pub email: String,
+  /// The user's preferred language for communication during the Age Assurance process.
+  pub language: String,
+  /// An ISO 3166-1 alpha-2 code of the user's location.
+  pub country_code: String,
+  /// An optional ISO 3166-2 code of the user's region or state within the country.
+  pub region_code: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// The access level granted based on Age Assurance data we've processed.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AppBskyAgeassuranceDefsAccess(pub String);
+
+/// The status of the Age Assurance process.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AppBskyAgeassuranceDefsStatus(pub String);
+
+/// The user's computed Age Assurance state.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceDefsState {
+  /// [format: datetime] The timestamp when this state was last updated.
+  pub last_initiated_at: Option<chrono::DateTime<chrono::Utc>>,
+  pub status: AppBskyAgeassuranceDefsStatus,
+  pub access: AppBskyAgeassuranceDefsAccess,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Additional metadata needed to compute Age Assurance state client-side.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceDefsStateMetadata {
+  /// [format: datetime] The account creation timestamp.
+  pub account_created_at: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+///
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceDefsConfig {
+  /// The per-region Age Assurance configuration.
+  pub regions: Vec<AppBskyAgeassuranceDefsConfigRegion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum AppBskyAgeassuranceDefsConfigRegionRulesUnion {
+  #[serde(rename = "app.bsky.ageassurance.defs#configRegionRuleDefault")]
+  AppBskyAgeassuranceDefsConfigRegionRuleDefault(
+    Box<AppBskyAgeassuranceDefsConfigRegionRuleDefault>,
+  ),
+  #[serde(rename = "app.bsky.ageassurance.defs#configRegionRuleIfDeclaredOverAge")]
+  AppBskyAgeassuranceDefsConfigRegionRuleIfDeclaredOverAge(
+    Box<AppBskyAgeassuranceDefsConfigRegionRuleIfDeclaredOverAge>,
+  ),
+  #[serde(rename = "app.bsky.ageassurance.defs#configRegionRuleIfDeclaredUnderAge")]
+  AppBskyAgeassuranceDefsConfigRegionRuleIfDeclaredUnderAge(
+    Box<AppBskyAgeassuranceDefsConfigRegionRuleIfDeclaredUnderAge>,
+  ),
+  #[serde(rename = "app.bsky.ageassurance.defs#configRegionRuleIfAssuredOverAge")]
+  AppBskyAgeassuranceDefsConfigRegionRuleIfAssuredOverAge(
+    Box<AppBskyAgeassuranceDefsConfigRegionRuleIfAssuredOverAge>,
+  ),
+  #[serde(rename = "app.bsky.ageassurance.defs#configRegionRuleIfAssuredUnderAge")]
+  AppBskyAgeassuranceDefsConfigRegionRuleIfAssuredUnderAge(
+    Box<AppBskyAgeassuranceDefsConfigRegionRuleIfAssuredUnderAge>,
+  ),
+  #[serde(rename = "app.bsky.ageassurance.defs#configRegionRuleIfAccountNewerThan")]
+  AppBskyAgeassuranceDefsConfigRegionRuleIfAccountNewerThan(
+    Box<AppBskyAgeassuranceDefsConfigRegionRuleIfAccountNewerThan>,
+  ),
+  #[serde(rename = "app.bsky.ageassurance.defs#configRegionRuleIfAccountOlderThan")]
+  AppBskyAgeassuranceDefsConfigRegionRuleIfAccountOlderThan(
+    Box<AppBskyAgeassuranceDefsConfigRegionRuleIfAccountOlderThan>,
+  ),
+}
+
+/// The Age Assurance configuration for a specific region.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceDefsConfigRegion {
+  /// The ISO 3166-1 alpha-2 country code this configuration applies to.
+  pub country_code: String,
+  /// The ISO 3166-2 region code this configuration applies to. If omitted, the configuration applies to the entire country.
+  pub region_code: Option<String>,
+  /// The ordered list of Age Assurance rules that apply to this region. Rules should be applied in order, and the first matching rule determines the access level granted. The rules array should always include a default rule as the last item.
+  pub rules: Vec<AppBskyAgeassuranceDefsConfigRegionRulesUnion>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Age Assurance rule that applies by default.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceDefsConfigRegionRuleDefault {
+  pub access: AppBskyAgeassuranceDefsAccess,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Age Assurance rule that applies if the user has declared themselves equal-to or over a certain age.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceDefsConfigRegionRuleIfDeclaredOverAge {
+  /// The age threshold as a whole integer.
+  pub age: i64,
+  pub access: AppBskyAgeassuranceDefsAccess,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Age Assurance rule that applies if the user has declared themselves under a certain age.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceDefsConfigRegionRuleIfDeclaredUnderAge {
+  /// The age threshold as a whole integer.
+  pub age: i64,
+  pub access: AppBskyAgeassuranceDefsAccess,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Age Assurance rule that applies if the user has been assured to be equal-to or over a certain age.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceDefsConfigRegionRuleIfAssuredOverAge {
+  /// The age threshold as a whole integer.
+  pub age: i64,
+  pub access: AppBskyAgeassuranceDefsAccess,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Age Assurance rule that applies if the user has been assured to be under a certain age.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceDefsConfigRegionRuleIfAssuredUnderAge {
+  /// The age threshold as a whole integer.
+  pub age: i64,
+  pub access: AppBskyAgeassuranceDefsAccess,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Age Assurance rule that applies if the account is equal-to or newer than a certain date.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceDefsConfigRegionRuleIfAccountNewerThan {
+  /// [format: datetime] The date threshold as a datetime string.
+  pub date: chrono::DateTime<chrono::Utc>,
+  pub access: AppBskyAgeassuranceDefsAccess,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Age Assurance rule that applies if the account is older than a certain date.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceDefsConfigRegionRuleIfAccountOlderThan {
+  /// [format: datetime] The date threshold as a datetime string.
+  pub date: chrono::DateTime<chrono::Utc>,
+  pub access: AppBskyAgeassuranceDefsAccess,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Object used to store Age Assurance data in stash.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceDefsEvent {
+  /// [format: datetime] The date and time of this write operation.
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  /// The unique identifier for this instance of the Age Assurance flow, in UUID format.
+  pub attempt_id: String,
+  /// [known_values: ["unknown", "pending", "assured", "blocked"]] The status of the Age Assurance process.
+  pub status: String,
+  /// [known_values: ["unknown", "none", "safe", "full"]] The access level granted based on Age Assurance data we've processed.
+  pub access: String,
+  /// The ISO 3166-1 alpha-2 country code provided when beginning the Age Assurance flow.
+  pub country_code: String,
+  /// The ISO 3166-2 region code provided when beginning the Age Assurance flow.
+  pub region_code: Option<String>,
+  /// The email used for Age Assurance.
+  pub email: Option<String>,
+  /// The IP address used when initiating the Age Assurance flow.
+  pub init_ip: Option<String>,
+  /// The user agent used when initiating the Age Assurance flow.
+  pub init_ua: Option<String>,
+  /// The IP address used when completing the Age Assurance flow.
+  pub complete_ip: Option<String>,
+  /// The user agent used when completing the Age Assurance flow.
+  pub complete_ua: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyAgeassuranceGetStateOutput {
+  pub state: AppBskyAgeassuranceDefsState,
+  pub metadata: AppBskyAgeassuranceDefsStateMetadata,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -1175,6 +1418,8 @@ pub struct AppBskyFeedDefsPostView {
   pub viewer: Option<AppBskyFeedDefsViewerState>,
   pub labels: Option<Vec<ComAtprotoLabelDefsLabel>>,
   pub threadgate: Option<AppBskyFeedDefsThreadgateView>,
+  /// Debug information for internal development
+  pub debug: Option<serde_json::Value>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -1902,7 +2147,7 @@ pub struct AppBskyFeedThreadgate {
   pub allow: Option<Vec<AppBskyFeedThreadgateAllowUnion>>,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
-  /// [max_length: 50] List of hidden reply URIs.,
+  /// [max_length: 300] List of hidden reply URIs.,
   pub hidden_replies: Option<Vec<String>>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -2105,6 +2350,7 @@ pub struct AppBskyGraphFollow {
   pub subject: String,
   /// [format: datetime],
   pub created_at: chrono::DateTime<chrono::Utc>,
+  pub via: Option<ComAtprotoRepoStrongRef>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -3080,6 +3326,24 @@ pub struct AppBskyUnspeccedGetConfigLiveNowConfig {
   /// [format: did]
   pub did: String,
   pub domains: Vec<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetOnboardingSuggestedStarterPacksOutput {
+  pub starter_packs: Vec<AppBskyGraphDefsStarterPackView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppBskyUnspeccedGetOnboardingSuggestedStarterPacksSkeletonOutput {
+  pub starter_packs: Vec<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -4561,6 +4825,20 @@ pub struct ComAtprotoLabelSubscribeLabelsInfo {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComAtprotoLexiconResolveLexiconOutput {
+  /// [format: cid] The CID of the lexicon schema record.
+  pub cid: String,
+  /// The resolved lexicon schema record.
+  pub schema: ComAtprotoLexiconSchema,
+  /// [format: at-uri] The AT-URI of the lexicon schema record.
+  pub uri: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 /// Representation of Lexicon schemas themselves, when published as atproto records. Note that the schema language is not defined in Lexicon; this meta schema currently only includes a single version field ('lexicon'). See the atproto specifications for description of the other expected top-level fields ('id', 'defs', etc).
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -5727,6 +6005,16 @@ pub struct ComAtprotoTempCheckSignupQueueOutput {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ComAtprotoTempDereferenceScopeOutput {
+  /// The full oauth permission scope
+  pub scope: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ComAtprotoTempFetchLabelsOutput {
   pub labels: Vec<ComAtprotoLabelDefsLabel>,
   #[serde(flatten)]
@@ -5922,6 +6210,42 @@ pub struct ToolsOzoneHostingGetAccountHistoryHandleUpdated {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationCancelScheduledActionsInput {
+  /// [max_length: 100] Array of DID subjects to cancel scheduled actions for
+  pub subjects: Vec<String>,
+  /// Optional comment describing the reason for cancellation
+  pub comment: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationCancelScheduledActionsCancellationResults {
+  /// DIDs for which all pending scheduled actions were successfully cancelled
+  pub succeeded: Vec<String>,
+  /// DIDs for which cancellation failed with error details
+  pub failed: Vec<ToolsOzoneModerationCancelScheduledActionsFailedCancellation>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationCancelScheduledActionsFailedCancellation {
+  /// [format: did]
+  pub did: String,
+  pub error: String,
+  pub error_code: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
 pub enum ToolsOzoneModerationDefsModEventViewEventUnion {
@@ -5972,6 +6296,16 @@ pub enum ToolsOzoneModerationDefsModEventViewEventUnion {
   #[serde(rename = "tools.ozone.moderation.defs#ageAssuranceOverrideEvent")]
   ToolsOzoneModerationDefsAgeAssuranceOverrideEvent(
     Box<ToolsOzoneModerationDefsAgeAssuranceOverrideEvent>,
+  ),
+  #[serde(rename = "tools.ozone.moderation.defs#revokeAccountCredentialsEvent")]
+  ToolsOzoneModerationDefsRevokeAccountCredentialsEvent(
+    Box<ToolsOzoneModerationDefsRevokeAccountCredentialsEvent>,
+  ),
+  #[serde(rename = "tools.ozone.moderation.defs#scheduleTakedownEvent")]
+  ToolsOzoneModerationDefsScheduleTakedownEvent(Box<ToolsOzoneModerationDefsScheduleTakedownEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#cancelScheduledTakedownEvent")]
+  ToolsOzoneModerationDefsCancelScheduledTakedownEvent(
+    Box<ToolsOzoneModerationDefsCancelScheduledTakedownEvent>,
   ),
 }
 
@@ -6055,6 +6389,16 @@ pub enum ToolsOzoneModerationDefsModEventViewDetailEventUnion {
   #[serde(rename = "tools.ozone.moderation.defs#ageAssuranceOverrideEvent")]
   ToolsOzoneModerationDefsAgeAssuranceOverrideEvent(
     Box<ToolsOzoneModerationDefsAgeAssuranceOverrideEvent>,
+  ),
+  #[serde(rename = "tools.ozone.moderation.defs#revokeAccountCredentialsEvent")]
+  ToolsOzoneModerationDefsRevokeAccountCredentialsEvent(
+    Box<ToolsOzoneModerationDefsRevokeAccountCredentialsEvent>,
+  ),
+  #[serde(rename = "tools.ozone.moderation.defs#scheduleTakedownEvent")]
+  ToolsOzoneModerationDefsScheduleTakedownEvent(Box<ToolsOzoneModerationDefsScheduleTakedownEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#cancelScheduledTakedownEvent")]
+  ToolsOzoneModerationDefsCancelScheduledTakedownEvent(
+    Box<ToolsOzoneModerationDefsCancelScheduledTakedownEvent>,
   ),
 }
 
@@ -6148,6 +6492,8 @@ pub struct ToolsOzoneModerationDefsSubjectStatusView {
   pub account_stats: Option<ToolsOzoneModerationDefsAccountStats>,
   /// Statistics related to the record subjects authored by the subject's account
   pub records_stats: Option<ToolsOzoneModerationDefsRecordsStats>,
+  /// Strike information for the account (account-level only)
+  pub account_strike: Option<ToolsOzoneModerationDefsAccountStrike>,
   /// [known_values: ["pending", "assured", "unknown", "reset", "blocked"]] Current age assurance state of the subject.
   pub age_assurance_state: Option<String>,
   /// [known_values: ["admin", "user"]] Whether or not the last successful update to age assurance was made by the user or admin.
@@ -6219,6 +6565,23 @@ pub struct ToolsOzoneModerationDefsRecordsStats {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+/// Strike information for an account
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsAccountStrike {
+  /// Current number of active strikes (excluding expired strikes)
+  pub active_strike_count: Option<i64>,
+  /// Total number of strikes ever received (including expired strikes)
+  pub total_strike_count: Option<i64>,
+  /// [format: datetime] Timestamp of the first strike received
+  pub first_strike_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime] Timestamp of the most recent strike received
+  pub last_strike_at: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ToolsOzoneModerationDefsSubjectReviewState(pub String);
 
@@ -6234,6 +6597,14 @@ pub struct ToolsOzoneModerationDefsModEventTakedown {
   pub acknowledge_account_subjects: Option<bool>,
   /// [max_length: 5] Names/Keywords of the policies that drove the decision.
   pub policies: Option<Vec<String>>,
+  /// Severity level of the violation (e.g., 'sev-0', 'sev-1', 'sev-2', etc.).
+  pub severity_level: Option<String>,
+  /// List of services where the takedown should be applied. If empty or not provided, takedown is applied on all configured services.
+  pub target_services: Option<Vec<String>>,
+  /// Number of strikes to assign to the user for this violation.
+  pub strike_count: Option<i64>,
+  /// [format: datetime] When the strike should expire. If not provided, the strike never expires.
+  pub strike_expires_at: Option<chrono::DateTime<chrono::Utc>>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -6245,6 +6616,12 @@ pub struct ToolsOzoneModerationDefsModEventTakedown {
 pub struct ToolsOzoneModerationDefsModEventReverseTakedown {
   /// Describe reasoning behind the reversal.
   pub comment: Option<String>,
+  /// [max_length: 5] Names/Keywords of the policy infraction for which takedown is being reversed.
+  pub policies: Option<Vec<String>>,
+  /// Severity level of the violation. Usually set from the last policy infraction's severity.
+  pub severity_level: Option<String>,
+  /// Number of strikes to subtract from the user's strike count. Usually set from the last policy infraction's severity.
+  pub strike_count: Option<i64>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -6318,10 +6695,15 @@ pub struct ToolsOzoneModerationDefsModEventPriorityScore {
 pub struct ToolsOzoneModerationDefsAgeAssuranceEvent {
   /// [format: datetime] The date and time of this write operation.
   pub created_at: chrono::DateTime<chrono::Utc>,
-  /// [known_values: ["unknown", "pending", "assured"]] The status of the age assurance process.
-  pub status: String,
   /// The unique identifier for this instance of the age assurance flow, in UUID format.
   pub attempt_id: String,
+  /// [known_values: ["unknown", "pending", "assured"]] The status of the Age Assurance process.
+  pub status: String,
+  pub access: Option<AppBskyAgeassuranceDefsAccess>,
+  /// The ISO 3166-1 alpha-2 country code provided when beginning the Age Assurance flow.
+  pub country_code: Option<String>,
+  /// The ISO 3166-2 region code provided when beginning the Age Assurance flow.
+  pub region_code: Option<String>,
   /// The IP address used when initiating the AA flow.
   pub init_ip: Option<String>,
   /// The user agent used when initiating the AA flow.
@@ -6341,7 +6723,19 @@ pub struct ToolsOzoneModerationDefsAgeAssuranceEvent {
 pub struct ToolsOzoneModerationDefsAgeAssuranceOverrideEvent {
   /// [known_values: ["assured", "reset", "blocked"]] The status to be set for the user decided by a moderator, overriding whatever value the user had previously. Use reset to default to original state.
   pub status: String,
+  pub access: Option<AppBskyAgeassuranceDefsAccess>,
   /// Comment describing the reason for the override.
+  pub comment: String,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Account credentials revocation by moderators. Only works on DID subjects.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsRevokeAccountCredentialsEvent {
+  /// Comment describing the reason for the revocation.
   pub comment: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -6424,6 +6818,16 @@ pub struct ToolsOzoneModerationDefsModEventEmail {
   pub content: Option<String>,
   /// Additional comment about the outgoing comm.
   pub comment: Option<String>,
+  /// [max_length: 5] Names/Keywords of the policies that necessitated the email.
+  pub policies: Option<Vec<String>>,
+  /// Severity level of the violation. Normally 'sev-1' that adds strike on repeat offense
+  pub severity_level: Option<String>,
+  /// Number of strikes to assign to the user for this violation. Normally 0 as an indicator of a warning and only added as a strike on a repeat offense.
+  pub strike_count: Option<i64>,
+  /// [format: datetime] When the strike should expire. If not provided, the strike never expires.
+  pub strike_expires_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// Indicates whether the email was successfully delivered to the user's inbox.
+  pub is_delivered: Option<bool>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -6498,6 +6902,32 @@ pub struct ToolsOzoneModerationDefsRecordEvent {
   pub cid: Option<String>,
   /// [format: datetime]
   pub timestamp: chrono::DateTime<chrono::Utc>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Logs a scheduled takedown action for an account.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsScheduleTakedownEvent {
+  pub comment: Option<String>,
+  /// [format: datetime]
+  pub execute_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
+  pub execute_after: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime]
+  pub execute_until: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Logs cancellation of a scheduled takedown action for an account.
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsCancelScheduledTakedownEvent {
+  pub comment: Option<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -6748,6 +7178,45 @@ pub struct ToolsOzoneModerationDefsModTool {
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
+/// View of a scheduled moderation action
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationDefsScheduledActionView {
+  /// Auto-incrementing row ID
+  pub id: i64,
+  /// [known_values: ["takedown"]] Type of action to be executed
+  pub action: String,
+  /// Serialized event object that will be propagated to the event when performed
+  pub event_data: Option<serde_json::Value>,
+  /// [format: did] Subject DID for the action
+  pub did: String,
+  /// [format: datetime] Exact time to execute the action
+  pub execute_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime] Earliest time to execute the action (for randomized scheduling)
+  pub execute_after: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime] Latest time to execute the action (for randomized scheduling)
+  pub execute_until: Option<chrono::DateTime<chrono::Utc>>,
+  /// Whether execution time should be randomized within the specified range
+  pub randomize_execution: Option<bool>,
+  /// [format: did] DID of the user who created this scheduled action
+  pub created_by: String,
+  /// [format: datetime] When the scheduled action was created
+  pub created_at: chrono::DateTime<chrono::Utc>,
+  /// [format: datetime] When the scheduled action was last updated
+  pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [known_values: ["pending", "executed", "cancelled", "failed"]] Current status of the scheduled action
+  pub status: String,
+  /// [format: datetime] When the action was last attempted to be executed
+  pub last_executed_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// Reason for the last execution failure
+  pub last_failure_reason: Option<String>,
+  /// ID of the moderation event created when action was successfully executed
+  pub execution_event_id: Option<i64>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(tag = "$type")]
 pub enum ToolsOzoneModerationEmitEventInputEventUnion {
@@ -6798,6 +7267,16 @@ pub enum ToolsOzoneModerationEmitEventInputEventUnion {
   #[serde(rename = "tools.ozone.moderation.defs#ageAssuranceOverrideEvent")]
   ToolsOzoneModerationDefsAgeAssuranceOverrideEvent(
     Box<ToolsOzoneModerationDefsAgeAssuranceOverrideEvent>,
+  ),
+  #[serde(rename = "tools.ozone.moderation.defs#revokeAccountCredentialsEvent")]
+  ToolsOzoneModerationDefsRevokeAccountCredentialsEvent(
+    Box<ToolsOzoneModerationDefsRevokeAccountCredentialsEvent>,
+  ),
+  #[serde(rename = "tools.ozone.moderation.defs#scheduleTakedownEvent")]
+  ToolsOzoneModerationDefsScheduleTakedownEvent(Box<ToolsOzoneModerationDefsScheduleTakedownEvent>),
+  #[serde(rename = "tools.ozone.moderation.defs#cancelScheduledTakedownEvent")]
+  ToolsOzoneModerationDefsCancelScheduledTakedownEvent(
+    Box<ToolsOzoneModerationDefsCancelScheduledTakedownEvent>,
   ),
 }
 
@@ -6851,7 +7330,7 @@ pub struct ToolsOzoneModerationGetAccountTimelineTimelineItem {
 pub struct ToolsOzoneModerationGetAccountTimelineTimelineItemSummary {
   /// [known_values: ["account", "record", "chat"]]
   pub event_subject_type: String,
-  /// [known_values: ["tools.ozone.moderation.defs#modEventTakedown", "tools.ozone.moderation.defs#modEventReverseTakedown", "tools.ozone.moderation.defs#modEventComment", "tools.ozone.moderation.defs#modEventReport", "tools.ozone.moderation.defs#modEventLabel", "tools.ozone.moderation.defs#modEventAcknowledge", "tools.ozone.moderation.defs#modEventEscalate", "tools.ozone.moderation.defs#modEventMute", "tools.ozone.moderation.defs#modEventUnmute", "tools.ozone.moderation.defs#modEventMuteReporter", "tools.ozone.moderation.defs#modEventUnmuteReporter", "tools.ozone.moderation.defs#modEventEmail", "tools.ozone.moderation.defs#modEventResolveAppeal", "tools.ozone.moderation.defs#modEventDivert", "tools.ozone.moderation.defs#modEventTag", "tools.ozone.moderation.defs#accountEvent", "tools.ozone.moderation.defs#identityEvent", "tools.ozone.moderation.defs#recordEvent", "tools.ozone.moderation.defs#modEventPriorityScore", "tools.ozone.moderation.defs#ageAssuranceEvent", "tools.ozone.moderation.defs#ageAssuranceOverrideEvent", "tools.ozone.moderation.defs#timelineEventPlcCreate", "tools.ozone.moderation.defs#timelineEventPlcOperation", "tools.ozone.moderation.defs#timelineEventPlcTombstone", "tools.ozone.hosting.getAccountHistory#accountCreated", "tools.ozone.hosting.getAccountHistory#emailConfirmed", "tools.ozone.hosting.getAccountHistory#passwordUpdated", "tools.ozone.hosting.getAccountHistory#handleUpdated"]]
+  /// [known_values: ["tools.ozone.moderation.defs#modEventTakedown", "tools.ozone.moderation.defs#modEventReverseTakedown", "tools.ozone.moderation.defs#modEventComment", "tools.ozone.moderation.defs#modEventReport", "tools.ozone.moderation.defs#modEventLabel", "tools.ozone.moderation.defs#modEventAcknowledge", "tools.ozone.moderation.defs#modEventEscalate", "tools.ozone.moderation.defs#modEventMute", "tools.ozone.moderation.defs#modEventUnmute", "tools.ozone.moderation.defs#modEventMuteReporter", "tools.ozone.moderation.defs#modEventUnmuteReporter", "tools.ozone.moderation.defs#modEventEmail", "tools.ozone.moderation.defs#modEventResolveAppeal", "tools.ozone.moderation.defs#modEventDivert", "tools.ozone.moderation.defs#modEventTag", "tools.ozone.moderation.defs#accountEvent", "tools.ozone.moderation.defs#identityEvent", "tools.ozone.moderation.defs#recordEvent", "tools.ozone.moderation.defs#modEventPriorityScore", "tools.ozone.moderation.defs#revokeAccountCredentialsEvent", "tools.ozone.moderation.defs#ageAssuranceEvent", "tools.ozone.moderation.defs#ageAssuranceOverrideEvent", "tools.ozone.moderation.defs#timelineEventPlcCreate", "tools.ozone.moderation.defs#timelineEventPlcOperation", "tools.ozone.moderation.defs#timelineEventPlcTombstone", "tools.ozone.hosting.getAccountHistory#accountCreated", "tools.ozone.hosting.getAccountHistory#emailConfirmed", "tools.ozone.hosting.getAccountHistory#passwordUpdated", "tools.ozone.hosting.getAccountHistory#handleUpdated", "tools.ozone.moderation.defs#scheduleTakedownEvent", "tools.ozone.moderation.defs#cancelScheduledTakedownEvent"]]
   pub event_type: String,
   pub count: i64,
   #[serde(flatten)]
@@ -6915,6 +7394,37 @@ pub struct ToolsOzoneModerationGetSubjectsOutput {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationListScheduledActionsInput {
+  /// [format: datetime] Filter actions scheduled to execute after this time
+  pub starts_after: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime] Filter actions scheduled to execute before this time
+  pub ends_before: Option<chrono::DateTime<chrono::Utc>>,
+  /// [max_length: 100] Filter actions for specific DID subjects
+  pub subjects: Option<Vec<String>>,
+  /// [min_length: 1] Filter actions by status
+  pub statuses: Vec<String>,
+  /// [minimum: 1] [maximum: 100] [default: 50] Maximum number of results to return
+  pub limit: Option<i64>,
+  /// Cursor for pagination
+  pub cursor: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationListScheduledActionsOutput {
+  pub actions: Vec<ToolsOzoneModerationDefsScheduledActionView>,
+  /// Cursor for next page of results
+  pub cursor: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ToolsOzoneModerationQueryEventsOutput {
   pub cursor: Option<String>,
   pub events: Vec<ToolsOzoneModerationDefsModEventView>,
@@ -6928,6 +7438,92 @@ pub struct ToolsOzoneModerationQueryEventsOutput {
 pub struct ToolsOzoneModerationQueryStatusesOutput {
   pub cursor: Option<String>,
   pub subject_statuses: Vec<ToolsOzoneModerationDefsSubjectStatusView>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(tag = "$type")]
+pub enum ToolsOzoneModerationScheduleActionInputActionUnion {
+  #[serde(rename = "tools.ozone.moderation.scheduleAction#takedown")]
+  ToolsOzoneModerationScheduleActionTakedown(Box<ToolsOzoneModerationScheduleActionTakedown>),
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationScheduleActionInput {
+  pub action: ToolsOzoneModerationScheduleActionInputActionUnion,
+  /// [max_length: 100] Array of DID subjects to schedule the action for
+  pub subjects: Vec<String>,
+  /// [format: did]
+  pub created_by: String,
+  pub scheduling: ToolsOzoneModerationScheduleActionSchedulingConfig,
+  /// This will be propagated to the moderation event when it is applied
+  pub mod_tool: Option<ToolsOzoneModerationDefsModTool>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Schedule a takedown action
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationScheduleActionTakedown {
+  pub comment: Option<String>,
+  /// Indicates how long the takedown should be in effect before automatically expiring.
+  pub duration_in_hours: Option<i64>,
+  /// If true, all other reports on content authored by this account will be resolved (acknowledged).
+  pub acknowledge_account_subjects: Option<bool>,
+  /// [max_length: 5] Names/Keywords of the policies that drove the decision.
+  pub policies: Option<Vec<String>>,
+  /// Severity level of the violation (e.g., 'sev-0', 'sev-1', 'sev-2', etc.).
+  pub severity_level: Option<String>,
+  /// Number of strikes to assign to the user when takedown is applied.
+  pub strike_count: Option<i64>,
+  /// [format: datetime] When the strike should expire. If not provided, the strike never expires.
+  pub strike_expires_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// Email content to be sent to the user upon takedown.
+  pub email_content: Option<String>,
+  /// Subject of the email to be sent to the user upon takedown.
+  pub email_subject: Option<String>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+/// Configuration for when the action should be executed
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationScheduleActionSchedulingConfig {
+  /// [format: datetime] Exact time to execute the action
+  pub execute_at: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime] Earliest time to execute the action (for randomized scheduling)
+  pub execute_after: Option<chrono::DateTime<chrono::Utc>>,
+  /// [format: datetime] Latest time to execute the action (for randomized scheduling)
+  pub execute_until: Option<chrono::DateTime<chrono::Utc>>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationScheduleActionScheduledActionResults {
+  pub succeeded: Vec<String>,
+  pub failed: Vec<ToolsOzoneModerationScheduleActionFailedScheduling>,
+  #[serde(flatten)]
+  pub extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolsOzoneModerationScheduleActionFailedScheduling {
+  /// [format: did]
+  pub subject: String,
+  pub error: String,
+  pub error_code: Option<String>,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -7389,7 +7985,7 @@ pub struct ToolsOzoneTeamDefsMember {
   /// [format: datetime]
   pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
   pub last_updated_by: Option<String>,
-  /// [known_values: ["#roleAdmin", "#roleModerator", "#roleTriage", "#roleVerifier"]]
+  /// [known_values: ["tools.ozone.team.defs#roleAdmin", "tools.ozone.team.defs#roleModerator", "tools.ozone.team.defs#roleTriage", "tools.ozone.team.defs#roleVerifier"]]
   pub role: String,
   #[serde(flatten)]
   pub extra: std::collections::HashMap<String, serde_json::Value>,
@@ -8020,6 +8616,163 @@ impl Atproto {
       .client
       .get(&format!(
         "https://{}/xrpc/app.bsky.actor.searchActorsTypeahead",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Initiate Age Assurance for an account.
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  ///
+  /// # Errors
+  ///
+  /// * `InvalidEmail`
+  /// * `DidTooLong`
+  /// * `InvalidInitiation`
+  /// * `RegionNotSupported`
+  pub async fn app_bsky_ageassurance_begin(
+    &self,
+    body: AppBskyAgeassuranceBeginInput,
+  ) -> Result<AppBskyAgeassuranceDefsState> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/app.bsky.ageassurance.begin",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Returns Age Assurance configuration for use on the client.
+  pub async fn app_bsky_ageassurance_get_config(&self) -> Result<AppBskyAgeassuranceDefsConfig> {
+    let mut request = self.client.get(&format!(
+      "https://{}/xrpc/app.bsky.ageassurance.getConfig",
+      self.host
+    ));
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Returns server-computed Age Assurance state, if available, and any additional metadata needed to compute Age Assurance state client-side.
+  ///
+  /// # Arguments
+  ///
+  /// * `country_code`
+  /// * `region_code`
+  pub async fn app_bsky_ageassurance_get_state(
+    &self,
+    country_code: &str,
+    region_code: Option<&str>,
+  ) -> Result<AppBskyAgeassuranceGetStateOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("country_code"), country_code.to_string()));
+    if let Some(region_code) = &region_code {
+      query_.push((String::from("region_code"), region_code.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.ageassurance.getState",
         self.host
       ))
       .query(&query_);
@@ -11450,6 +12203,121 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
+  /// Get a list of suggested starterpacks for onboarding
+  ///
+  /// # Arguments
+  ///
+  /// * `limit` - [minimum: 1] [maximum: 25] [default: 10]
+  pub async fn app_bsky_unspecced_get_onboarding_suggested_starter_packs(
+    &self,
+    limit: Option<i64>,
+  ) -> Result<AppBskyUnspeccedGetOnboardingSuggestedStarterPacksOutput> {
+    let mut query_ = Vec::new();
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getOnboardingSuggestedStarterPacks",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Get a skeleton of suggested starterpacks for onboarding. Intended to be called and hydrated by app.bsky.unspecced.getOnboardingSuggestedStarterPacks
+  ///
+  /// # Arguments
+  ///
+  /// * `viewer` - [format: did] DID of the account making the request (not included for public/unauthenticated queries).
+  /// * `limit` - [minimum: 1] [maximum: 25] [default: 10]
+  pub async fn app_bsky_unspecced_get_onboarding_suggested_starter_packs_skeleton(
+    &self,
+    viewer: Option<&str>,
+    limit: Option<i64>,
+  ) -> Result<AppBskyUnspeccedGetOnboardingSuggestedStarterPacksSkeletonOutput> {
+    let mut query_ = Vec::new();
+    if let Some(viewer) = &viewer {
+      query_.push((String::from("viewer"), viewer.to_string()));
+    }
+    if let Some(limit) = &limit {
+      query_.push((String::from("limit"), limit.to_string()));
+    }
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/app.bsky.unspecced.getOnboardingSuggestedStarterPacksSkeleton",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// An unspecced view of globally popular feed generators.
   ///
   /// # Arguments
@@ -11520,20 +12388,12 @@ impl Atproto {
   /// # Arguments
   ///
   /// * `anchor` - [format: at-uri] Reference (AT-URI) to post record. This is the anchor post.
-  /// * `prioritize_followed_users` - [default: false] Whether to prioritize posts from followed users. It only has effect when the user is authenticated.
   pub async fn app_bsky_unspecced_get_post_thread_other_v2(
     &self,
     anchor: &str,
-    prioritize_followed_users: Option<bool>,
   ) -> Result<AppBskyUnspeccedGetPostThreadOtherV2Output> {
     let mut query_ = Vec::new();
     query_.push((String::from("anchor"), anchor.to_string()));
-    if let Some(prioritize_followed_users) = &prioritize_followed_users {
-      query_.push((
-        String::from("prioritize_followed_users"),
-        prioritize_followed_users.to_string(),
-      ));
-    }
     let mut request = self
       .client
       .get(&format!(
@@ -11584,7 +12444,6 @@ impl Atproto {
   /// * `above` - [default: true] Whether to include parents above the anchor.
   /// * `below` - [minimum: 0] [maximum: 20] [default: 6] How many levels of replies to include below the anchor.
   /// * `branching_factor` - [minimum: 0] [maximum: 100] [default: 10] Maximum of replies to include at each level of the thread, except for the direct replies to the anchor, which are (NOTE: currently, during unspecced phase) all returned (NOTE: later they might be paginated).
-  /// * `prioritize_followed_users` - [default: false] Whether to prioritize posts from followed users. It only has effect when the user is authenticated.
   /// * `sort` - [known_values: ["newest", "oldest", "top"]] [default: oldest] Sorting for the thread replies.
   pub async fn app_bsky_unspecced_get_post_thread_v2(
     &self,
@@ -11592,7 +12451,6 @@ impl Atproto {
     above: Option<bool>,
     below: Option<i64>,
     branching_factor: Option<i64>,
-    prioritize_followed_users: Option<bool>,
     sort: Option<&str>,
   ) -> Result<AppBskyUnspeccedGetPostThreadV2Output> {
     let mut query_ = Vec::new();
@@ -11607,12 +12465,6 @@ impl Atproto {
       query_.push((
         String::from("branching_factor"),
         branching_factor.to_string(),
-      ));
-    }
-    if let Some(prioritize_followed_users) = &prioritize_followed_users {
-      query_.push((
-        String::from("prioritize_followed_users"),
-        prioritize_followed_users.to_string(),
       ));
     }
     if let Some(sort) = &sort {
@@ -15323,6 +16175,63 @@ impl Atproto {
     )
   }
 
+  /// Resolves an atproto lexicon (NSID) to a schema.
+  ///
+  /// # Arguments
+  ///
+  /// * `nsid` - [format: nsid] The lexicon NSID to resolve.
+  ///
+  /// # Errors
+  ///
+  /// * `LexiconNotFound` - No lexicon was resolved for the NSID.
+  pub async fn com_atproto_lexicon_resolve_lexicon(
+    &self,
+    nsid: &str,
+  ) -> Result<ComAtprotoLexiconResolveLexiconOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("nsid"), nsid.to_string()));
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/com.atproto.lexicon.resolveLexicon",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// Submit a moderation report regarding an atproto account or record. Implemented by moderation services (with PDS proxying), and requires auth.
   ///
   /// # Arguments
@@ -18297,6 +19206,63 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
+  /// Allows finding the oauth permission scope from a reference
+  ///
+  /// # Arguments
+  ///
+  /// * `scope` - The scope reference (starts with 'ref:')
+  ///
+  /// # Errors
+  ///
+  /// * `InvalidScopeReference` - An invalid scope reference was provided.
+  pub async fn com_atproto_temp_dereference_scope(
+    &self,
+    scope: &str,
+  ) -> Result<ComAtprotoTempDereferenceScopeOutput> {
+    let mut query_ = Vec::new();
+    query_.push((String::from("scope"), scope.to_string()));
+    let mut request = self
+      .client
+      .get(&format!(
+        "https://{}/xrpc/com.atproto.temp.dereferenceScope",
+        self.host
+      ))
+      .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// DEPRECATED: use queryLabels or subscribeLabels instead -- Fetch all labels from a labeler created after a certain date.
   ///
   /// # Arguments
@@ -18698,6 +19664,57 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Cancel all pending scheduled moderation actions for specified subjects
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn tools_ozone_moderation_cancel_scheduled_actions(
+    &self,
+    body: ToolsOzoneModerationCancelScheduledActionsInput,
+  ) -> Result<ToolsOzoneModerationCancelScheduledActionsCancellationResults> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.moderation.cancelScheduledActions",
+        self.host
+      ))
+      .json(&body);
     if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
@@ -19250,6 +20267,57 @@ impl Atproto {
     Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
   }
 
+  /// List scheduled moderation actions with optional filtering
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn tools_ozone_moderation_list_scheduled_actions(
+    &self,
+    body: ToolsOzoneModerationListScheduledActionsInput,
+  ) -> Result<ToolsOzoneModerationListScheduledActionsOutput> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.moderation.listScheduledActions",
+        self.host
+      ))
+      .json(&body);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
   /// List moderation events related to a subject.
   ///
   /// # Arguments
@@ -19275,6 +20343,7 @@ impl Atproto {
   /// * `mod_tool` - If specified, only events where the modTool name matches any of the given values are returned
   /// * `batch_id` - If specified, only events where the batchId matches the given value are returned
   /// * `age_assurance_state` - [known_values: ["pending", "assured", "unknown", "reset", "blocked"]] If specified, only events where the age assurance state matches the given value are returned
+  /// * `with_strike` - If specified, only events where strikeCount value is set are returned.
   /// * `cursor`
   pub async fn tools_ozone_moderation_query_events(
     &self,
@@ -19299,6 +20368,7 @@ impl Atproto {
     mod_tool: Option<&[&str]>,
     batch_id: Option<&str>,
     age_assurance_state: Option<&str>,
+    with_strike: Option<bool>,
     cursor: Option<&str>,
   ) -> Result<ToolsOzoneModerationQueryEventsOutput> {
     let mut query_ = Vec::new();
@@ -19416,6 +20486,9 @@ impl Atproto {
         age_assurance_state.to_string(),
       ));
     }
+    if let Some(with_strike) = &with_strike {
+      query_.push((String::from("with_strike"), with_strike.to_string()));
+    }
     if let Some(cursor) = &cursor {
       query_.push((String::from("cursor"), cursor.to_string()));
     }
@@ -19482,7 +20555,7 @@ impl Atproto {
   /// * `reviewed_before` - [format: datetime] Search subjects reviewed before a given timestamp
   /// * `include_muted` - By default, we don't include muted subjects in the results. Set this to true to include them.
   /// * `only_muted` - When set to true, only muted subjects and reporters will be returned.
-  /// * `review_state` - Specify when fetching subjects in a certain state
+  /// * `review_state` - [known_values: ["tools.ozone.moderation.defs#reviewOpen", "tools.ozone.moderation.defs#reviewClosed", "tools.ozone.moderation.defs#reviewEscalated", "tools.ozone.moderation.defs#reviewNone"]] Specify when fetching subjects in a certain state
   /// * `ignore_subjects`
   /// * `last_reviewed_by` - [format: did] Get all subject statuses that were reviewed by a specific moderator
   /// * `sort_field` - [default: lastReportedAt] [enum: ["lastReviewedAt", "lastReportedAt", "reportedRecordsCount", "takendownRecordsCount", "priorityScore"]]
@@ -19499,6 +20572,7 @@ impl Atproto {
   /// * `min_reported_records_count` - If specified, only subjects that belong to an account that has at least this many reported records will be returned.
   /// * `min_takendown_records_count` - If specified, only subjects that belong to an account that has at least this many taken down records will be returned.
   /// * `min_priority_score` - [minimum: 0] [maximum: 100] If specified, only subjects that have priority score value above the given value will be returned.
+  /// * `min_strike_count` - [minimum: 1] If specified, only subjects that belong to an account that has at least this many active strikes will be returned.
   /// * `age_assurance_state` - [known_values: ["pending", "assured", "unknown", "reset", "blocked"]] If specified, only subjects with the given age assurance state will be returned.
   pub async fn tools_ozone_moderation_query_statuses(
     &self,
@@ -19536,6 +20610,7 @@ impl Atproto {
     min_reported_records_count: Option<i64>,
     min_takendown_records_count: Option<i64>,
     min_priority_score: Option<i64>,
+    min_strike_count: Option<i64>,
     age_assurance_state: Option<&str>,
   ) -> Result<ToolsOzoneModerationQueryStatusesOutput> {
     let mut query_ = Vec::new();
@@ -19702,6 +20777,12 @@ impl Atproto {
         min_priority_score.to_string(),
       ));
     }
+    if let Some(min_strike_count) = &min_strike_count {
+      query_.push((
+        String::from("min_strike_count"),
+        min_strike_count.to_string(),
+      ));
+    }
     if let Some(age_assurance_state) = &age_assurance_state {
       query_.push((
         String::from("age_assurance_state"),
@@ -19715,6 +20796,57 @@ impl Atproto {
         self.host
       ))
       .query(&query_);
+    if let Some(token) = { self.access_jwt.read().await.clone() } {
+      request = request.header("Authorization", format!("Bearer {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == 429 {
+      return Err(Error::Rate((
+        response
+          .headers()
+          .get("ratelimit-limit")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-remaining")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-reset")
+          .and_then(|v| v.to_str().ok())
+          .and_then(|v| v.parse().ok())
+          .unwrap_or_default(),
+        response
+          .headers()
+          .get("ratelimit-policy")
+          .and_then(|v| v.to_str().map(|v| v.to_string()).ok())
+          .unwrap_or_default(),
+      )));
+    }
+    let text = response.text().await?;
+    Ok(serde_json::from_str(&text).map_err(|e| Error::from((e, text)))?)
+  }
+
+  /// Schedule a moderation action to be executed at a future time
+  ///
+  /// # Arguments
+  ///
+  /// * body
+  pub async fn tools_ozone_moderation_schedule_action(
+    &self,
+    body: ToolsOzoneModerationScheduleActionInput,
+  ) -> Result<ToolsOzoneModerationScheduleActionScheduledActionResults> {
+    let mut request = self
+      .client
+      .post(&format!(
+        "https://{}/xrpc/tools.ozone.moderation.scheduleAction",
+        self.host
+      ))
+      .json(&body);
     if let Some(token) = { self.access_jwt.read().await.clone() } {
       request = request.header("Authorization", format!("Bearer {token}"));
     }
