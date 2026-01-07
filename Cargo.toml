@@ -11,7 +11,7 @@ version = "0.1.0"
 
 [dependencies]
 async-trait = "0.1.88"
-axum = {version = "0.8.3", features = ["macros"]}
+axum = {version = "0.8.8", features = ["macros"]}
 base64 = "0.22.1"
 chrono = {version = "0.4.40", features = ["serde"]}
 ciborium = "0.2.2"
@@ -21,15 +21,15 @@ futures-util = "0.3.31"
 http = "1.4.0"
 indexmap = "2.12.1"
 ipld-core = {version = "0.4.2", features = ["serde"]}
-lindera = {version = "1.1.2", features = ["embedded-ipadic"]}
+lindera = {version = "1.5.1", features = ["embedded-ipadic"]}
 mime_guess = "2.0.5"
-reqwest = {version = "0.12.24", default-features = false, features = ["json", "rustls-tls-webpki-roots"]}
+reqwest = {version = "0.12.28", default-features = false, features = ["json", "rustls-tls-webpki-roots"]}
 reqwest-websocket = "0.5.1"
 rs-car = "0.5.0"
 serde = {version = "1.0.219", features = ["derive"]}
 serde_ipld_dagcbor = "0.6.2"
-serde_json = "1.0.140"
+serde_json = "1.0.149"
 serde_with = "3.12.0"
-tokio = {version = "1.44.1", features = ["full"]}
-tower-http = {version = "0.6.2", features = ["timeout"]}
-tracing = "0.1.41"
+tokio = {version = "1.49.0", features = ["full"]}
+tower-http = {version = "0.6.8", features = ["timeout"]}
+tracing = "0.1.44"
